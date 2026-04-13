@@ -78,14 +78,14 @@ Somos un grupo de estudiantes de pregrado y su docente tutor, unidos por el inte
 semillero-mecanica-computacional/
 │
 ├── 📂 proyectos/
-│   ├── 2024-01_ecuacion_calor_2d/
+│   ├── Proyecto 1/
 │   │   ├── README.md              ← Descripción del proyecto
 │   │   ├── src/                   ← Código fuente
 │   │   ├── mallas/                ← Archivos de malla (.msh, .xdmf)
 │   │   ├── resultados/            ← Outputs y figuras
 │   │   └── referencias/           ← Papers y notas técnicas
 │   │
-│   └── 2024-02_elasticidad_lineal/
+│   └── 2026-04_elasticidad_lineal/
 │       └── ...
 │
 ├── 📂 tutoriales/
@@ -99,14 +99,14 @@ semillero-mecanica-computacional/
 │   └── 05_postprocesamiento_paraview/
 │
 ├── 📂 journal_club/
-│   ├── 2024-08-15_titulo_articulo/
+│   ├── 2026-04-13_titulo_articulo/
 │   │   ├── presentacion.pdf
 │   │   ├── resumen.md             ← Resumen crítico del artículo
 │   │   └── preguntas_discusion.md
 │   └── ...
 │
 ├── 📂 actas/
-│   ├── 2024-08-01_sesion_fundacional.md
+│   ├── 2026-04-13_sesion_fundacional.md
 │   ├── 2024-08-15_sesion_02.md
 │   └── plantilla_acta.md          ← Usar esta para nuevas actas
 │
