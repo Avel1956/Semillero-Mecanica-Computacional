@@ -474,7 +474,7 @@ Universidad Javeriana de Cali
 *"No puedes simular lo que no entiendes. No puedes entender lo que no te atreves a preguntar."*
 
 **Semillero de Mecánica Computacional**
-Universidad Javeriana de Cali · Facultad de Ingeniería · Desde 2024
+Universidad Javeriana de Cali · Facultad de Ingeniería · Desde 2026
 
 ⭐ Si este repositorio te fue útil, considera darle una estrella.
 
