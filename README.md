@@ -469,7 +469,7 @@ Universidad Javeriana de Cali
 
 -----
 
-\<div align="center"\>
+
 
 *"No puedes simular lo que no entiendes. No puedes entender lo que no te atreves a preguntar."*
 
@@ -478,9 +478,5 @@ Universidad Javeriana de Cali · Facultad de Ingeniería · Desde 2024
 
 ⭐ Si este repositorio te fue útil, considera darle una estrella.
 
-\</div\>
 
-```
 
-No olvides reemplazar los campos entre corchetes `[...]` (como los nombres, correos y la URL exacta del git clone) antes de hacer tu primer commit. ¡Mucho éxito en esa primera sesión del semillero\!
-```
