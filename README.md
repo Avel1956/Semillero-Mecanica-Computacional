@@ -412,9 +412,9 @@ Estos principios definen cómo trabajamos:
 
 | Nombre | Correo | Perfil |
 |---|---|---|
-| [Nombre del Tutor] | tutor@javerianacali.edu.co | Google Scholar · ResearchGate |
+| Jaime Andrés Vélez Zea | jaimea.velez@javerianacali.edu.co | Google Scholar · ResearchGate |
 
-**Miembros Activos — Cohorte 2024**
+**Miembros Activos — Cohorte 2026**
 
 | Nombre | Programa | Rol | Proyecto |
 |---|---|---|---|
