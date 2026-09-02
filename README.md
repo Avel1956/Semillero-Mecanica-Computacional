@@ -1,347 +1,253 @@
-
 <div align="center">
 
-# ⚙️ Semillero de Mecánica Computacional
-### Universidad Javeriana de Cali — Facultad de Ingeniería
-*Simulando la física. Construyendo el criterio.*
+# Semillero de Mecánica Computacional
+### Pontificia Universidad Javeriana – Cali · Facultad de Ingeniería
+Grupo de Investigación SIGMA · Programa de Ingeniería Mecánica
 
 ---
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FEniCSx](https://img.shields.io/badge/FEniCSx-0.7-blue?style=for-the-badge)
-![OpenFOAM](https://img.shields.io/badge/OpenFOAM-v2312-informational?style=for-the-badge)
-![License](https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge)
-![Status](https://img.shields.io/badge/Estado-Activo-brightgreen?style=for-the-badge)
-![Miembros](https://img.shields.io/badge/Miembros-12-orange?style=for-the-badge)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-F37626?style=for-the-badge&logo=jupyter&logoColor=white)
+![FreeCAD](https://img.shields.io/badge/FreeCAD-FEM-333333?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-A%C3%B1o%201%20en%20ejecuci%C3%B3n-brightgreen?style=for-the-badge)
 
 </div>
 
 ---
 
-## 📋 Tabla de Contenidos
+## Tabla de contenidos
 
-- [¿Qué es este repositorio?](#-qué-es-este-repositorio)
-- [¿Quiénes somos?](#-quiénes-somos)
-- [Estructura del repositorio](#-estructura-del-repositorio)
-- [Cómo empezar](#-cómo-empezar)
-  - [Requisitos previos](#requisitos-previos)
-  - [Instalación del entorno](#instalación-del-entorno)
-  - [Verificación de la instalación](#verificación-de-la-instalación)
-- [Proyectos activos](#-proyectos-activos)
-- [Cómo contribuir](#-cómo-contribuir)
-  - [Estándar de código](#estándar-de-código)
-  - [Flujo de trabajo con Git](#flujo-de-trabajo-con-git)
-  - [Plantilla de commit](#plantilla-de-commit)
-- [Recursos de aprendizaje](#-recursos-de-aprendizaje)
-- [Valores del semillero](#-valores-del-semillero)
-- [Equipo](#-equipo)
-- [Licencia](#-licencia)
-- [Contacto](#-contacto)
+- [Descripción](#descripción)
+- [Ficha del semillero](#ficha-del-semillero)
+- [Objetivos](#objetivos)
+- [Enfoque y herramientas](#enfoque-y-herramientas)
+- [Problema que aborda](#problema-que-aborda)
+- [Metodología](#metodología)
+- [Líneas de operación](#líneas-de-operación)
+- [Cronograma](#cronograma)
+- [Productos esperados](#productos-esperados)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Equipo](#equipo)
+- [Cómo contribuir](#cómo-contribuir)
+- [Contacto](#contacto)
 
 ---
 
-## 📦 ¿Qué es este repositorio?
+## Descripción
 
-Este repositorio es la **memoria técnica viva** del Semillero de Mecánica Computacional de la Universidad Javeriana de Cali. Aquí conviven:
+El Semillero de Mecánica Computacional es un semillero de investigación registrado en la Convocatoria de Semilleros de Investigación 2026 de la Pontificia Universidad Javeriana – Cali. Está vinculado al grupo de investigación SIGMA y al programa de Ingeniería Mecánica.
 
-- El **código fuente** de todos los proyectos de investigación del semillero.
-- Los **tutoriales internos** desarrollados por y para los miembros.
-- Las **presentaciones y resúmenes** del Journal Club.
-- Las **actas** de cada sesión de trabajo.
-- Los **recursos curados** que guían el aprendizaje del grupo.
+Su propósito es formar estudiantes de ingeniería con capacidad crítica frente a las herramientas de simulación: los integrantes programan sus propios métodos numéricos (Python/Jupyter) y contrastan los resultados contra software de simulación (FreeCAD). De esta forma comprenden los fundamentos físicos y matemáticos de cada simulación en lugar de usar las herramientas como una caja negra.
 
-> **Principio fundamental:** Todo lo que se aprende en el semillero se documenta aquí. El conocimiento que no se escribe, no existe para el siguiente miembro que llegue.
+Este repositorio es el espacio de trabajo del semillero. Documenta el avance de las líneas de operación definidas por el grupo, las actas de las sesiones y el material de formación y divulgación que se produzca.
 
 ---
 
-## 👥 ¿Quiénes somos?
+## Ficha del semillero
 
-Somos un grupo de estudiantes de pregrado y su docente tutor, unidos por el interés en comprender y simular fenómenos físicos mediante métodos numéricos y computación científica. Trabajamos en la intersección de:
+| Campo | Información |
+|---|---|
+| Nombre | Semillero de Mecánica Computacional |
+| Institución | Pontificia Universidad Javeriana – Cali, Facultad de Ingeniería |
+| Grupo de investigación | SIGMA |
+| Programa académico | Ingeniería Mecánica |
+| Tipo de propuesta | Nuevo semillero (Convocatoria Semilleros de Investigación 2026) |
+| Tutor | Jaime Andrés Vélez Zea |
+| Correo del tutor | jaimea.velez@javerianacali.edu.co |
+| Fecha de inicio de ejecución | 06/04/2026 (fija) |
+| Fecha de fin de ejecución | 30/11/2027 (fija) |
+| Eje estratégico | Desarrollo humano, paz, equidad y democracia |
+| ODS abordados | ODS 4 — Educación de calidad; ODS 9 — Industria, innovación e infraestructura |
+| Gran área / Área | Ingeniería y Tecnología / Ingeniería Mecánica |
+| Objetivo socioeconómico | Producción y tecnología industrial |
 
-**Matemáticas Aplicadas × Física de Medios Continuos × Computación Científica**
+---
 
-**No somos** usuarios de software. **Somos** desarrolladores de criterio: entendemos qué hay detrás de cada simulación que ejecutamos.
+## Objetivos
 
-**Áreas de trabajo:**
+**Objetivo general**
 
-| Área | Método Principal | Herramientas |
+Desarrollar competencias investigativas en estudiantes de ingeniería a través de una metodología híbrida que integra la programación de métodos numéricos y el uso de software de simulación, para la resolución de problemas avanzados en mecánica computacional y la apropiación social del conocimiento científico en el entorno local.
+
+**Objetivos específicos**
+
+1. Capacitar a los estudiantes en el desarrollo autónomo de algoritmos propios para la solución de problemas de cinemática y mecánica de materiales.
+2. Comparar y validar los resultados de los códigos propios frente a soluciones obtenidas en software de simulación para desarrollar criterio ingenieril crítico.
+3. Diseñar estrategias de divulgación y material didáctico basado en las simulaciones para actividades de promoción de la ingeniería en colegios de la región.
+
+---
+
+## Enfoque y herramientas
+
+El semillero trabaja en mecánica computacional, con énfasis en análisis de elementos finitos (FEA) y dinámica de sistemas multicuerpo. Las actividades se estructuran en torno a problemas de dinámica, cinética y mecánica de materiales.
+
+La metodología de aprendizaje es híbrida (gray-box modeling): la solución programada en código abierto (Python/Jupyter) se contrasta contra la solución obtenida en FreeCAD. El contraste entre ambos resultados forma el criterio del estudiante para validar simulaciones.
+
+El componente de apropiación social del conocimiento utiliza la visualización científica como medio para comunicar conceptos de ingeniería a públicos no expertos, en el marco de la MEGA de la Universidad en Salida.
+
+---
+
+## Problema que aborda
+
+En la formación de ingeniería existe una desconexión entre los fundamentos teóricos de los métodos numéricos y la práctica con herramientas de simulación. Los estudiantes usan con frecuencia herramientas avanzadas sin comprender cómo validar sus resultados, o poseen conocimientos teóricos que no saben aplicar en entornos modernos. A esto se suma la necesidad de la universidad de impactar el entorno local, traduciendo conceptos técnicos complejos en formatos accesibles que promuevan vocaciones científicas en la educación básica y media.
+
+---
+
+## Metodología
+
+| Fase | Descripción |
+|---|---|
+| 1. Fundamentación en investigación | Talleres sobre método científico, proceso investigativo y ética profesional |
+| 2. Nivelación de herramientas | Talleres de nivelación en Python y revisión de teoría de elementos finitos |
+| 3. Desarrollo híbrido | Celdas de trabajo; cada celda resuelve un problema clásico (p. ej. deformación de una viga, mecanismo de cuatro barras) por dos vías: código propio y software de simulación |
+| 4. Validación | Análisis de error y convergencia entre ambos métodos |
+| 5. Transposición didáctica | Adaptación de los resultados visuales a demostraciones para ferias y visitas a colegios |
+
+---
+
+## Líneas de operación
+
+La operación del semillero se organiza en líneas de trabajo definidas según los intereses del grupo y el contexto del semillero. Cada línea contará con un estudiante responsable que lidere la creación de capacidades y la ejecución del presupuesto asignado.
+
+| Línea | Alcance |
+|---|---|
+| Formación | Programa de talleres y webinarios sobre simulación y modelación computacional. Modalidad asíncrona, con videos de preparación y ejercicios prácticos |
+| Inteligencia artificial | Incorporación de herramientas de inteligencia artificial al trabajo del semillero: apoyo a la programación, al análisis de resultados y a la elaboración de material de formación |
+| Modelado físico | Modelado y fabricación de prototipos y herramientas mediante manufactura aditiva (impresión 3D), como complemento experimental de las simulaciones y apoyo a la divulgación |
+| Control | Instrumentación de experimentos y adquisición de datos con sistemas embebidos, orientada a la validación experimental de los modelos computacionales |
+| Biomecánica | Simulación de problemas de interés biomecánico y desarrollo de proyectos interdisciplinarios con el programa de Ingeniería Biomédica |
+
+**Responsables de área:** por definir.
+
+---
+
+## Cronograma
+
+**Año 1 (marzo – noviembre 2026)**
+
+- Talleres de fundamentación en investigación y de herramientas (Python/FreeCAD).
+- Definición de retos de simulación.
+- Desarrollo de los primeros códigos comparativos.
+- Diseño e implementación del piloto de la estrategia pedagógica para colegios.
+
+**Año 2 (febrero – noviembre 2027)**
+
+- Ejecución de simulaciones complejas (dinámica y materiales).
+- Visitas a colegios (implementación de la estrategia).
+- Escritura de ponencias o artículos.
+- Presentación en evento de semilleros interno o externo.
+
+---
+
+## Productos esperados
+
+Productos comprometidos en la propuesta registrada ante la convocatoria.
+
+| Categoría | Producto | Cantidad | Año de entrega |
+|---|---|---|---|
+| Activos de propiedad intelectual — Software | Repositorio de códigos básicos documentados que resuelven problemas básicos de mecánica | 1 | Año 1 (30/11/2026) |
+| Activos de propiedad intelectual — Software | Repositorio de simulaciones (FreeCAD) con verificación analítica | 1 | Año 2 (30/11/2027) |
+| Organización de eventos / capacitaciones — Taller | Diseño de la actividad lúdico-pedagógica "Simulando el Futuro" para estudiantes de bachillerato | 1 | Año 1 (30/11/2026) |
+| Otros productos de divulgación | Por definir en el documento oficial | 1 | Año 2 (30/11/2027) |
+
+---
+
+## Estructura del repositorio
+
+Estructura planificada. Las carpetas se crearán cuando exista el primer contenido; ninguna carpeta contiene material por adelantado.
+
+```text
+Semillero-Mecanica-Computacional/
+│
+├── actas/          Acta de cada sesión de trabajo
+├── formacion/      Material del programa de talleres y webinarios
+├── proyectos/      Trabajo de las líneas de operación
+├── recursos/       Material de referencia del grupo
+│
+└── README.md
+```
+
+---
+
+## Equipo
+
+| Nombre | Rol | Correo |
 |---|---|---|
-| Mecánica Estructural | FEM | FEniCSx, Ansys |
-| Dinámica de Fluidos | FVM | OpenFOAM, Fluent |
-| Transferencia de Calor | FDM / FEM | Python, FEniCSx |
-| Biomecánica | FEM | Abaqus, FEniCSx |
+| Jaime Andrés Vélez Zea | Tutor del semillero | jaimea.velez@javerianacali.edu.co |
+
+La lista de estudiantes vinculados se publicará cuando esté confirmada.
 
 ---
 
-## 🗂️ Estructura del repositorio
+## Cómo contribuir
 
-```text
-semillero-mecanica-computacional/
-│
-├── 📂 proyectos/
-│   ├── 2026-04-12_ecuacion_calor_2d/
-│   │   ├── README.md              ← Descripción del proyecto
-│   │   ├── src/                   ← Código fuente
-│   │   ├── mallas/                ← Archivos de malla (.msh, .xdmf)
-│   │   ├── resultados/            ← Outputs y figuras
-│   │   └── referencias/           ← Papers y notas técnicas
-│   │
-│   └── 2026-04-12_elasticidad_lineal/
-│       └── ...
-│
-├── 📂 tutoriales/
-│   ├── 00_python_cientifico/
-│   │   ├── README.md
-│   │   └── notebook.ipynb
-│   ├── 01_fdm_calor_1d/
-│   ├── 02_fdm_laplace_2d/
-│   ├── 03_intro_fenics/
-│   ├── 04_generacion_mallas_gmsh/
-│   └── 05_postprocesamiento_paraview/
-│
-├── 📂 journal_club/
-│   ├── 2026-04-12_titulo_articulo/
-│   │   ├── presentacion.pdf
-│   │   ├── resumen.md             ← Resumen crítico del artículo
-│   │   └── preguntas_discusion.md
-│   └── ...
-│
-├── 📂 actas/
-│   ├── 2026-04-12_sesion_fundacional.md
-│   ├── 2026-04-12_sesion_02.md
-│   └── plantilla_acta.md          ← Usar esta para nuevas actas
-│
-├── 📂 recursos/
-│   ├── libros_recomendados.md
-│   ├── cursos_online.md
-│   ├── revistas_cientificas.md
-│   └── datasets_y_benchmarks.md
-│
-├── 📂 entorno/
-│   ├── environment.yml            ← Entorno Conda
-│   ├── requirements.txt           ← Dependencias pip
-│   └── setup_instructions.md      ← Guía de instalación detallada
-│
-├── 📄 README.md                   ← Este archivo
-├── 📄 CONTRIBUTING.md             ← Guía completa de contribución
-├── 📄 CODE_OF_CONDUCT.md          ← Código de conducta
-└── 📄 LICENSE
-````
-
------
-
-## 🚀 Cómo empezar
-
-### Requisitos previos
-
-Antes de clonar el repositorio, asegúrate de tener instalado:
-
-  - **Git** ≥ 2.40 → [git-scm.com](https://git-scm.com/)
-  - **Python** ≥ 3.10 → [python.org](https://www.python.org/)
-  - **Conda / Miniconda** (recomendado) → [docs.conda.io](https://docs.conda.io/)
-  - **Editor de código:** VS Code + extensiones Python y Jupyter (recomendado)
-
-> 💡 Si no tienes experiencia con Git, comienza con el tutorial interno:
-> [`tutoriales/00_python_cientifico/git_basico.md`](https://www.google.com/search?q=tutoriales/00_python_cientifico/git_basico.md)
-
------
-
-### Instalación del entorno
-
-**Paso 1 — Clona el repositorio**
-
-```bash
-git clone [https://github.com/javeriana-cali-comp-mech/semillero.git](https://github.com/javeriana-cali-comp-mech/semillero.git)
-cd semillero
-```
-
-**Paso 2 — Crea el entorno Conda**
-
-```bash
-conda env create -f entorno/environment.yml
-conda activate semillero-mc
-```
-
-\<details\>
-\<summary\>📦 ¿Qué contiene el entorno? (click para expandir)\</summary\>
-
-```yaml
-# entorno/environment.yml
-name: semillero-mc
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - python=3.11
-  - numpy
-  - scipy
-  - matplotlib
-  - sympy
-  - jupyterlab
-  - ipywidgets
-  - fenics-dolfinx          # FEM con FEniCSx
-  - gmsh                    # Generación de mallas
-  - pyvista                 # Visualización 3D en Python
-  - meshio                  # Conversión de formatos de malla
-  - tqdm                    # Barras de progreso
-  - black                   # Formateador de código
-  - pytest                  # Testing
-  - pip:
-    - scikit-fem             # FEM alternativo liviano
-```
-
-\</details\>
-
-**Paso 3 — Verifica la instalación**
-
-```bash
-python entorno/verificar_instalacion.py
-```
-
-Deberías ver una salida similar a:
-
-```text
-✅ Python        3.11.x   — OK
-✅ NumPy         1.26.x   — OK
-✅ SciPy         1.12.x   — OK
-✅ Matplotlib    3.8.x    — OK
-✅ FEniCSx       0.7.x    — OK
-✅ Gmsh          4.12.x   — OK
-✅ PyVista       0.43.x   — OK
-
-🎉 Entorno listo. Bienvenido al semillero.
-```
-
-### Verificación de la instalación
-
-Para confirmar que todo funciona correctamente, ejecuta el primer tutorial:
-
-```bash
-cd tutoriales/01_fdm_calor_1d/
-jupyter lab notebook.ipynb
-```
-
-Si la celda de verificación corre sin errores y genera una gráfica de distribución de temperatura, tu entorno está configurado correctamente.
-
------
-
-## 🔬 Proyectos activos
-
-| \# | Proyecto | Responsables | Estado | Método |
-|---|---|---|---|---|
-| 01 | Solución numérica de la ecuación de calor 2D | Equipo A | 🟡 En progreso | FDM |
-| 02 | Análisis de elasticidad lineal plana con FEniCSx | Equipo B | 🟢 Iniciado | FEM |
-| 03 | Validación de flujo de Poiseuille en OpenFOAM | Equipo C | 🔵 Planificado | FVM |
-
-Para unirte a un proyecto o proponer uno nuevo, consulta la sección **Cómo contribuir** y abre un Issue con la etiqueta `nuevo-proyecto`.
-
------
-
-## 🤝 Cómo contribuir
-
-Todo miembro activo del semillero debe contribuir al repositorio. A continuación, el proceso estándar:
+Todo integrante del semillero contribuye al repositorio. El flujo de trabajo es el siguiente.
 
 ### Estándar de código
 
-Todo script de Python debe comenzar con el siguiente encabezado:
+Todo script de Python inicia con un encabezado con la siguiente información:
 
 ```python
-# ═══════════════════════════════════════════════════════════════════════
 # ARCHIVO     : nombre_descriptivo.py
-# SEMILLERO   : Mecánica Computacional — U. Javeriana Cali
+# SEMILLERO   : Mecánica Computacional — PUJ Cali
 # AUTOR(ES)   : Nombre Apellido <correo@javerianacali.edu.co>
 # FECHA       : YYYY-MM-DD
 # VERSIÓN     : 1.0.0
 #
-# DESCRIPCIÓN :
-#   Descripción clara de qué hace el script y qué problema resuelve.
-#   Incluir las ecuaciones o fenómeno físico que se modela.
-#
+# DESCRIPCIÓN : Qué hace el script y qué problema resuelve.
 # MÉTODO      : FDM | FEM | FVM | Analítico | Otro
 # REFERENCIA  : Apellido, A. (Año). Título. Journal. DOI:...
-#
 # DEPENDENCIAS: numpy, scipy, matplotlib
 # USO         : python nombre_descriptivo.py
-#               o: jupyter nbconvert --to script notebook.ipynb
-# ═══════════════════════════════════════════════════════════════════════
 ```
 
-**Convenciones adicionales:**
+Convenciones:
 
-  * Nombres de variables en `snake_case` descriptivo (ej: `nodos_internos`, no `n`).
-  * Constantes físicas en `MAYUSCULAS` con unidades en comentario.
-  * Una función = una responsabilidad. Funciones de más de 30 líneas deben dividirse.
-  * Toda función debe tener `docstring` con parámetros, retorno y ejemplo.
-
-<!-- end list -->
-
-```python
-def calcular_temperatura_fdm(n_nodos: int, t_izq: float, t_der: float) -> np.ndarray:
-    """
-    Resuelve la ecuación de Laplace 1D por diferencias finitas.
-
-    Parámetros
-    ----------
-    n_nodos : int
-        Número total de nodos incluyendo fronteras.
-    t_izq : float
-        Temperatura en la frontera izquierda [°C].
-    t_der : float
-        Temperatura en la frontera derecha [°C].
-
-    Retorna
-    -------
-    np.ndarray
-        Vector de temperaturas en todos los nodos [°C].
-
-    Ejemplo
-    -------
-    >>> T = calcular_temperatura_fdm(5, 100.0, 50.0)
-    >>> print(T)
-    [100.  87.5  75.  62.5  50.]
-    """
-```
+- Nombres de variables en `snake_case` descriptivo (p. ej. `nodos_internos`, no `n`).
+- Constantes físicas en `MAYUSCULAS` con unidades en comentario.
+- Una función cumple una responsabilidad. Funciones de más de 30 líneas se dividen.
+- Toda función tiene `docstring` con parámetros, retorno y ejemplo.
 
 ### Flujo de trabajo con Git
 
-Nunca trabajes directamente sobre la rama `main`. El flujo es:
+No se trabaja directamente sobre la rama `main`.
 
 ```bash
-# 1. Asegúrate de tener la versión más reciente
+# 1. Obtener la versión más reciente
 git checkout main
 git pull origin main
 
-# 2. Crea una rama de trabajo con nombre descriptivo
+# 2. Crear una rama de trabajo con nombre descriptivo
 #    Formato: tipo/descripcion-corta
 #    Tipos: feat | fix | docs | tutorial | refactor
-git checkout -b feat/solucion-calor-2d-dirichlet
+git checkout -b feat/solucion-viga-dirichlet
 
-# 3. Trabaja, haz commits frecuentes (ver plantilla abajo)
-git add src/solver_calor_2d.py
-git commit -m "feat(calor-2d): implementar ensamblaje de matriz de rigidez"
+# 3. Trabajar y hacer commits frecuentes (ver plantilla abajo)
+git add proyectos/solver_viga.py
+git commit -m "feat(viga): implementar solver de deflexión por elementos finitos"
 
-# 4. Empuja tu rama al repositorio remoto
-git push origin feat/solucion-calor-2d-dirichlet
+# 4. Publicar la rama en el repositorio remoto
+git push origin feat/solucion-viga-dirichlet
 
-# 5. Abre un Pull Request en GitHub hacia main
-#    - Describe qué hiciste y por qué
-#    - Asigna a un revisor (otro miembro del semillero)
-#    - Espera la revisión antes de hacer merge
+# 5. Abrir un Pull Request en GitHub hacia main
+#    - Describir qué se hizo y por qué
+#    - Asignar un revisor (otro integrante del semillero)
+#    - Esperar la revisión antes del merge
 ```
 
 ### Plantilla de commit
 
-Seguimos la convención **Conventional Commits**:
+Convención **Conventional Commits**:
 
 ```text
 <tipo>(<alcance>): <descripción corta en imperativo>
 
-[Cuerpo opcional: qué se hizo y por qué, no el cómo]
+[Cuerpo opcional: qué se hizo y por qué]
 
 [Referencias opcionales: Closes #12, Refs #8]
 ```
 
-**Tipos válidos:**
+Tipos válidos:
 
 | Tipo | Cuándo usarlo |
 |---|---|
@@ -352,131 +258,21 @@ Seguimos la convención **Conventional Commits**:
 | `refactor` | Reestructuración de código sin cambio de comportamiento |
 | `test` | Adición de pruebas unitarias |
 | `acta` | Nueva acta de sesión |
-| `jclub` | Material del Journal Club |
 
-**Ejemplos:**
+---
 
-```bash
-git commit -m "feat(fdm): agregar solver 2D para ecuación de Poisson"
-git commit -m "fix(fem): corregir indexación en ensamblaje de vector de fuerzas"
-git commit -m "docs(tutorial-01): agregar explicación de condición CFL"
-git commit -m "acta: sesión 05 del 2024-09-12"
-```
+## Contacto
 
------
-
-## 📚 Recursos de aprendizaje
-
-**Libros fundamentales del semillero**
-
-| Libro | Autores | Nivel | Disponible en |
-|---|---|---|---|
-| Numerical Methods for Engineers | Chapra & Canale | ⭐ Introductorio | Biblioteca Javeriana |
-| Solving PDEs in Python | Langtangen & Logg | ⭐⭐ Intermedio | Libre online |
-| The Finite Element Method | Zienkiewicz & Taylor | ⭐⭐⭐ Avanzado | Biblioteca Javeriana |
-| An Introduction to CFD | Versteeg & Malalasekera | ⭐⭐ Intermedio | Biblioteca Javeriana |
-
-**Cursos en línea recomendados**
-
-  * 🎓 **CFD Python** — Lorena Barba (GWU) → lorenabarba.com
-  * 🎓 **FEniCSx Tutorial** — Jørgen Dokken → jsdokken.com
-  * 🎓 **MIT 18.335** — Numerical Methods → ocw.mit.edu
-  * 🎓 **Scientific Computing with Python** — edX / Coursera
-
-**Recursos internos del repositorio**
-
-```text
-recursos/
-├── libros_recomendados.md        ← Lista anotada con comentarios del grupo
-├── cursos_online.md              ← Cursos evaluados por miembros del semillero
-├── revistas_cientificas.md       ← Journals relevantes y cómo acceder desde Javeriana
-└── datasets_y_benchmarks.md      ← Problemas de referencia para validar solvers
-```
-
------
-
-## 🧭 Valores del semillero
-
-Estos principios definen cómo trabajamos:
-
-  * 🔬 **Rigor Matemático:** No basta con que el código "corra". Debemos entender la física detrás del resultado, analizar la convergencia y conocer los límites de validez de nuestros modelos.
-  * ⚖️ **Ética en la Simulación:** Reportamos los errores, las limitaciones de la malla y los casos en que el modelo falla. Una simulación bien documentada —incluyendo sus limitaciones— vale más que una que solo muestra los resultados bonitos.
-  * 🤝 **Colaboración Radical:** Todo lo que desarrollamos se documenta y comparte. Este repositorio es la evidencia de ese compromiso.
-  * 🧪 **Cultura del Experimento:** Los errores son datos. Fallar en reproducir un resultado es el inicio de una investigación, no un fracaso.
-
------
-
-## 👨‍🔬 Equipo
-
-**Docente Tutor**
-
-| Nombre | Correo | Perfil |
-|---|---|---|
-| Jaime Andrés Vélez Zea | jaimea.velez@javerianacali.edu.co | Google Scholar · ResearchGate |
-
-**Miembros Activos — Cohorte 2026**
-
-| Nombre | Programa | Rol | Proyecto |
-|---|---|---|---|
-| [Estudiante 1] | Ing. Civil | Coordinador | Calor 2D |
-| [Estudiante 2] | Ing. Mecánica | Gestor de Docs | Elasticidad |
-| [Estudiante 3] | Ing. Electrónica | Miembro | Calor 2D |
-
-🙌 **¿Quieres unirte?** Lee la sección *Cómo empezar* y escríbenos al correo de contacto.
-
-**Miembros Alumni**
-
-| Nombre | Año | Proyecto | Destino |
-|---|---|---|---|
-| — | — | — | — |
-*(Esta tabla se irá llenando con el tiempo. Tú podrías ser el primero.)*
-
------
-
-## 📊 Estado del repositorio
-
-```text
-Última actualización     : 2026-04-12
-Tutoriales disponibles   : 1 / 6 planificados
-Proyectos activos        : 3
-Actas registradas        : 1
-Journal Clubs realizados : 0
-```
-
------
-
-## 📄 Licencia
-
-El contenido de este repositorio se distribuye bajo la licencia **MIT** para el código fuente y **CC BY 4.0** para la documentación y materiales educativos.
-
-Esto significa que puedes usar, modificar y distribuir el contenido siempre que des crédito al semillero de origen.
-
-```text
-Copyright (c) 2026 Semillero de Mecánica Computacional
-Universidad Javeriana de Cali
-```
-
------
-
-## 📬 Contacto
+El semillero no cuenta con correo electrónico propio. Las comunicaciones se reciben a través del correo del tutor.
 
 | Canal | Información |
 |---|---|
-| ✉️ Correo del semillero | semillero.mc@javerianacali.edu.co |
-| ✉️ Docente tutor | tutor@javerianacali.edu.co |
-| 💬 Grupo de WhatsApp | Solicitar acceso por correo |
-| 🏛️ Facultad | Ingeniería — Universidad Javeriana Cali |
+| Correo de contacto (tutor) | jaimea.velez@javerianacali.edu.co |
+| Facultad | Ingeniería — Pontificia Universidad Javeriana Cali |
+| Grupo de investigación | SIGMA |
 
------
-
-
-
-*"No puedes simular lo que no entiendes. No puedes entender lo que no te atreves a preguntar."*
+---
 
 **Semillero de Mecánica Computacional**
-Universidad Javeriana de Cali · Facultad de Ingeniería · Desde 2026
-
-⭐ Si este repositorio te fue útil, considera darle una estrella.
-
-
-
+Pontificia Universidad Javeriana – Cali · Facultad de Ingeniería
+Convocatoria Semilleros de Investigación 2026 · Ejecución 2026 – 2027
