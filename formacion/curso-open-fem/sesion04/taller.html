@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller 4 — El efecto del radio de acuerdo (singularidad vs convergencia)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Taller 4 · Sesión 4
+  Recalca: Guía de Simulación FEM, caps. 4.3 (solver), 4.4.1
+  (singularidades), 4.4.3 (tipos de esfuerzo), 5 (error 6)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#170d12;--bg2:#1d1017;--panel:rgba(29,16,23,.92);--line:rgba(157,180,208,.18);
+  --text:#e4e8ec;--text2:#a89aa5;--blue:#9db4d0;--gold:#ffc857;--mint:#6fcf97;--red:#e05252;
+  --font:'Manrope',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:40px;font-weight:600;margin:10px 0 8px}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:26px;font-weight:600;margin:40px 0 14px;color:var(--gold)}
+h3{font-size:19px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+p,li{font-size:16.5px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:15px 20px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15.5px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout.mint .tag{color:var(--mint)}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.warn .tag{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2);vertical-align:top}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14px;color:var(--gold)}
+.puntos{text-align:center;font-family:var(--mono);font-size:14px;color:var(--gold);white-space:nowrap}
+.entrega{display:flex;gap:12px;align-items:flex-start;background:rgba(72,201,176,.07);border:1px solid rgba(72,201,176,.25);border-radius:10px;padding:16px 20px;margin:16px 0}
+.nota{font-family:var(--mono);font-size:14px;color:var(--mint)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t4">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 4 · Taller 4</div>
+  <h1>Taller 4 — El efecto del radio de acuerdo</h1>
+  <div class="meta">Entrega individual o en parejas · Formato: informe PDF/Markdown · Ponderación: ver rúbrica</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-verif"/></svg>&nbsp; Objetivos</h3>
+  <ul>
+    <li>Demostrar con datos propios que el esfuerzo en una <strong>esquina entrante aguda no converge</strong> (singularidad numérica, cap. 4.4.1).</li>
+    <li>Demostrar que un <strong>radio de acuerdo elimina la singularidad</strong> y restaura la convergencia del pico.</li>
+    <li>Aplicar el criterio de falla correcto según el material: <strong>von Mises (dúctil) vs principal máxima σ₁ (frágil)</strong>, cap. 4.4.3.</li>
+    <li>Practicar la lectura escéptica del post-proceso: reportar el esfuerzo a la distancia correcta y no confundir un artefacto numérico con una falla (cap. 5, Error 6).</li>
+  </ul>
+</div>
+
+<h2>Parte A — Esquina aguda: documentar la NO convergencia</h2>
+<ol style="padding-left:22px">
+  <li>Construya el soporte en L del ejercicio 4 (150 × 80 × 10 mm, corte en x = 100, brazo de 50) <strong>sin redondeo</strong>. Empotre la cara vertical del brazo corto y aplique 1000 N hacia abajo en el extremo del brazo largo. Material acero (\(E = 210\ \text{GPa}\), \(\nu = 0.3\)).</li>
+  <li>Ejecute con <strong>tres mallas</strong>: <span class="mono">5 mm</span>, <span class="mono">2.5 mm</span> y <span class="mono">1.25 mm</span>. En cada una registre: nodos/elementos, δ<sub>máx</sub> y σ<sub>pico</sub> (von Mises, esquina entrante).</li>
+  <li>Documente en una tabla que <strong>σ<sub>pico</sub> crece</strong> con el refinamiento (p. ej. ≈ 300 → 450 → 650 MPa, orientativo) mientras <strong>δ se estabiliza</strong> (décimas de milímetro). Concluya: el pico es una singularidad numérica.</li>
+</ol>
+
+<h2>Parte B — Con radio de acuerdo: la convergencia regresa</h2>
+<ol style="padding-left:22px">
+  <li>Añada un redondeo: workbench <kbd>Part</kbd> → <kbd>Fillet</kbd> con radio <span class="mono">5 mm</span> sobre la <strong>arista de la esquina entrante</strong>.</li>
+  <li>Repita las <strong>mismas tres mallas</strong> (5 / 2.5 / 1.25 mm) y registre σ<sub>pico</sub> en cada una.</li>
+  <li>Verifique que ahora <strong>σ<sub>pico</sub> converge</strong>: los valores de la malla media y la fina deben acercarse (diferencia &lt; 5–10%), en lugar de crecer.</li>
+</ol>
+
+<h2>Parte C — Criterio de falla: von Mises vs principal máxima</h2>
+<ol style="padding-left:22px">
+  <li>Con el modelo <strong>redondeado</strong> y la malla fina, anote en el punto crítico (el acuerdo): σ<sub>VM</sub>, σ₁ y σ₃ (pestaña Stress del post-proceso).</li>
+  <li>Compare \(\sigma_{VM}\) vs \(\sigma_1\): ¿cuánto difieren? ¿Cuál es mayor?</li>
+  <li>Discuta: para <strong>acero dúctil</strong> (σ<sub>y</sub> ≈ 250–350 MPa típico) ¿qué criterio usaría y contra qué valor compara? Para <strong>fundición gris</strong> (frágil, σ<sub>u</sub> ≈ 150–250 MPa) ¿qué criterio usaría y por qué? Apóyese en la guía, cap. 4.4.3.</li>
+</ol>
+
+<h2>Parte D — Gráfica y conclusión</h2>
+<ol style="padding-left:22px">
+  <li>Grafique <strong>σ<sub>pico</sub> vs tamaño de malla</strong> (o vs \(1/h\)) con las dos curvas: esquina aguda (crece) y con radio (se estabiliza).</li>
+  <li>Escriba una conclusión que cite explícitamente el cap. 4.4.1 de la guía: qué es una singularidad, por qué el pico no es un esfuerzo físico, y cómo la práctica ingenieril (radios de acuerdo, hot-spot stress) la maneja.</li>
+</ol>
+
+<h2>Entregables</h2>
+<div class="entrega"><div>
+  <p><strong><svg class="fico" style="color:var(--mint);width:1.1em;height:1.1em"><use href="#fem-taller"/></svg>&nbsp; 1. Tablas de resultados</strong> — Parte A (3 mallas, esquina aguda) y Parte B (3 mallas, con radio): σ<sub>pico</sub>, δ y estadísticas de malla.</p>
+  <p><strong>2. Gráfica</strong> σ<sub>pico</sub> vs tamaño de malla con ambas curvas (aguda vs redondeada), claramente etiquetada.</p>
+  <p><strong>3. Comparación de criterios</strong> — Parte C: valores de σ<sub>VM</sub>, σ₁, σ₃ en el punto crítico + discusión para acero dúctil y fundición gris.</p>
+  <p><strong>4. Conclusión</strong> — citando la guía, cap. 4.4.1 (y opcionalmente 4.4.3 y cap. 5, Error 6).</p>
+</div></div>
+
+<h2>Rúbrica de evaluación</h2>
+<table>
+  <thead><tr><th>Criterio</th><th>Logrado (100%)</th><th>Parcial (60%)</th><th>No logrado (0%)</th><th>Puntos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Modelo FEM correcto</strong><br><span class="mono">Geometría L, material, CF, carga</span></td>
+        <td>Análisis completo y funcional en ambos modelos (agudo y con fillet); CF y carga físicamente correctas</td>
+        <td>Análisis funcional con algún error menor (dirección de carga, fillet mal aplicado)</td>
+        <td>Análisis no ejecuta o CF/cargas incorrectas</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Demostración de singularidad</strong><br><span class="mono">Aguda vs redondeada · 3 mallas</span></td>
+        <td>Tablas completas que muestran σ<sub>pico</sub> creciendo (aguda) y estabilizándose (radio); gráfica con ambas curvas</td>
+        <td>Datos parciales o sin una de las dos condiciones</td>
+        <td>Sin datos de convergencia o conclusión errónea</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Criterio de falla</strong><br><span class="mono">von Mises vs principal</span></td>
+        <td>Comparación correcta σ<sub>VM</sub>/σ₁ en el punto crítico y criterio adecuado para dúctil y frágil</td>
+        <td>Comparación presente sin justificación del criterio</td>
+        <td>Parte C ausente o criterio incorrecto</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Discusión y cita de la guía</strong><br><span class="mono">Conclusión cap. 4.4.1</span></td>
+        <td>Conclusión sustentada que explica la singularidad y cita correctamente la guía</td>
+        <td>Conclusión presente sin vínculo explícito a la guía</td>
+        <td>Sin discusión</td><td class="puntos">15</td></tr>
+  </tbody>
+</table>
+<p class="nota">Total: 100 puntos · Entregar antes de la Sesión 5.</p>
+
+<div class="callout warn"><span class="tag">Recuerde · Cap. 5 · Error 6 (7%)</span>
+No reporte el pico de la esquina aguda como esfuerzo de diseño. Si en su informe aparece "σ = 650 MPa → falla" sin la discusión de la singularidad, el criterio se evalúa como no logrado.</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 4.3 (solver directo de CalculiX), cap. 4.4.1 (singularidades: evaluar a 1–2 mm, hot-spot stress), cap. 4.4.3 (tipos de esfuerzo y criterios de falla), cap. 5 (errores 1 y 6), cap. 6.2 (convergencia — formalizada con GCI en la Sesión 5).</div>
+
+<footer>FEM práctico con FreeCAD · Taller 4 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

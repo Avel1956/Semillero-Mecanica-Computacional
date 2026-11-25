@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM con FreeCAD — Sesión 1: ¿Qué es simular? Del fenómeno al modelo</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD (6 sesiones)
+  Sesión 1 — ¿Qué es simular? Del fenómeno al modelo matemático
+  Recalca: Guía Práctica de Simulación en Ingeniería (caps. 1–2)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Estilo: "Blueprint técnico" — paleta coherente con VIDEOMN
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (THEME) — Blueprint técnico · t1
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg: #0b1220;            /* azul nocturno profundo */
+  --bg2: #0e1626;
+  --panel: rgba(13,22,38,.92);
+  --line: rgba(93,156,236,.18);
+  --text: #e4e8ec;
+  --text2: #9aa7b8;
+  --blue: #5d9cec;          /* método / datos */
+  --gold: #e8c76a;          /* insight / resultado */
+  --mint: #48c9b0;          /* correcto / validado */
+  --red: #e0555a;           /* error / peligro */
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --title-size: 76px;
+  --subtitle-size: 30px;
+  --body-size: 26px;
+  --slide-padding: 88px;
+  --content-gap: 34px;
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);
+  --duration-normal: .6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* --- PASTE viewport-base.css CONTENTS (fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT BASE DE LA PLANTILLA (1920×1080)
+   ═══════════════════════════════════════════════════════════════ */
+body{font-family:var(--font-display);color:var(--text);background:var(--bg)}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.slide{
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(93,156,236,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(232,199,106,.06), transparent 60%),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  padding:var(--slide-padding);
+}
+/* retícula técnica sutil de fondo */
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(93,156,236,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(93,156,236,.05) 1px,transparent 1px);
+  background-size:96px 96px;
+}
+
+/* header de slide */
+.slide-header{
+  display:flex;align-items:baseline;gap:24px;margin-bottom:42px;
+  border-bottom:1px solid var(--line);padding-bottom:20px;
+}
+.kicker{
+  font-family:var(--font-mono);font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+}
+.slide-num{margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--text2)}
+.slide h2{font-size:var(--title-size);font-weight:600;letter-spacing:-.01em;line-height:1.05;margin-bottom:10px}
+.slide h3{font-size:38px;font-weight:600;margin:0 0 18px;color:var(--text)}
+.slide p,.slide li{font-size:var(--body-size);line-height:1.5;color:var(--text2)}
+.slide strong{color:var(--text);font-weight:600}
+.slide .lead{font-size:30px;color:var(--text);line-height:1.45}
+
+/* ANIMACIONES */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration-normal) var(--ease-out-expo),transform var(--duration-normal) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.reveal:nth-child(1){transition-delay:.08s}
+.reveal:nth-child(2){transition-delay:.16s}
+.reveal:nth-child(3){transition-delay:.24s}
+.reveal:nth-child(4){transition-delay:.32s}
+.reveal:nth-child(5){transition-delay:.40s}
+.reveal:nth-child(6){transition-delay:.48s}
+
+/* tarjetas y grids */
+.grid{display:grid;gap:var(--content-gap)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:30px 32px;backdrop-filter:blur(4px);
+}
+.card h4{font-size:24px;margin-bottom:12px;font-weight:600;letter-spacing:.01em}
+.card p,.card li{font-size:22px;line-height:1.45}
+.card .num{font-family:var(--font-mono);font-size:52px;font-weight:600;line-height:1;margin-bottom:14px}
+.t-blue .num,.t-blue h4{color:var(--blue)}
+.t-gold .num,.t-gold h4{color:var(--gold)}
+.t-mint .num,.t-mint h4{color:var(--mint)}
+.t-red .num,.t-red h4{color:var(--red)}
+
+/* tablas */
+table{width:100%;border-collapse:collapse;font-size:23px}
+th{font-family:var(--font-mono);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);font-weight:600}
+td{padding:13px 16px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2);line-height:1.4}
+td strong{color:var(--text)}
+tr:hover td{background:rgba(93,156,236,.05)}
+.mono{font-family:var(--font-mono);font-size:22px}
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.big{font-size:44px;line-height:1.3;color:var(--text)}
+.formula{
+  font-family:var(--font-mono);font-size:40px;color:var(--gold);text-align:center;
+  background:rgba(232,199,106,.07);border:1px solid rgba(232,199,106,.25);
+  border-radius:12px;padding:26px;margin:14px 0;letter-spacing:.01em;
+}
+.formula small{display:block;font-size:20px;color:var(--text2);margin-top:10px;font-family:var(--font-display)}
+
+/* callouts */
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:22px 28px;border-radius:0 12px 12px 0;font-size:25px;line-height:1.5}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout .tag{font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--blue)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint .tag{color:var(--mint)}
+
+/* portada y cierre */
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;gap:0}
+.cover .course-tag{font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:34px}
+.cover h1{font-size:110px;font-weight:600;line-height:1.04;letter-spacing:-.015em;max-width:1500px}
+.cover h1 .accent{color:var(--gold)}
+.cover .sub{margin-top:30px;font-size:34px;color:var(--text2);max-width:1300px;line-height:1.4}
+.cover .meta{margin-top:56px;font-family:var(--font-mono);font-size:21px;color:var(--text2);letter-spacing:.08em;display:flex;gap:36px;align-items:center}
+.cover .meta span{display:flex;align-items:center;gap:10px}
+.cover .rule{width:120px;height:2px;background:var(--gold);margin-top:40px;opacity:.7}
+
+/* lista de pasos numerados */
+.steps{counter-reset:step;list-style:none;display:grid;gap:20px}
+.steps li{counter-increment:step;display:flex;gap:22px;align-items:flex-start;font-size:25px;color:var(--text2);line-height:1.45}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);flex:0 0 56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--blue);
+  border:1px solid var(--line);background:rgba(93,156,236,.08);
+}
+.steps li strong{color:var(--text)}
+.steps li em{color:var(--mint);font-style:normal}
+
+/* footer chrome del deck */
+.deck-chrome{position:fixed;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:900;pointer-events:none;font-family:var(--font-mono);font-size:16px;color:var(--text2);opacity:.75;background:linear-gradient(transparent,rgba(11,18,32,.9))}
+.deck-chrome .brand{letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.deck-chrome .dots{display:flex;gap:10px;align-items:center}
+.deck-chrome .dots i{width:8px;height:8px;border-radius:50%;background:var(--text2);opacity:.35}
+.deck-chrome .dots i.on{background:var(--gold);opacity:1}
+
+/* imágenes */
+.figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(13,22,38,.6)}
+.figure img{display:block;width:100%;height:100%;object-fit:contain}
+.figure figcaption{padding:14px 20px;font-size:19px;color:var(--text2);font-family:var(--font-mono);letter-spacing:.03em;border-top:1px solid var(--line)}
+</style>
+</head>
+<body data-tema="t1">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ═══════════════════════ SLIDE 1 · PORTADA ═══════════════════════ -->
+<section class="slide cover active">
+  <div class="reveal course-tag">Curso · FEM práctico con FreeCAD · Sesión 1 de 6</div>
+  <h1 class="reveal">¿Qué es <span class="accent">simular</span>?</h1>
+  <div class="reveal sub">Del fenómeno físico al modelo matemático.<br>La simulación como tercer pilar de la ingeniería.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta">
+    <span>Prof. J. A. Vélez</span><span>·</span><span>PUJ Cali — Mecánica</span><span>·</span><span>Basado en: Guía Práctica de Simulación en Ingeniería (caps. 1–2)</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 2 · AGENDA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 1 · Ruta</span>
+    <span class="slide-num">02 / 20</span>
+  </div>
+  <h2 class="reveal">Agenda de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:36px">
+    <div class="card reveal t-blue"><div class="num">01</div><h4>Teoría</h4><p>Los 3 pilares de la ingeniería, el costo de una mala simulación, y la regla de oro.</p></div>
+    <div class="card reveal t-gold"><div class="num">02</div><h4>Fenómeno → Modelo</h4><p>Abstracción, ecuaciones gobernantes, condiciones de frontera y modelos constitutivos.</p></div>
+    <div class="card reveal t-blue"><div class="num">03</div><h4>Herramientas</h4><p>La caja de herramientas de simulación. Por qué <strong>FreeCAD + CalculiX</strong> para este curso.</p></div>
+    <div class="card reveal t-mint"><div class="num">04</div><h4>Práctica</h4><p>Viga en voladizo: del enunciado al resultado. Verificación contra la fórmula de flexión.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía</span>
+    Cada sesión cierra con <strong>un taller calificable</strong> y enlaza con los capítulos de la Guía de Simulación FEM.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 3 · LOS 3 PILARES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fundamentos · Cap. 1</span>
+    <span class="slide-num">03 / 20</span>
+  </div>
+  <h2 class="reveal">La simulación: tercer pilar de la ingeniería</h2>
+  <p class="lead reveal" style="margin-bottom:34px">Históricamente la ingeniería descansó sobre dos pilares. Hoy son tres — y la simulación <strong>complementa</strong>, no reemplaza.</p>
+  <div class="grid grid-3">
+    <div class="card reveal t-blue"><div class="num">Teoría</div><h4>Modelos matemáticos</h4><p><strong>Fortaleza:</strong> generalizable, exacta dentro de sus supuestos.<br><strong>Debilidad:</strong> solo soluble para geometrías simples.</p></div>
+    <div class="card reveal t-gold"><div class="num">Experimento</div><h4>Ensayos y prototipos</h4><p><strong>Fortaleza:</strong> realidad física completa.<br><strong>Debilidad:</strong> costoso, lento, no siempre factible.</p></div>
+    <div class="card reveal t-mint"><div class="num">Simulación</div><h4>Cómputo</h4><p><strong>Fortaleza:</strong> rápida, exploratoria, repetible.<br><strong>Debilidad:</strong> depende de la calidad del modelo.</p></div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:34px">
+    <span class="tag">Tríada virtuosa</span>
+    Teoría → Simulación → Experimento → <strong>Validación</strong> → Teoría refinada. Ningún pilar sobra.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 4 · ¿PARA QUÉ SIMULAR? ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fundamentos · Cap. 1</span>
+    <span class="slide-num">04 / 20</span>
+  </div>
+  <h2 class="reveal">¿Para qué sirve simular?</h2>
+  <div class="grid grid-2" style="margin-top:30px">
+    <div class="card reveal"><h4 class="blue"><svg class="fico lg"><use href="#fem-teoria"/></svg>&nbsp; Predecir</h4><p>Comportamiento de un sistema <strong>antes</strong> de construirlo: análisis predictivo.</p></div>
+    <div class="card reveal"><h4 class="blue"><svg class="fico lg"><use href="#fem-practica"/></svg>&nbsp; Optimizar</h4><p>Explorar diseños sin fabricar múltiples prototipos físicos.</p></div>
+    <div class="card reveal"><h4 class="blue"><svg class="fico lg"><use href="#fem-verif"/></svg>&nbsp; Diagnosticar</h4><p>Analizar fallas en sistemas existentes: ingeniería forense.</p></div>
+    <div class="card reveal"><h4 class="blue"><svg class="fico lg"><use href="#fem-ia"/></svg>&nbsp; Explorar</h4><p>Escenarios imposibles o peligrosos de reproducir experimentalmente.</p></div>
+  </div>
+  <div class="card reveal t-gold" style="margin-top:30px">
+    <h4>Certificar</h4><p>Demostrar que un diseño cumple normas y estándares de la industria.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 5 · EL COSTO DE UNA MALA SIMULACIÓN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fundamentos · Cap. 1</span>
+    <span class="slide-num">05 / 20</span>
+  </div>
+  <h2 class="reveal">El costo de una mala simulación</h2>
+  <p class="lead reveal" style="margin-bottom:30px">Una simulación mal hecha es <strong class="red">peor que ninguna</strong>: genera falsa confianza.</p>
+  <div class="grid grid-2">
+    <div class="card reveal t-red">
+      <div class="num">1940</div><h4>Puente de Tacoma Narrows</h4>
+      <p>Los modelos estáticos no capturaron los <strong>efectos aeroelásticos</strong>. El puente colapsó por oscilaciones de torsión.</p>
+    </div>
+    <div class="card reveal t-red">
+      <div class="num">1991</div><h4>Plataforma Sleipner A</h4>
+      <p>Un <strong>error en la malla de elementos finitos</strong> subestimó los esfuerzos en una celda crítica. Hundimiento en el Mar del Norte [1].</p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Regla de oro</span>
+    Trata cada resultado de simulación como una <strong>hipótesis que debe verificarse</strong>, no como una verdad revelada.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 6 · CAJA DE HERRAMIENTAS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fundamentos · Cap. 1</span>
+    <span class="slide-num">06 / 20</span>
+  </div>
+  <h2 class="reveal">La caja de herramientas</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Software</th><th>Tipo</th><th>Fortaleza principal</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ANSYS</strong></td><td class="mono">Comercial</td><td>Suite completa: estructural, CFD, electromagnetismo, multifísica</td></tr>
+      <tr><td><strong>Abaqus</strong></td><td class="mono">Comercial</td><td>No linealidades avanzadas, contacto, grandes deformaciones</td></tr>
+      <tr><td><strong>SolidWorks Simulation</strong></td><td class="mono">Comercial</td><td>Integración CAD–simulación, ideal para diseñadores</td></tr>
+      <tr><td><strong style="color:var(--mint)">FreeCAD FEM</strong></td><td class="mono">Open-source</td><td>Acceso libre, ideal para aprendizaje y geometrías moderadas</td></tr>
+      <tr><td><strong>CalculiX</strong></td><td class="mono">Open-source</td><td>Solver similar a Abaqus, compatible con formatos industriales</td></tr>
+      <tr><td><strong>FEniCSx</strong></td><td class="mono">Open-source</td><td>Framework Python para FEM personalizado; investigación</td></tr>
+      <tr><td><strong>COMSOL</strong></td><td class="mono">Comercial</td><td>Multifísica acoplada por excelencia</td></tr>
+    </tbody>
+  </table>
+  <div class="callout mint reveal" style="margin-top:28px">
+    <span class="tag">Este curso</span>
+    Trabajaremos con <strong>FreeCAD (pre-proceso + post-proceso) + CalculiX (solver)</strong>: 100% gratuitos, instalables sin licencia. Los conceptos son transferibles a ANSYS o Abaqus.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 7 · ABSTRACCIÓN / BRECHA DE MODELADO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fenómeno → Modelo · Cap. 2</span>
+    <span class="slide-num">07 / 20</span>
+  </div>
+  <h2 class="reveal">Modelar es elegir qué simplificar</h2>
+  <p class="lead reveal">La pregunta no es si el modelo es "correcto", sino si es <strong>útil para el propósito</strong>.</p>
+  <div class="grid grid-2" style="margin-top:30px">
+    <div class="card reveal t-red">
+      <h4>Realidad (viga de acero)</h4>
+      <ul style="list-style:none">
+        <li>· Micro-defectos y rugosidad</li>
+        <li>· Soldadura imperfecta</li>
+        <li>· Variaciones de E en el lote</li>
+        <li>· Condiciones ambientales</li>
+        <li>· Vibraciones del entorno</li>
+      </ul>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>Modelo ingenieril</h4>
+      <ul style="list-style:none">
+        <li>· Sección constante</li>
+        <li>· Material homogéneo e isótropo</li>
+        <li>· Empotramiento perfecto</li>
+        <li>· Carga puntual ideal</li>
+        <li>· Pequeñas deformaciones</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout warn reveal" style="margin-top:30px">
+    <span class="tag">Brecha de modelado</span>
+    La diferencia entre ambos es la <strong>brecha de modelado</strong> (modeling gap). Un buen ingeniero la conoce y la declara.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 8 · ECUACIONES GOBERNANTES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fenómeno → Modelo · Cap. 2</span>
+    <span class="slide-num">08 / 20</span>
+  </div>
+  <h2 class="reveal">Las ecuaciones gobernantes</h2>
+  <p class="reveal" style="font-size:24px;margin-bottom:26px">Cada fenómeno físico tiene ecuaciones que lo gobiernan. <strong>No hay que memorizarlas:</strong> hay que saber que existen y qué significan sus términos.</p>
+  <table class="reveal">
+    <thead><tr><th>Fenómeno</th><th>Ecuación gobernante</th><th>Variable primaria</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Elasticidad lineal</strong></td><td class="mono">∇·σ + f = 0 (equilibrio)</td><td class="mono">Desplazamientos u</td></tr>
+      <tr><td><strong>Transferencia de calor</strong></td><td class="mono">ρc<sub>p</sub> ∂T/∂t = ∇·(k∇T) + q̇</td><td class="mono">Temperatura T</td></tr>
+      <tr><td><strong>Flujo de fluidos</strong></td><td class="mono">Navier–Stokes</td><td class="mono">Velocidad v, presión p</td></tr>
+      <tr><td><strong>Electromagnetismo</strong></td><td class="mono">Ecuaciones de Maxwell</td><td class="mono">Campos E, B</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Principio clave</span>
+    Este curso se enfoca en <strong>elasticidad lineal</strong>: la ecuación de equilibrio ∇·σ + f = 0, resuelta por FEM en desplazamientos u.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 9 · CONDICIONES DE FRONTERA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fenómeno → Modelo · Cap. 2</span>
+    <span class="slide-num">09 / 20</span>
+  </div>
+  <h2 class="reveal">Condiciones de frontera: donde el modelo toca el mundo</h2>
+  <p class="reveal" style="font-size:24px;margin-bottom:24px">Las EDP tienen infinitas soluciones. Las condiciones de frontera (CF) seleccionan la suya. <strong>Son la fuente más frecuente de errores.</strong></p>
+  <table class="reveal">
+    <thead><tr><th>Tipo</th><th>Qué fija</th><th>Ejemplo estructural</th><th>Ejemplo térmico</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dirichlet (esencial)</strong></td><td>Valor de la variable primaria</td><td class="mono">u = 0 (empotramiento)</td><td class="mono">T = T₀</td></tr>
+      <tr><td><strong>Neumann (natural)</strong></td><td>Flujo / derivada</td><td class="mono">σ·n = t (presión)</td><td class="mono">−k∇T·n = q</td></tr>
+      <tr><td><strong>Robin (mixta)</strong></td><td>Combinación lineal</td><td class="mono">Soporte elástico</td><td class="mono">Convección</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn reveal" style="margin-top:28px">
+    <span class="tag">La trampa más común</span>
+    Un "empotramiento perfecto" (u<sub>x</sub>=u<sub>y</sub>=u<sub>z</sub>=0) es una abstracción. Pregúntese: <strong>¿qué tan sensible es mi resultado a cómo modelo los apoyos?</strong>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 10 · MODELOS CONSTITUTIVOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fenómeno → Modelo · Cap. 2</span>
+    <span class="slide-num">10 / 20</span>
+  </div>
+  <h2 class="reveal">Modelos constitutivos: cómo responde el material</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Modelo</th><th>¿Cuándo usarlo?</th><th>Limitación</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Elástico lineal</strong></td><td>Pequeñas deformaciones, sin plasticidad</td><td>No captura fluencia ni daño</td></tr>
+      <tr><td><strong>Elasto-plástico (von Mises)</strong></td><td>Metales dúctiles con plasticidad</td><td>No captura daño progresivo</td></tr>
+      <tr><td><strong>Hiperelástico (Mooney-Rivlin)</strong></td><td>Elastómeros, tejidos biológicos</td><td>Requiere datos experimentales de calibración</td></tr>
+      <tr><td><strong>Viscoelástico</strong></td><td>Polímeros, comportamiento dependiente del tiempo</td><td>Complejidad de parámetros</td></tr>
+      <tr><td><strong>Ortotrópico / Anisotrópico</strong></td><td>Maderas, composites, laminados</td><td>Más constantes elásticas que medir</td></tr>
+    </tbody>
+  </table>
+  <div class="callout mint reveal" style="margin-top:26px">
+    <span class="tag">Regla práctica</span>
+    Use el modelo <strong>más simple que capture la física relevante</strong>. El elástico lineal resuelve el 80% de los problemas de diseño con metales.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 11 · LINEAL VS NO LINEAL ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fenómeno → Modelo · Cap. 2</span>
+    <span class="slide-num">11 / 20</span>
+  </div>
+  <h2 class="reveal">Lineal vs. no lineal: decisión fundamental</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Característica</th><th>Lineal</th><th>No lineal</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Geometría</strong></td><td>Pequeños desplazamientos</td><td>Grandes desplazamientos, pandeo</td></tr>
+      <tr><td><strong>Material</strong></td><td class="mono">E y ν constantes</td><td>Plasticidad, hiperelasticidad</td></tr>
+      <tr><td><strong>Contacto</strong></td><td>No hay, o es fijo</td><td>Contacto con fricción, separación</td></tr>
+      <tr><td><strong>Costo</strong></td><td class="mono">Bajo O(N)–O(N²)</td><td class="mono">Alto O(N²)–O(N³)</td></tr>
+      <tr><td><strong>Superposición</strong></td><td class="mint">Válido</td><td class="red">NO válido</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold reveal" style="margin-top:26px">
+    <span class="tag">Regla</span>
+    Si la relación carga–desplazamiento es razonablemente lineal y los desplazamientos son pequeños frente a las dimensiones, use <strong>lineal</strong>. En duda: ejecute lineal primero; si σ<sub>VM</sub> &gt; σ<sub>y</sub> o δ &gt; 5% de la dimensión, pase a no lineal.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 12 · FLUJO DE TRABAJO FEM ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Método · Cap. 4</span>
+    <span class="slide-num">12 / 20</span>
+  </div>
+  <h2 class="reveal">El flujo de simulación</h2>
+  <div class="grid grid-2" style="margin-top:24px;gap:26px">
+    <div class="figure reveal" style="align-self:center">
+      <img src="../assets/figuras/01_flujo_simulacion.png" alt="Flujo de simulación: fenómeno → modelo → método → software → resultados → validación">
+      <figcaption>Figura 1 — Flujo completo de una simulación (Guía, cap. 1)</figcaption>
+    </div>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:12px;justify-content:center">
+      <div class="card" style="padding:14px 22px"><h4 class="blue">1 · Fenómeno físico</h4><p style="font-size:20px">El problema real: cargas, apoyos, material.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="blue">2 · Modelo matemático</h4><p style="font-size:20px">Ecuaciones + CF + constitutivo.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="blue">3 · Discretización</h4><p style="font-size:20px">Malla de elementos finitos.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="gold">4 · Resultados</h4><p style="font-size:20px">Desplazamientos → deformaciones → esfuerzos.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="mint">5 · Validación</h4><p style="font-size:20px">¿Tiene sentido físico? ¿Converge? ¿Compara?</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 13 · PRÁCTICA: ENUNCIADO VIGA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Ejercicio 1</span>
+    <span class="slide-num">13 / 20</span>
+  </div>
+  <h2 class="reveal">Viga en voladizo — el problema</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal t-blue">
+      <h4>Enunciado</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Viga de acero: <span class="mono">200 × 20 × 10 mm</span></li>
+        <li>· Empotrada en un extremo</li>
+        <li>· Carga puntual <span class="mono">P = 100 N</span> en el extremo libre</li>
+        <li>· Acero: <span class="mono">E = 210 GPa, ν = 0.3</span></li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Pregunta de diseño</h4>
+      <p class="big">¿Cuánto se deflecta el extremo libre y cuál es el esfuerzo máximo?</p>
+      <p style="margin-top:14px">Primero calculamos a mano (solución analítica), luego en FreeCAD, y <strong>comparamos</strong>.</p>
+    </div>
+  </div>
+  <div class="formula reveal" data-katex="\delta = \frac{PL^{3}}{3EI}" style="font-size:34px">$$\delta = \frac{PL^{3}}{3EI}$$<small>Fórmula de flexión de la viga en voladizo (teoría de Euler–Bernoulli)</small></div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 14 · SOLUCIÓN ANALÍTICA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Verificación</span>
+    <span class="slide-num">14 / 20</span>
+  </div>
+  <h2 class="reveal">Solución analítica: la referencia</h2>
+  <div class="grid grid-3" style="margin-top:24px;gap:26px">
+    <div class="card reveal">
+      <h4 class="blue">Inercia de la sección</h4>
+      <div class="formula" data-katex="I = \frac{b\,h^{3}}{12} = \frac{20\cdot 10^{3}}{12}" style="font-size:26px;padding:18px">$$I = \frac{bh^{3}}{12} = 1666.7\ \text{mm}^4$$</div>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Deflexión máxima</h4>
+      <div class="formula" data-katex="\delta = \frac{PL^{3}}{3EI}" style="font-size:26px;padding:18px">$$\delta = \frac{PL^{3}}{3EI}$$</div>
+      <p class="mono" style="text-align:center;margin-top:8px">δ = 100·200³/(3·210000·1666.7)</p>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">δ ≈ 0.76 mm</p>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Esfuerzo máximo</h4>
+      <div class="formula" data-katex="\sigma = \frac{M\,c}{I}" style="font-size:26px;padding:18px">$$\sigma = \frac{Mc}{I}$$<small>M = P·L = 20000 N·mm ; c = 5 mm</small></div>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">σ ≈ 60 MPa</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:26px">
+    <span class="tag">Objetivo</span>
+    El FEM debe reproducir estos valores con error &lt; 2% (malla convergida). Si no lo hace: <strong>algo está mal en el modelo</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 15 · PLAN DE TRABAJO EN FREECAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · FreeCAD</span>
+    <span class="slide-num">15 / 20</span>
+  </div>
+  <h2 class="reveal">Plan de trabajo en FreeCAD FEM</h2>
+  <ol class="steps" style="margin-top:30px">
+    <li class="reveal"><strong>Geometría</strong> — <em>Part → Box</em>: 200 × 20 × 10 mm</li>
+    <li class="reveal"><strong>Análisis</strong> — <em>FEM → New Analysis</em>; material acero (<span class="mono">E=210000 MPa, ν=0.3</span>)</li>
+    <li class="reveal"><strong>Condiciones</strong> — <em>Fixed constraint</em> en la cara del empotramiento; <em>Force</em> de 100 N en el extremo libre</li>
+    <li class="reveal"><strong>Malla</strong> — <em>Gmsh</em>, tamaño de elemento 5 mm</li>
+    <li class="reveal"><strong>Solver</strong> — <em>CalculiX</em>: escribir input, ejecutar</li>
+    <li class="reveal"><strong>Resultados</strong> — desplazamiento y esfuerzo von Mises; comparar con δ = 0.76 mm y σ = 60 MPa</li>
+  </ol>
+  <div class="callout warn reveal" style="margin-top:28px">
+    <span class="tag">Atención · Cap. 4.4</span>
+    El esfuerzo en la <strong>arista del empotramiento</strong> puede no converger (singularidad numérica). Evaluaremos el pico con escepticismo — como manda la guía.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 16 · MAPA DE ERRORES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Adelanto · Cap. 5</span>
+    <span class="slide-num">16 / 20</span>
+  </div>
+  <h2 class="reveal">Los errores que veremos hoy (y en todo el curso)</h2>
+  <div class="figure reveal" style="max-width:980px;margin:0 auto">
+    <img src="../assets/figuras/07_errores_comunes.png" alt="Frecuencia de errores comunes en simulación">
+    <figcaption>Figura 2 — Frecuencia de errores en simulación (Guía, cap. 5)</figcaption>
+  </div>
+  <div class="callout gold reveal" style="margin-top:20px">
+    <span class="tag">Top 3 para la sesión de hoy</span>
+    <strong>1. CF incorrectas (28%)</strong> · 2. Mallado inadecuado (22%) · 3. Material erróneo (15%). Las tres aparecen en el ejercicio de la viga.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 17 · TALLER 1 ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 1 · Entregable</span>
+    <span class="slide-num">17 / 20</span>
+  </div>
+  <h2 class="reveal">Taller 1 — Viga: modelo, verifica, explora</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue">Parte A · Modelar y verificar</h4>
+      <ul style="font-size:23px;line-height:1.6">
+        <li>Viga en voladizo <span class="mono">200×20×10 mm</span>, P = 100 N</li>
+        <li>Simular con mallas de <span class="mono">10, 5 y 2.5 mm</span></li>
+        <li>Reportar δ y σ<sub>máx</sub> en cada malla</li>
+        <li>Comparar con solución analítica (δ = 0.76 mm, σ = 60 MPa)</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="gold">Parte B · Explorar la sensibilidad</h4>
+      <ul style="font-size:23px;line-height:1.6">
+        <li>Variar E: <span class="mono">200, 210, 220 GPa</span></li>
+        <li>Registrar δ: ¿proporcional a 1/E? <em>(debería serlo: δ ∝ 1/E)</em></li>
+        <li>Variar la carga: <span class="mono">50, 100, 150 N</span></li>
+        <li>¿Se mantiene σ/δ lineal? Justificar con los datos</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Entregables</span>
+    Tabla de resultados + gráfica δ vs. tamaño de malla + 3 conclusiones que citen la guía (cap. 6.2: convergencia; cap. 6.4: sensibilidad). Ver rúbrica en <strong>taller.html</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 18 · RESUMEN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre</span>
+    <span class="slide-num">18 / 20</span>
+  </div>
+  <h2 class="reveal">Lo que debe quedar hoy</h2>
+  <div class="grid grid-3" style="margin-top:30px">
+    <div class="card reveal t-gold"><div class="num">1</div><h4>Simular ≠ confiar</h4><p>Todo resultado es una hipótesis. La regla de oro de la guía.</p></div>
+    <div class="card reveal t-blue"><div class="num">2</div><h4>Modelar = simplificar</h4><p>Conozca la brecha de modelado y declárela.</p></div>
+    <div class="card reveal t-mint"><div class="num">3</div><h4>Verificar siempre</h4><p>Solución analítica primero; FEM después; comparar y explicar diferencias.</p></div>
+  </div>
+  <div class="callout blue reveal" style="margin-top:34px">
+    <span class="tag">Próxima sesión</span>
+    Sesión 2 — <strong>Métodos numéricos y la idea del FEM</strong>: discretización, [K]{u}={F} y la barra en tracción. Leer guía caps. 3–4.1.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 19 · REFERENCIAS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Materiales</span>
+    <span class="slide-num">19 / 20</span>
+  </div>
+  <h2 class="reveal">Recursos de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue">Guía de referencia</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li>Cap. 1 — Introducción: ¿qué es simular?</li>
+        <li>Cap. 2 — Del fenómeno al modelo matemático</li>
+        <li>Cap. 4.4 — Post-procesamiento (singularidades)</li>
+        <li>Cap. 5 — Errores comunes</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Archivos del curso</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li><span class="mono">ejercicio_paso_a_paso.html</span> — guía detallada</li>
+        <li><span class="mono">taller.html</span> — enunciado + rúbrica</li>
+        <li><span class="mono">video/guion.md</span> — guion del video asíncrono</li>
+        <li>Notebooks guía: <span class="mono">01_intro_fem_barra.ipynb</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="mono reveal" style="margin-top:30px;color:var(--text2);font-size:20px">Referencia [1] B. Jakobsen y F. Rosendahl, "The Sleipner Platform Accident," <em>Structural Engineering International</em>, vol. 4, no. 3, pp. 190–193, 1994.</p>
+</section>
+
+<!-- ═══════════════════════ SLIDE 20 · CIERRE ═══════════════════════ -->
+<section class="slide cover">
+  <div class="reveal course-tag">Sesión 1 · Fin</div>
+  <h1 class="reveal">Simular bien<br>es <span class="accent">pensar bien</span></h1>
+  <div class="reveal sub">Próxima sesión: la idea del FEM — discretizar para resolver.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta"><span>FEM con FreeCAD · 6 sesiones</span><span>·</span><span>Guía Práctica de Simulación FEM</span></div>
+</section>
+
+</main>
+</div>
+
+<!-- footer chrome: navegación -->
+<div class="deck-chrome" id="deckChrome">
+  <span class="brand">FEM · FreeCAD</span>
+  <span class="dots" id="dots"></span>
+  <span class="hint">← → navegar · P imprimir</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE PRESENTATION CONTROLLER — plantilla frontend-slides
+   ═══════════════════════════════════════════════════════════════ */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.current=0;
+    this.stage=document.getElementById('deckStage');
+    this.dots=document.getElementById('dots');
+    this.buildDots();
+    this.setupScale();
+    this.setupKeys();
+    this.setupTouch();
+    this.show(0);
+  }
+  buildDots(){
+    this.dots.innerHTML=this.slides.map((_,i)=>`<i data-i="${i}"></i>`).join('');
+    this.dots.querySelectorAll('i').forEach(d=>d.addEventListener('click',()=>this.show(+d.dataset.i)));
+  }
+  setupScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();window.addEventListener('resize',scale);
+  }
+  setupKeys(){
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();this.show(this.current+1)}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();this.show(this.current-1)}
+      else if(e.key==='Home'){this.show(0)}
+      else if(e.key==='End'){this.show(this.slides.length-1)}
+      else if(e.key==='p'||e.key==='P'){window.print()}
+    });
+  }
+  setupTouch(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>60)this.show(this.current+(dx<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.querySelectorAll('i').forEach((d,k)=>d.classList.toggle('on',k===this.current));
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

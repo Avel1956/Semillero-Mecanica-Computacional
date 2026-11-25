@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejercicio 1 — Viga en voladizo (FreeCAD FEM)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Ejercicio 1 · Sesión 1
+  Viga en voladizo: primer análisis estático lineal
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Recalca: Guía de Simulación FEM, caps. 1, 2, 4.4
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#0b1220;--bg2:#0e1626;--panel:rgba(13,22,38,.92);--line:rgba(93,156,236,.18);
+  --text:#e4e8ec;--text2:#9aa7b8;--blue:#5d9cec;--gold:#e8c76a;--mint:#48c9b0;--red:#e0555a;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);}
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:42px;font-weight:600;margin:10px 0 8px;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:28px;font-weight:600;margin:44px 0 16px;color:var(--gold);display:flex;align-items:center;gap:14px}
+h2 .n{font-family:var(--mono);font-size:18px;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+h3{font-size:21px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+p,li{font-size:17px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:16px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:16px 22px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout.mint .tag{color:var(--mint)}
+.steps{counter-reset:step;list-style:none}
+.steps>li{counter-increment:step;margin:18px 0;padding-left:64px;position:relative;font-size:17px;color:var(--text2)}
+.steps>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue);border:1px solid var(--line);background:rgba(93,156,236,.08)}
+.steps>li strong{color:var(--text)}
+.steps>li em{color:var(--mint);font-style:normal}
+table{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0}
+th{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2)}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14.5px;color:var(--gold)}
+.check{display:flex;gap:12px;align-items:flex-start;background:rgba(72,201,176,.07);border:1px solid rgba(72,201,176,.25);border-radius:10px;padding:16px 20px;margin:14px 0}
+.check::before{content:'✓';color:var(--mint);font-weight:700;flex:0 0 auto}
+.check strong{color:var(--mint)}
+.q{border-left:4px solid var(--gold);background:rgba(232,199,106,.06);padding:16px 22px;border-radius:0 10px 10px 0;margin:14px 0}
+.q .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+kbd{font-family:var(--mono);font-size:13.5px;background:rgba(93,156,236,.12);border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--blue)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t1">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 1 · Ejercicio 1</div>
+  <h1>Viga en voladizo: primer análisis estático lineal</h1>
+  <div class="meta">Requisitos: FreeCAD 1.0+ instalado (freecad.org) · Workbench FEM · CalculiX · Tiempo: 40–60 min</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-taller"/></svg>&nbsp; Enunciado</h3>
+  <p>Viga de acero de <strong>200 × 20 × 10 mm</strong>, empotrada en un extremo, con carga puntual de <strong>100 N</strong> hacia abajo en el extremo libre. Determine el desplazamiento máximo y el esfuerzo máximo, y verifíquelos contra la solución analítica.</p>
+  <p style="margin-top:8px">Material: acero, \(E = 210\ \text{GPa}\ (210000\ \text{MPa})\), \(\nu = 0.3\).</p>
+</div>
+
+<h2><span class="n">PASO 1</span> Preparar el entorno</h2>
+<ol class="steps">
+  <li><strong>Instalar FreeCAD</strong> desde <em>freecad.org</em> (instalador oficial, Windows/Linux/macOS). Versión 1.0 o superior.</li>
+  <li>Verificar que el <strong>solver CalculiX</strong> esté disponible: menú <kbd>FEM</kbd> → <kbd>Preferences</kbd> → pestaña <kbd>CalculiX</kbd>. Si la ruta está vacía, instale CalculiX (calculix.de) y seleccione el ejecutable <span class="mono">ccx.exe</span>. FreeCAD 1.0 puede descargarlo automáticamente desde esa misma pestaña.</li>
+  <li>Crear documento nuevo: <kbd>File</kbd> → <kbd>New</kbd>.</li>
+</ol>
+
+<h2><span class="n">PASO 2</span> Geometría: el cubo 200 × 20 × 10</h2>
+<ol class="steps">
+  <li>Workbench <kbd>Part</kbd> (lista desplegable superior).</li>
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd>.</li>
+  <li>En la pestaña Datos (abajo a la izquierda) fije: <span class="mono">Length = 200 mm</span>, <span class="mono">Width = 20 mm</span>, <span class="mono">Height = 10 mm</span>.</li>
+  <li>Pulse <kbd>Ctrl+D</kbd> para ver todo (<em>Fit all</em>).</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.2.1</span>
+Geometría = <strong>simplificar con criterio</strong>. Aquí la viga real tendría chaflanes y rugosidad; los eliminamos porque no están en la zona de interés (principio de St. Venant).</div>
+
+<h2><span class="n">PASO 3</span> Crear el análisis FEM</h2>
+<ol class="steps">
+  <li>Cambie al workbench <kbd>FEM</kbd>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Analysis container</kbd> → <kbd>New analysis</kbd>. Se crea un contenedor con un solver CalculiX por defecto.</li>
+  <li>En el árbol, verifique que aparece: <span class="mono">Analysis</span> → <span class="mono">Solver CalculiX</span>.</li>
+</ol>
+
+<h2><span class="n">PASO 4</span> Material: acero con trazabilidad</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Material</kbd> → <kbd>Solid material</kbd>.</li>
+  <li>En el diálogo, seleccione el <strong>objeto Box</strong> (clic en el modelo o en el árbol).</li>
+  <li>Elija la plantilla <span class="mono">CalculiX-Steel</span> o cree un material propio con: <span class="mono">Young's modulus = 210000 MPa</span>, <span class="mono">Poisson's ratio = 0.3</span>, <span class="mono">Density = 7.85e-9 t/mm³</span>.</li>
+  <li>Acepte. En el árbol debe aparecer <span class="mono">MechanicalMaterial</span> con el sólido asignado.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.2 · Error 3 (15%)</span>
+Propiedades de material con <strong>trazabilidad</strong>: anote de dónde salió cada valor (norma, ensayo, estimación). El E nominal del acero varía 190–210 GPa según la norma — en análisis de frecuencias o pandeo esa diferencia es crítica.</div>
+
+<h2><span class="n">PASO 5</span> Condiciones de frontera</h2>
+<ol class="steps">
+  <li><strong>Empotramiento:</strong> <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint fixed</kbd>. Seleccione la <strong>cara</strong> de la viga en x = 0 (extremo izquierdo). Acepte.</li>
+  <li><strong>Carga:</strong> <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd>. Seleccione la <strong>cara</strong> en x = 200 mm (extremo libre).</li>
+  <li>Fije <span class="mono">Force = 100 N</span>. En <strong>Direction</strong>, elija <span class="mono">-Z</span> (o la dirección vertical de su sistema; use el botón <em>Reverse direction</em> si la flecha apunta hacia arriba).</li>
+  <li>Nota: como la carga actúa sobre la cara completa, FreeCAD la reparte automáticamente como carga distribuida equivalente.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 2.3 · Error 1 (28%)</span>
+El empotramiento perfecto (u=0) es una abstracción. Pregúntese: <strong>¿qué tan sensible es el resultado a cómo modelo los apoyos?</strong> Lo exploraremos en el taller.</div>
+
+<h2><span class="n">PASO 6</span> Mallado con Gmsh</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd>.</li>
+  <li>Seleccione el sólido (Box) y deje marcado <em>Make mesh</em> / <em>Automatic mesh</em>.</li>
+  <li>Fije <span class="mono">Maximum element size = 5 mm</span> (por defecto puede venir 0 = automático; escríbalo explícito).</li>
+  <li>Pulse <kbd>OK</kbd> y luego <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>.</li>
+  <li>En el árbol: <span class="mono">Mesh</span> (Gmsh) con el número de nodos y elementos.</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.2.3</span>
+Reglas de mallado que aplican aquí: <strong>transición suave</strong> (el tamaño no debe cambiar más de 2× entre elementos adyacentes) y <strong>refinar donde hay gradientes altos</strong> (el empotramiento). En la Sesión 5 haremos el análisis de convergencia formal con GCI.</div>
+
+<h2><span class="n">PASO 7</span> Ejecutar el solver CalculiX</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">Solver CalculiX</span> del árbol.</li>
+  <li>Marque <em>Analysis type = Static</em> (por defecto).</li>
+  <li>Pulse <kbd>Write .inp file</kbd> y luego <kbd>Run CalculiX</kbd>.</li>
+  <li>Espere el mensaje <em>CalculiX done!</em> (o revisar la pestaña <em>Report</em>).</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 7:</strong> en la pestaña Report debe aparecer la línea <span class="mono">"CalculiX done!"</span> sin errores. Si falla, revise que el material y las CF estén asignados al sólido.</div></div>
+
+<h2><span class="n">PASO 8</span> Post-proceso: leer los resultados</h2>
+<ol class="steps">
+  <li>En el árbol aparece <span class="mono">CalculiX_static_results</span>. Selecciónelo y pulse <kbd>FEM</kbd> → <kbd>Post processing</kbd> → <kbd>Warp by filter</kbd> (para ver la deformada).</li>
+  <li>Para el mapa de color: doble clic en <span class="mono">CalculiX_static_results</span> → pestaña <em>Displacement</em> → marque <em>Show</em>, magnitud <span class="mono">Abs</span>.</li>
+  <li>Para esfuerzos: misma ventana, pestaña <em>Stress</em> → <em>Von Mises</em> → <em>Show</em>.</li>
+  <li>Anote el valor máximo de cada mapa (leyenda a la derecha).</li>
+</ol>
+
+<h2><span class="n">PASO 9</span> Verificación analítica (¡haga esto SIEMPRE!)</h2>
+<table>
+  <thead><tr><th>Magnitud</th><th>Fórmula</th><th>Cálculo</th><th>Valor esperado</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Inercia</strong></td><td class="mono">\(I = \frac{bh^{3}}{12}\)</td><td class="mono">\(\frac{20\cdot 10^{3}}{12}\)</td><td class="mono">\(1666.7\ \text{mm}^4\)</td></tr>
+    <tr><td><strong>Deflexión máx</strong></td><td class="mono">\(\delta = \frac{PL^{3}}{3EI}\)</td><td class="mono">\(\frac{100\cdot 200^{3}}{3\cdot 210000\cdot 1666.7}\)</td><td class="mono gold">\(\approx 0.76\ \text{mm}\)</td></tr>
+    <tr><td><strong>Momento máx</strong></td><td class="mono">\(M = P\cdot L\)</td><td class="mono">\(100\cdot 200\)</td><td class="mono">\(20000\ \text{N·mm}\)</td></tr>
+    <tr><td><strong>Esfuerzo máx</strong></td><td class="mono">\(\sigma = \frac{Mc}{I},\ c = \frac{h}{2}\)</td><td class="mono">\(\frac{20000\cdot 5}{1666.7}\)</td><td class="mono gold">\(\approx 60\ \text{MPa}\)</td></tr>
+  </tbody>
+</table>
+<div class="check"><div><strong>Checkpoint 9a:</strong> desplazamiento máximo FEM ≈ <strong>0.70–0.82 mm</strong> (error &lt; 10% con malla de 5 mm; baja al refinar).</div></div>
+<div class="check"><div><strong>Checkpoint 9b:</strong> esfuerzo máximo ≈ <strong>55–75 MPa</strong>. El valor exacto depende de la malla: la arista del empotramiento es una <strong>singularidad numérica</strong> (la guía, cap. 4.4.1): al refinar la malla, el pico crece sin converger. Reporte el valor a 1–2 mm de la arista, no en el punto singular.</div></div>
+
+<div class="q"><span class="tag">Preguntas de reflexión (para el taller)</span>
+<p>1. ¿La deflexión del FEM se acerca a 0.76 mm al refinar la malla? ¿A partir de qué tamaño de elemento el error es &lt; 2%?</p>
+<p>2. ¿El esfuerzo máximo converge al refinar? ¿Dónde está el pico y por qué?</p>
+<p>3. Si duplico E, ¿qué pasa con δ? ¿Y con σ? ¿Tiene sentido físico?</p>
+<p>4. ¿Qué condición de frontera del modelo es la más alejada de la realidad? ¿Cómo la validaría experimentalmente?</p>
+</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 1 (regla de oro), cap. 2 (CF, constitutivos, lineal vs no lineal), cap. 4.4 (singularidades), cap. 5 (errores 1, 2 y 3), cap. 9.1 (ejercicio de viga en voladizo). Notebook complementario: <span class="mono">notebooks/01_intro_fem_barra.ipynb</span>.</div>
+
+<footer>FEM práctico con FreeCAD · Sesión 1 · Ejercicio 1 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

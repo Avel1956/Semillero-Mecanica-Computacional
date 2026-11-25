@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM con FreeCAD — Sesión 4: Solver y post-procesamiento</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD (6 sesiones)
+  Sesión 4 — Solver y post-procesamiento: leer resultados con escepticismo
+  Recalca: Guía Práctica de Simulación en Ingeniería (caps. 4.3, 4.4, 5)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Estilo: "Blueprint técnico" — paleta coherente con VIDEOMN
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (THEME) — Blueprint técnico
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg: #170d12;            /* burdeos profundo · tema Alerta (t4) */
+  --bg2: #1d1017;
+  --panel: rgba(29,16,23,.92);
+  --line: rgba(157,180,208,.18);
+  --text: #e4e8ec;
+  --text2: #a89aa5;
+  --blue: #9db4d0;          /* método / datos */
+  --gold: #ffc857;          /* insight / resultado */
+  --mint: #6fcf97;          /* correcto / validado */
+  --red: #e05252;           /* error / peligro */
+  --font-display: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --title-size: 76px;
+  --subtitle-size: 30px;
+  --body-size: 26px;
+  --slide-padding: 88px;
+  --content-gap: 34px;
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);
+  --duration-normal: .6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* --- PASTE viewport-base.css CONTENTS (fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT BASE DE LA PLANTILLA (1920×1080)
+   ═══════════════════════════════════════════════════════════════ */
+body{font-family:var(--font-display);color:var(--text);background:var(--bg)}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.slide{
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(93,156,236,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(232,199,106,.06), transparent 60%),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  padding:var(--slide-padding);
+}
+/* retícula técnica sutil de fondo */
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(93,156,236,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(93,156,236,.05) 1px,transparent 1px);
+  background-size:96px 96px;
+}
+
+/* header de slide */
+.slide-header{
+  display:flex;align-items:baseline;gap:24px;margin-bottom:42px;
+  border-bottom:1px solid var(--line);padding-bottom:20px;
+}
+.kicker{
+  font-family:var(--font-mono);font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+}
+.slide-num{margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--text2)}
+.slide h2{font-size:var(--title-size);font-weight:600;letter-spacing:-.01em;line-height:1.05;margin-bottom:10px}
+.slide h3{font-size:38px;font-weight:600;margin:0 0 18px;color:var(--text)}
+.slide p,.slide li{font-size:var(--body-size);line-height:1.5;color:var(--text2)}
+.slide strong{color:var(--text);font-weight:600}
+.slide .lead{font-size:30px;color:var(--text);line-height:1.45}
+
+/* ANIMACIONES */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration-normal) var(--ease-out-expo),transform var(--duration-normal) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.reveal:nth-child(1){transition-delay:.08s}
+.reveal:nth-child(2){transition-delay:.16s}
+.reveal:nth-child(3){transition-delay:.24s}
+.reveal:nth-child(4){transition-delay:.32s}
+.reveal:nth-child(5){transition-delay:.40s}
+.reveal:nth-child(6){transition-delay:.48s}
+
+/* tarjetas y grids */
+.grid{display:grid;gap:var(--content-gap)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:30px 32px;backdrop-filter:blur(4px);
+}
+.card h4{font-size:24px;margin-bottom:12px;font-weight:600;letter-spacing:.01em}
+.card p,.card li{font-size:22px;line-height:1.45}
+.card .num{font-family:var(--font-mono);font-size:52px;font-weight:600;line-height:1;margin-bottom:14px}
+.t-blue .num,.t-blue h4{color:var(--blue)}
+.t-gold .num,.t-gold h4{color:var(--gold)}
+.t-mint .num,.t-mint h4{color:var(--mint)}
+.t-red .num,.t-red h4{color:var(--red)}
+
+/* tablas */
+table{width:100%;border-collapse:collapse;font-size:23px}
+th{font-family:var(--font-mono);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);font-weight:600}
+td{padding:13px 16px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2);line-height:1.4}
+td strong{color:var(--text)}
+tr:hover td{background:rgba(93,156,236,.05)}
+.mono{font-family:var(--font-mono);font-size:22px}
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.big{font-size:44px;line-height:1.3;color:var(--text)}
+.formula{
+  font-family:var(--font-mono);font-size:40px;color:var(--gold);text-align:center;
+  background:rgba(232,199,106,.07);border:1px solid rgba(232,199,106,.25);
+  border-radius:12px;padding:26px;margin:14px 0;letter-spacing:.01em;
+}
+.formula small{display:block;font-size:20px;color:var(--text2);margin-top:10px;font-family:var(--font-display)}
+
+/* callouts */
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:22px 28px;border-radius:0 12px 12px 0;font-size:25px;line-height:1.5}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout .tag{font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--blue)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint .tag{color:var(--mint)}
+
+/* portada y cierre */
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;gap:0}
+.cover .course-tag{font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:34px}
+.cover h1{font-size:110px;font-weight:600;line-height:1.04;letter-spacing:-.015em;max-width:1500px}
+.cover h1 .accent{color:var(--gold)}
+.cover .sub{margin-top:30px;font-size:34px;color:var(--text2);max-width:1300px;line-height:1.4}
+.cover .meta{margin-top:56px;font-family:var(--font-mono);font-size:21px;color:var(--text2);letter-spacing:.08em;display:flex;gap:36px;align-items:center}
+.cover .meta span{display:flex;align-items:center;gap:10px}
+.cover .rule{width:120px;height:2px;background:var(--gold);margin-top:40px;opacity:.7}
+
+/* lista de pasos numerados */
+.steps{counter-reset:step;list-style:none;display:grid;gap:20px}
+.steps li{counter-increment:step;display:flex;gap:22px;align-items:flex-start;font-size:25px;color:var(--text2);line-height:1.45}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);flex:0 0 56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--blue);
+  border:1px solid var(--line);background:rgba(93,156,236,.08);
+}
+.steps li strong{color:var(--text)}
+.steps li em{color:var(--mint);font-style:normal}
+
+/* footer chrome del deck */
+.deck-chrome{position:fixed;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:900;pointer-events:none;font-family:var(--font-mono);font-size:16px;color:var(--text2);opacity:.75;background:linear-gradient(transparent,rgba(11,18,32,.9))}
+.deck-chrome .brand{letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.deck-chrome .dots{display:flex;gap:10px;align-items:center}
+.deck-chrome .dots i{width:8px;height:8px;border-radius:50%;background:var(--text2);opacity:.35}
+.deck-chrome .dots i.on{background:var(--gold);opacity:1}
+
+/* imágenes */
+.figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(13,22,38,.6)}
+.figure img{display:block;width:100%;height:100%;object-fit:contain}
+.figure figcaption{padding:14px 20px;font-size:19px;color:var(--text2);font-family:var(--font-mono);letter-spacing:.03em;border-top:1px solid var(--line)}
+
+/* diagrama SVG de la esquina entrante */
+.lfig{width:100%;height:auto;display:block}
+</style>
+</head>
+<body data-tema="t4">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ═══════════════════════ SLIDE 1 · PORTADA ═══════════════════════ -->
+<section class="slide cover active">
+  <div class="reveal course-tag">Curso · FEM práctico con FreeCAD · Sesión 4 de 6</div>
+  <h1 class="reveal">Solver y <span class="accent">post-procesamiento</span></h1>
+  <div class="reveal sub">Leer resultados con escepticismo.<br>La esquina entrante y las singularidades numéricas.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta">
+    <span>Prof. J. A. Vélez</span><span>·</span><span>PUJ Cali — Mecánica</span><span>·</span><span>Basado en: Guía Práctica de Simulación en Ingeniería (caps. 4.3–4.4 y 5)</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 2 · AGENDA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 4 · Ruta</span>
+    <span class="slide-num">02 / 20</span>
+  </div>
+  <h2 class="reveal">Agenda de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:36px">
+    <div class="card reveal t-blue"><div class="num">01</div><h4>El solver</h4><p>Qué pasa al apretar <em>Solve</em>: directo, iterativo y Newton–Raphson. Cap. 4.3.</p></div>
+    <div class="card reveal t-red"><div class="num">02</div><h4>Post-proceso crítico</h4><p>Singularidades, convergencia de esfuerzos y tipos de esfuerzo. Cap. 4.4.</p></div>
+    <div class="card reveal t-blue"><div class="num">03</div><h4>Práctica</h4><p>Soporte en L con <strong>esquina entrante</strong>: tres mallas para ver la singularidad con datos propios.</p></div>
+    <div class="card reveal t-mint"><div class="num">04</div><h4>Taller 4</h4><p>El efecto del radio de acuerdo: cómo una arista redondeada elimina la singularidad.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía</span>
+    Esta sesión es la más importante del curso para <strong>no creerse los colores</strong>: aprenderá a distinguir un pico real de un artefacto numérico.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 3 · EL SOLVER: [K]{u}={F} ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">El solver · Cap. 4.3</span>
+    <span class="slide-num">03 / 20</span>
+  </div>
+  <h2 class="reveal">¿Qué pasa cuando aprieta "Solve"?</h2>
+  <p class="lead reveal" style="margin-bottom:26px">El solver no "hace magia": <strong>construye y resuelve</strong> el sistema de ecuaciones del FEM. Todo lo demás es detalle de cómo lo resuelve.</p>
+  <div class="formula reveal" data-katex="[K]\{u\}=\{F\}" style="font-size:34px">$$[K]\{u\}=\{F\}$$<small>K = matriz de rigidez global · u = desplazamientos nodales · F = vector de fuerzas</small></div>
+  <div class="grid grid-3" style="margin-top:24px">
+    <div class="card reveal t-blue"><div class="num">Directo</div><h4>Eliminación gaussiana / LU</h4><p>Robusto: <strong>siempre converge</strong> si la matriz es no singular. Costo <span class="mono">\(O(N^3)\)</span>.</p></div>
+    <div class="card reveal t-gold"><div class="num">Iterativo</div><h4>PCG · GMRES</h4><p>Rápido en modelos grandes bien condicionados. <strong class="red">Puede no converger</strong>.</p></div>
+    <div class="card reveal t-blue"><div class="num">No lineal</div><h4>Newton–Raphson</h4><p>Iterativo sobre <span class="mono">\([K_T]\Delta u = R\)</span>. Requiere buen punto inicial; <strong class="red">divergencia posible</strong>.</p></div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:28px">
+    <span class="tag">Este curso</span>
+    CalculiX resuelve con <strong>solver directo</strong> (SPOOLES / PARDISO): la opción segura para los tamaños de modelo de este curso.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 4 · TABLA COMPARATIVA DE SOLVERS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">El solver · Cap. 4.3</span>
+    <span class="slide-num">04 / 20</span>
+  </div>
+  <h2 class="reveal">Tres familias de solvers, tres contratos</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Método</th><th>Idea</th><th>Costo</th><th>Fortaleza</th><th>Riesgo</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Directo</strong><br><span class="mono">Gauss / LU</span></td><td>Factoriza [K] una vez y resuelve por sustitución</td><td class="mono">\(O(N^3)\)</td><td class="mint">Siempre converge si [K] es no singular</td><td>Memoria alta; lento si N es enorme</td></tr>
+      <tr><td><strong>Iterativo</strong><br><span class="mono">PCG · GMRES</span></td><td>Aproxima la solución por pasos hasta una tolerancia</td><td class="mono">\(O(N^2)\)–\(O(N^3)\)</td><td>Rápido en &gt; 1M DOF bien condicionados</td><td class="red">Puede NO converger</td></tr>
+      <tr><td><strong>No lineal</strong><br><span class="mono">Newton–Raphson</span></td><td><span class="mono">\([K_T(u_i)]\Delta u = R(u_i)\)</span>; corrige en cada iteración</td><td class="mono">\(O(N^3)\) / iteración</td><td>Plasticidad, contacto, grandes deformaciones</td><td class="red">Buen punto inicial; divergencia posible</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Regla práctica · Cap. 4.3</span>
+    <strong>Directo:</strong> ideal para &lt; 500K DOF — el rango del curso. <strong>Iterativo:</strong> solo gana en &gt; 1M DOF bien condicionados. <strong>No lineal:</strong> úselo cuando \(\sigma_{VM} > \sigma_y\) o δ &gt; 5% de la dimensión.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 5 · POST-PROCESO CON ESCEPTICISMO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4</span>
+    <span class="slide-num">05 / 20</span>
+  </div>
+  <h2 class="reveal">Leer resultados con escepticismo</h2>
+  <p class="lead reveal" style="margin-bottom:32px">Resolver es la parte fácil. Lo difícil es <strong>interpretar</strong>: el post-proceso es donde se cometen los errores más silenciosos.</p>
+  <div class="grid grid-3">
+    <div class="card reveal t-red"><div class="num"><svg class="fico" style="width:36px;height:36px;color:var(--red)"><use href="#fem-atencion"/></svg>&nbsp;1</div><h4>Singularidades</h4><p>En esquinas entrantes el esfuerzo <strong>no converge</strong>: refinar la malla hace crecer el pico (cap. 4.4.1).</p></div>
+    <div class="card reveal t-gold"><div class="num"><svg class="fico" style="width:36px;height:36px;color:var(--gold)"><use href="#fem-atencion"/></svg>&nbsp;2</div><h4>Convergencia desigual</h4><p>Los <strong>desplazamientos</strong> convergen rápido; las <strong>deformaciones y esfuerzos</strong>, lento (cap. 4.4.2).</p></div>
+    <div class="card reveal t-blue"><div class="num"><svg class="fico" style="width:36px;height:36px;color:var(--blue)"><use href="#fem-atencion"/></svg>&nbsp;3</div><h4>¿Qué esfuerzo?</h4><p>Von Mises no es universal: cada tipo responde a un criterio de falla distinto (cap. 4.4.3).</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:32px">
+    <span class="tag">Regla de la sesión</span>
+    Ante cada número del post-proceso pregúntese: <strong>¿de dónde sale este valor y qué significa físicamente?</strong> Si no puede responder, no lo reporte.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 6 · SINGULARIDAD EN ESQUINA ENTRANTE ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4.1</span>
+    <span class="slide-num">06 / 20</span>
+  </div>
+  <h2 class="reveal">La singularidad de la esquina entrante</h2>
+  <div class="grid grid-2" style="margin-top:20px;gap:44px;align-items:center">
+    <div class="reveal">
+      <svg class="lfig" viewBox="0 0 520 420" role="img" aria-label="Perfil en L con esquina entrante">
+        <polygon points="80,340 460,340 460,100 280,100 280,240 80,240" fill="rgba(93,156,236,.10)" stroke="#5d9cec" stroke-width="3"/>
+        <text x="150" y="330" fill="#9aa7b8" font-size="18" font-family="IBM Plex Mono">brazo largo 150</text>
+        <text x="340" y="140" fill="#9aa7b8" font-size="18" font-family="IBM Plex Mono">brazo corto</text>
+        <text x="300" y="290" fill="#e8c76a" font-size="16" font-family="IBM Plex Mono">corte en x = 100</text>
+        <circle cx="280" cy="240" r="12" fill="#e0555a"/>
+        <text x="220" y="215" fill="#e0555a" font-size="18" font-family="IBM Plex Mono">esquina entrante (90°)</text>
+        <line x1="455" y1="100" x2="455" y2="340" stroke="#48c9b0" stroke-width="5"/>
+        <line x1="80" y1="290" x2="80" y2="365" stroke="#e8c76a" stroke-width="4"/>
+        <polygon points="80,365 74,350 86,350" fill="#e8c76a"/>
+        <text x="48" y="390" fill="#e8c76a" font-size="18" font-family="IBM Plex Mono">F = 1000 N</text>
+      </svg>
+    </div>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:22px">
+      <div class="card"><h4 class="red">El problema</h4><p>En una esquina entrante de 90° (o más aguda), la solución elástica teórica predice <strong>\(\sigma \to \infty\)</strong> en el punto exacto.</p></div>
+      <div class="card"><h4 class="red">Lo que hace el FEM</h4><p>Al refinar la malla, el pico <strong>crece sin límite</strong>: no converge a ningún valor.</p></div>
+      <div class="card"><h4 class="mint">Lo que NO significa</h4><p><strong>No significa que la pieza falle.</strong> Es un artefacto matemático del vértice, no un esfuerzo físico.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 7 · DEMOSTRACIÓN: TABLA MALLA vs σ vs δ ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4.1</span>
+    <span class="slide-num">07 / 20</span>
+  </div>
+  <h2 class="reveal">La demostración: refinar no es converger</h2>
+  <p class="reveal" style="font-size:24px;margin-bottom:24px">Soporte en L del ejercicio: empotrado por el brazo corto, 1000 N en el extremo del brazo largo. Tres mallas, mismos datos:</p>
+  <table class="reveal">
+    <thead><tr><th>Tamaño de malla (Gmsh)</th><th>σ<sub>pico</sub> en la esquina (MPa)</th><th>δ en el extremo (mm)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>5 mm</strong></td><td class="red">≈ 300</td><td class="mint">≈ 0.34</td></tr>
+      <tr><td><strong>2.5 mm</strong></td><td class="red">≈ 450</td><td class="mint">≈ 0.31</td></tr>
+      <tr><td><strong>1.25 mm</strong></td><td class="red">≈ 650</td><td class="mint">≈ 0.30</td></tr>
+    </tbody>
+  </table>
+  <div class="grid grid-2" style="margin-top:24px;gap:26px">
+    <div class="card reveal t-red"><h4>σ<sub>pico</sub> en la esquina</h4><p><strong>NO converge:</strong> sube con cada refinamiento (300 → 450 → 650 MPa). La malla más fina NO da el valor "verdadero".</p></div>
+    <div class="card reveal t-mint"><h4>δ en el extremo</h4><p><strong>SÍ converge:</strong> se estabiliza (0.34 → 0.31 → 0.30 mm). Los desplazamientos son confiables.</p></div>
+  </div>
+  <div class="callout warn reveal" style="margin-top:26px">
+    <span class="tag">Ojo · valores orientativos</span>
+    Los números son ilustrativos para mostrar la <strong>tendencia</strong>; dependerán de la geometría exacta. Lo que debe reproducir usted: <strong>el pico sube, δ se estabiliza</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 8 · QUÉ HACER: HOT-SPOT A 2 MM ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4.1</span>
+    <span class="slide-num">08 / 20</span>
+  </div>
+  <h2 class="reveal">Solución: no evalúe en el punto singular</h2>
+  <div class="grid grid-2" style="margin-top:16px;gap:40px;align-items:center">
+    <div class="reveal" style="max-width:600px">
+      <svg class="lfig" viewBox="0 0 520 420" role="img" aria-label="Evaluación del esfuerzo a 2 mm de la esquina entrante">
+        <polygon points="80,340 460,340 460,100 280,100 280,240 80,240" fill="rgba(93,156,236,.10)" stroke="#5d9cec" stroke-width="3"/>
+        <circle cx="280" cy="240" r="11" fill="#e0555a"/>
+        <circle cx="306" cy="240" r="9" fill="#48c9b0"/>
+        <line x1="280" y1="240" x2="306" y2="240" stroke="#e8c76a" stroke-width="2.5" stroke-dasharray="6 6"/>
+        <text x="150" y="330" fill="#9aa7b8" font-size="18" font-family="IBM Plex Mono">brazo largo 150</text>
+        <text x="220" y="215" fill="#e0555a" font-size="18" font-family="IBM Plex Mono">σ no converge aquí</text>
+        <text x="318" y="228" fill="#48c9b0" font-size="18" font-family="IBM Plex Mono">σ a 2 mm</text>
+        <text x="318" y="252" fill="#e8c76a" font-size="17" font-family="IBM Plex Mono">150–200 MPa · estable</text>
+      </svg>
+    </div>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:14px">
+      <div class="card" style="padding:16px 22px"><h4 class="blue" style="font-size:21px;margin-bottom:6px">1 · Distancia característica</h4><p style="font-size:19px">Evalúe el esfuerzo a <strong>1–2 mm de la esquina</strong>: allí el campo ya es regular y el valor converge con la malla.</p></div>
+      <div class="card" style="padding:16px 22px"><h4 class="blue" style="font-size:21px;margin-bottom:6px">2 · Hot-spot stress</h4><p style="font-size:19px">Métodos estructurales (recipientes, uniones soldadas) extrapolan el esfuerzo a la distancia definida por norma.</p></div>
+      <div class="card" style="padding:16px 22px"><h4 class="blue" style="font-size:21px;margin-bottom:6px">3 · Energía de deformación</h4><p style="font-size:19px">Promedios sobre volumen (densidades de energía) son regulares incluso en la singularidad.</p></div>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:18px;padding:16px 24px;font-size:22px">
+    <span class="tag">Cap. 4.4.1 · Textual de la guía</span>
+    "No evalúe el esfuerzo en el punto singular. Evalúe a una distancia característica (ej. 1-2 mm) o use métodos como hot-spot stress."
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 9 · DESPLAZAMIENTOS VS ESFUERZOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4.2</span>
+    <span class="slide-num">09 / 20</span>
+  </div>
+  <h2 class="reveal">Desplazamientos y esfuerzos convergen distinto</h2>
+  <p class="reveal" style="font-size:24px;margin-bottom:26px">El FEM resuelve en desplazamientos; los esfuerzos se obtienen <strong>derivando</strong> — y derivar amplifica el error.</p>
+  <div class="grid grid-2">
+    <div class="card reveal t-mint">
+      <h4>Desplazamientos u</h4>
+      <ul style="list-style:none;font-size:23px;line-height:1.7">
+        <li>· Variable primaria del FEM</li>
+        <li>· <strong>Convergen rápida</strong>: confiables incluso con mallas gruesas</li>
+        <li>· Perfectos para verificar contra soluciones analíticas</li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Deformaciones ε y esfuerzos σ</h4>
+      <ul style="list-style:none;font-size:23px;line-height:1.7">
+        <li>· Se derivan de u (\(\varepsilon = \nabla u\), \(\sigma = E\,\varepsilon\))</li>
+        <li>· <strong>Convergen lento</strong>: requieren mallas finas</li>
+        <li>· Sensibles a singularidades y calidad de malla</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:30px">
+    <span class="tag">Regla práctica · Cap. 4.4.2</span>
+    ¿Va a reportar solo desplazamientos? Una malla gruesa puede bastar. ¿Va a reportar esfuerzos? <strong>Refine y verifique convergencia</strong> antes de creerle al número.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 10 · TIPOS DE ESFUERZO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4.3</span>
+    <span class="slide-num">10 / 20</span>
+  </div>
+  <h2 class="reveal">Tipos de esfuerzo: ¿cuál reportar?</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Esfuerzo</th><th>Significado</th><th>¿Cuándo usarlo?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Von Mises (σ<sub>VM</sub>)</strong></td><td>Energía de distorsión</td><td class="mint">Criterio de fluencia para metales dúctiles</td></tr>
+      <tr><td><strong>Tresca (τ<sub>max</sub>)</strong></td><td>Esfuerzo cortante máximo</td><td>Criterio conservador alternativo</td></tr>
+      <tr><td><strong>Principal máxima (σ<sub>1</sub>)</strong></td><td>Tracción máxima</td><td>Materiales frágiles (fundición, cerámicos)</td></tr>
+      <tr><td><strong>Principal mínima (σ<sub>3</sub>)</strong></td><td>Compresión máxima</td><td>Evaluación de pandeo local</td></tr>
+      <tr><td><strong>Normal direccional (σ<sub>x</sub>, σ<sub>y</sub>, σ<sub>z</sub>)</strong></td><td>Componente direccional</td><td>Cuando la dirección de falla es conocida</td></tr>
+    </tbody>
+  </table>
+  <div class="callout blue reveal" style="margin-top:26px">
+    <span class="tag">Idea clave</span>
+    Cada esfuerzo responde a una <strong>pregunta distinta</strong>. Elegir el tipo equivocado es un error de interpretación — el Error 6 de la guía.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 11 · CRITERIO DE FALLA + ERROR DEL PRINCIPIANTE ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Post-proceso · Cap. 4.4.3</span>
+    <span class="slide-num">11 / 20</span>
+  </div>
+  <h2 class="reveal">El criterio depende del material</h2>
+  <div class="grid grid-2" style="margin-top:26px">
+    <div class="card reveal t-mint"><h4>Acero dúctil</h4><p><strong>Von Mises</strong>: fluencia por energía de distorsión. Compare contra σ<sub>y</sub>.</p></div>
+    <div class="card reveal t-red"><h4>Fundición gris · cerámica</h4><p><strong>Principal máxima σ<sub>1</sub></strong>: fallan por tracción máxima, no por fluencia.</p></div>
+    <div class="card reveal t-gold"><h4>Certificación conservadora</h4><p><strong>Tresca</strong>: el cortante máximo siempre da un margen más conservador.</p></div>
+    <div class="card reveal t-blue"><h4>Pandeo local · compresión</h4><p><strong>Principal mínima σ<sub>3</sub></strong>: evalúe la compresión máxima en la zona crítica.</p></div>
+  </div>
+  <div class="callout warn reveal" style="margin-top:30px">
+    <span class="tag">Error frecuente de principiante · Cap. 4.4.3</span>
+    Asumir que <strong>\(\sigma_{VM} > \sigma_y\) = falla</strong> sin verificar si el pico es una <strong>singularidad numérica</strong>. Un pico singular no es un esfuerzo físico: no lo compare contra el límite del material.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 12 · MAPA DE ERRORES ═══════════════════════ -->
+<section class="slide" style="padding-top:64px;padding-bottom:64px">
+  <div class="slide-header reveal">
+    <span class="kicker">Adelanto · Cap. 5</span>
+    <span class="slide-num">12 / 20</span>
+  </div>
+  <h2 class="reveal" style="font-size:64px">Los errores de esta sesión en el mapa global</h2>
+  <div class="figure reveal" style="max-width:680px;margin:14px auto 0">
+    <img src="../assets/figuras/07_errores_comunes.png" alt="Frecuencia de errores comunes en simulación">
+    <figcaption>Figura 1 — Frecuencia de errores en simulación (Guía, cap. 5)</figcaption>
+  </div>
+  <div class="grid grid-2" style="margin-top:16px;gap:22px">
+    <div class="card reveal t-red" style="padding:18px 24px"><div class="num" style="font-size:36px;margin-bottom:6px">6</div><h4 style="font-size:21px;margin-bottom:6px">Interpretación errónea · 7%</h4><p style="font-size:19px">Decisiones de diseño basadas en <strong>picos singulares</strong>. Síntoma: confiar en σ que no converge. Solución: entienda las limitaciones del método (cap. 5, Error 6).</p></div>
+    <div class="card reveal t-gold" style="padding:18px 24px"><div class="num" style="font-size:36px;margin-bottom:6px">1</div><h4 style="font-size:21px;margin-bottom:6px">CF incorrectas · 28%</h4><p style="font-size:19px">El error más frecuente de todos. La cara que empotra y la dirección de la carga <strong>deciden el resultado</strong> (cap. 5, Error 1).</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 13 · PRÁCTICA: ENUNCIADO SOPORTE EN L ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Ejercicio 4</span>
+    <span class="slide-num">13 / 20</span>
+  </div>
+  <h2 class="reveal">Soporte en L — el problema</h2>
+  <div class="grid grid-2" style="margin-top:26px">
+    <div class="card reveal t-blue">
+      <h4>Enunciado</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Perfil en L: <span class="mono">150 × 80 × 10 mm</span>, corte en <span class="mono">x = 100</span> (brazo de 50)</li>
+        <li>· Empotrado por la <strong>cara vertical del brazo corto</strong></li>
+        <li>· Fuerza <span class="mono">F = 1000 N</span> hacia abajo en el extremo del brazo largo</li>
+        <li>· Acero: <span class="mono">\(E = 210\ \text{GPa},\ \nu = 0.3\)</span></li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Pregunta de diseño</h4>
+      <p class="big">¿Cuánto se deflecta el extremo y cuál es el esfuerzo en la <strong>esquina entrante</strong>?</p>
+      <p style="margin-top:14px">Y la pregunta que importa: <strong>¿converge ese esfuerzo al refinar la malla?</strong></p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:30px">
+    <span class="tag">Objetivo pedagógico</span>
+    El objetivo NO es un número exacto (no hay analítica simple): es <strong>ver con sus propios datos</strong> que σ<sub>pico</sub> crece y δ se estabiliza — y aprender a reportar σ a 2 mm de la esquina.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 14 · PLAN DE TRABAJO EN FREECAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · FreeCAD</span>
+    <span class="slide-num">14 / 20</span>
+  </div>
+  <h2 class="reveal">Plan de trabajo en FreeCAD FEM</h2>
+  <ol class="steps" style="margin-top:30px">
+    <li class="reveal"><strong>Geometría</strong> — <em>Part → Box</em> (150×80×10) y <em>Part → Cut</em> con un box que recorte la esquina en <span class="mono">x=100</span>, dejando la L</li>
+    <li class="reveal"><strong>Análisis</strong> — <em>FEM → New analysis</em>; material acero (<span class="mono">E=210000 MPa, ν=0.3</span>)</li>
+    <li class="reveal"><strong>Condiciones</strong> — <em>Constraint fixed</em> en la cara del brazo corto; <em>Constraint force</em> de 1000 N en el extremo del brazo largo</li>
+    <li class="reveal"><strong>Malla</strong> — <em>Gmsh</em>, 5 mm → ejecutar → anotar σ<sub>pico</sub></li>
+    <li class="reveal"><strong>Refinar</strong> — repetir con <em>2.5 mm</em> y <em>1.25 mm</em>: σ<sub>pico</sub> crece, δ se estabiliza</li>
+    <li class="reveal"><strong>Hot-spot</strong> — leer σ a <em>2 mm de la esquina</em>; opcional: <em>Part → Fillet</em> r = 5 mm y repetir</li>
+  </ol>
+  <div class="callout warn reveal" style="margin-top:28px">
+    <span class="tag">Atención · Cap. 4.4.1</span>
+    No se sorprenda si el pico "empeora" al refinar: <strong>esa es la lección</strong>. El valor que se reporta es el de la zona regular, a 1–2 mm de la esquina.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 15 · VALORES ESPERADOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Qué esperar</span>
+    <span class="slide-num">15 / 20</span>
+  </div>
+  <h2 class="reveal">Valores esperados (orientativos)</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Magnitud</th><th>Comportamiento al refinar</th><th>Valor orientativo</th></tr></thead>
+    <tbody>
+      <tr><td><strong>δ extremo del brazo largo</strong></td><td class="mint">Converge · se estabiliza</td><td class="mono">del orden de décimas de mm (p. ej. 0.30–0.34 mm)</td></tr>
+      <tr><td><strong>σ<sub>pico</sub> en la esquina entrante</strong></td><td class="red">NO converge · crece</td><td class="mono">300 → 450 → 650 MPa (mallas 5 / 2.5 / 1.25 mm)</td></tr>
+      <tr><td><strong>σ a 2 mm de la esquina</strong></td><td class="mint">Mucho más estable</td><td class="mono">150–200 MPa</td></tr>
+    </tbody>
+  </table>
+  <div class="grid grid-2" style="margin-top:26px;gap:26px">
+    <div class="card reveal t-mint"><h4>Lo confiable</h4><p>El desplazamiento: converge y es verificable por orden de magnitud (décimas de milímetro).</p></div>
+    <div class="card reveal t-red"><h4>Lo que NO debe reportar</h4><p>El pico de la esquina como esfuerzo de diseño. Eso es el <strong>Error 6 (7%)</strong>: interpretación errónea de resultados.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 16 · TALLER 4 ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 4 · Entregable</span>
+    <span class="slide-num">16 / 20</span>
+  </div>
+  <h2 class="reveal">Taller 4 — El efecto del radio de acuerdo</h2>
+  <div class="grid grid-2" style="margin-top:26px">
+    <div class="card reveal t-red">
+      <h4>Parte A · Esquina aguda</h4>
+      <ul style="font-size:22px;line-height:1.6">
+        <li>Soporte en L sin radio: <span class="mono">3 mallas (5/2.5/1.25 mm)</span></li>
+        <li>Tabla: σ<sub>pico</sub> <strong>NO converge</strong> (crece)</li>
+      </ul>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>Parte B · Con radio de acuerdo</h4>
+      <ul style="font-size:22px;line-height:1.6">
+        <li><em>Part → Fillet</em> r = 5 mm en la arista de la esquina</li>
+        <li>Repetir las 3 mallas: σ<sub>pico</sub> <strong>SÍ converge</strong> (el radio elimina la singularidad)</li>
+      </ul>
+    </div>
+    <div class="card reveal t-blue">
+      <h4>Parte C · Criterio de falla</h4>
+      <ul style="font-size:22px;line-height:1.6">
+        <li>Comparar <strong>\(\sigma_{VM}\) vs \(\sigma_1\)</strong> en el punto crítico</li>
+        <li>Discutir: ¿qué criterio para acero dúctil? ¿Y para fundición gris (frágil)?</li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Parte D · Gráfica y conclusión</h4>
+      <ul style="font-size:22px;line-height:1.6">
+        <li>Gráfica σ<sub>pico</sub> vs tamaño de malla: <strong>aguda crece · redondeada se estabiliza</strong></li>
+        <li>Conclusión citando la guía, cap. 4.4.1</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Entregables · Rúbrica 100 pts</span>
+    Informe con tablas + gráfica + discusión. Modelo FEM 30 · demostración de singularidad 30 · criterio de falla 25 · discusión y cita 15. Ver <strong>taller.html</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 17 · RESUMEN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre</span>
+    <span class="slide-num">17 / 20</span>
+  </div>
+  <h2 class="reveal">Lo que debe quedar hoy</h2>
+  <div class="grid grid-3" style="margin-top:30px">
+    <div class="card reveal t-blue"><div class="num">1</div><h4>El solver no es caja negra</h4><p>Directo (robusto), iterativo (rápido pero frágil), Newton–Raphson (no lineal). CalculiX: directo.</p></div>
+    <div class="card reveal t-red"><div class="num">2</div><h4>σ en esquinas no converge</h4><p>Refinar ≠ verdad. Evalúe a 1–2 mm o use hot-spot. El pico no es un esfuerzo físico.</p></div>
+    <div class="card reveal t-mint"><div class="num">3</div><h4>Reporte el esfuerzo correcto</h4><p>Von Mises para dúctiles, σ<sub>1</sub> para frágiles, a la distancia correcta y con malla verificada.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">La frase de la sesión</span>
+    "El desplazamiento converge, el esfuerzo sospecha, el pico singular acusa." — Lea cada número con la pregunta: <strong>¿esto es física o es la malla?</strong>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 18 · PRÓXIMOS PASOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Ruta del curso</span>
+    <span class="slide-num">18 / 20</span>
+  </div>
+  <h2 class="reveal">Próximos pasos</h2>
+  <div class="card reveal t-blue" style="margin-top:30px">
+    <h4>Antes de la Sesión 5</h4>
+    <ul style="font-size:24px;line-height:1.7;list-style:none">
+      <li>· Complete el <strong>Taller 4</strong> (radio de acuerdo: aguda vs redondeada)</li>
+      <li>· Repita el ejercicio con una carga de compresión: ¿cambia el criterio de falla?</li>
+      <li>· Lea la guía: caps. <strong>5 (errores)</strong> y <strong>6 (verificación y validación)</strong></li>
+    </ul>
+  </div>
+  <div class="callout mint reveal" style="margin-top:30px">
+    <span class="tag">Sesión 5</span>
+    <strong>Errores comunes + verificación y validación</strong>: el índice de convergencia de malla <strong>GCI</strong> — la herramienta formal para saber si su resultado merece confianza. Lo que hoy vimos cualitativamente (δ converge, σ no), allí lo hará cuantitativo.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 19 · REFERENCIAS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Materiales</span>
+    <span class="slide-num">19 / 20</span>
+  </div>
+  <h2 class="reveal">Recursos de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue">Guía de referencia</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li>Cap. 4.3 — El solver: directo, iterativo, no lineal</li>
+        <li>Cap. 4.4.1 — Singularidades en esquinas entrantes</li>
+        <li>Cap. 4.4.2 — Desplazamientos vs deformaciones/esfuerzos</li>
+        <li>Cap. 4.4.3 — Tipos de esfuerzo y criterios de falla</li>
+        <li>Cap. 5 — Errores 1 (CF, 28%) y 6 (interpretación, 7%)</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Archivos del curso</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li><span class="mono">ejercicio_paso_a_paso.html</span> — soporte en L, 3 mallas</li>
+        <li><span class="mono">taller.html</span> — radio de acuerdo + rúbrica</li>
+        <li><span class="mono">video/guion.md</span> — guion del video asíncrono</li>
+        <li><span class="mono">video/diapositivas.html</span> — escenas p5.js</li>
+      </ul>
+    </div>
+  </div>
+  <p class="mono reveal" style="margin-top:30px;color:var(--text2);font-size:20px">Referencia [1] B. Jakobsen y F. Rosendahl, "The Sleipner Platform Accident," <em>Structural Engineering International</em>, vol. 4, no. 3, pp. 190–193, 1994.</p>
+</section>
+
+<!-- ═══════════════════════ SLIDE 20 · CIERRE ═══════════════════════ -->
+<section class="slide cover">
+  <div class="reveal course-tag">Sesión 4 · Fin</div>
+  <h1 class="reveal">Lea los resultados<br>como un <span class="accent">escéptico</span></h1>
+  <div class="reveal sub">El pico que no converge no es falla: es una señal de que debe mirar más de cerca.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta"><span>FEM con FreeCAD · 6 sesiones</span><span>·</span><span>Sesión 5: errores comunes, verificación y validación (GCI)</span></div>
+</section>
+
+</main>
+</div>
+
+<!-- footer chrome: navegación -->
+<div class="deck-chrome" id="deckChrome">
+  <span class="brand">FEM · FreeCAD</span>
+  <span class="dots" id="dots"></span>
+  <span class="hint">← → navegar · P imprimir</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE PRESENTATION CONTROLLER — plantilla frontend-slides
+   ═══════════════════════════════════════════════════════════════ */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.current=0;
+    this.stage=document.getElementById('deckStage');
+    this.dots=document.getElementById('dots');
+    this.buildDots();
+    this.setupScale();
+    this.setupKeys();
+    this.setupTouch();
+    this.show(0);
+  }
+  buildDots(){
+    this.dots.innerHTML=this.slides.map((_,i)=>`<i data-i="${i}"></i>`).join('');
+    this.dots.querySelectorAll('i').forEach(d=>d.addEventListener('click',()=>this.show(+d.dataset.i)));
+  }
+  setupScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();window.addEventListener('resize',scale);
+  }
+  setupKeys(){
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();this.show(this.current+1)}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();this.show(this.current-1)}
+      else if(e.key==='Home'){this.show(0)}
+      else if(e.key==='End'){this.show(this.slides.length-1)}
+      else if(e.key==='p'||e.key==='P'){window.print()}
+    });
+  }
+  setupTouch(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>60)this.show(this.current+(dx<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.querySelectorAll('i').forEach((d,k)=>d.classList.toggle('on',k===this.current));
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

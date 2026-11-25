@@ -1,0 +1,265 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S4 - Solver y post-procesamiento: leer resultados con escepticismo</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — SESIÓN 4 (video asíncrono)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Motor: VIDEOMN engine v2 (compartido). NO editar engine.js.
+  Anclaje visual: plataforma Sleipner A (1991) — un error de malla
+  FEM subestimó los esfuerzos en una celda crítica y la plataforma
+  se hundió. 6 escenas, narración ~11-12 min.
+  Guion: sesion04/video/guion.md
+  ═══════════════════════════════════════════════════════════════ -->
+<script src="../../assets/p5.min.js"></script><script>p5.disableFriendlyErrors=true;</script>
+<script src="../../assets/engine.js"></script>
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#3a3d45;}canvas{display:block;}</style>
+</head><body><script>
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 0 — PORTADA: el anclaje de Sleipner A (1991)
+//  Un error de malla FEM subestimó los esfuerzos en una celda
+//  crítica; la plataforma se hundió en el Mar del Norte.
+// ═══════════════════════════════════════════════════════════════
+function s0(){
+  let t=st,cx=width/2,cy=height*0.42;uFF(t);uFP();
+  let sy=height*0.60; // nivel del mar
+  // — mar: olas —
+  stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],90);strokeWeight(2);noFill();
+  for(let i=0;i<8;i++){let wy=sy-8+i*3,off=i*37;
+    beginShape();for(let x=-40;x<=width+40;x+=24){vertex(x,wy+sin(x*0.02+t*1.2+off)*4)}endShape();}
+  // — plataforma: celdas de concreto (base Condeep) — el hundimiento es sutil
+  let sink=sin(t*0.7)*3;
+  push();translate(cx,sink);
+  // base de celdas bajo el agua
+  fill(60,66,78,140);stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],80);strokeWeight(1.5);
+  let bw=width*0.42,bh=height*0.30;
+  rect(-bw/2,sy-bh*0.35,bw,bh);
+  // celdas: líneas horizontales y verticales
+  for(let i=1;i<4;i++){line(-bw/2,sy-bh*0.35+bh*i/4,bw/2,sy-bh*0.35+bh*i/4)}
+  for(let i=1;i<5;i++){line(-bw/2+bw*i/5,sy-bh*0.35,-bw/2+bw*i/5,sy+bh*0.65)}
+  // celda crítica con esfuerzos en rojo (la que falló)
+  if(t>2){let ck=constrain(map(t,2,5,0,1),0,1);
+    stroke(cb('red')[0],cb('red')[1],cb('red')[2],170*ck);strokeWeight(3);
+    let cex=-bw/2+bw*2/5,cwy=sy-bh*0.35+bh*2/4;
+    line(cex+8,cwy+8,cex+bw/5-10,cwy+8);
+    line(cex+14,cwy+8,cex+16,cwy+bh/4-8);
+    stroke(cb('red')[0],cb('red')[1],cb('red')[2],90*ck);strokeWeight(1.5);
+    for(let i=0;i<6;i++){let px=cex+10+i*10;line(px,cwy+6,px-6,cwy-10)}
+  }
+  // columnas + cubierta
+  fill(52,58,70,200);noStroke();
+  for(let i=0;i<4;i++){rect(-bw/2+30+i*(bw-60)/3,sy-bh*0.35-46,26,46)}
+  fill(44,50,62,220);rect(-bw/2-26,sy-bh*0.35-70,bw+52,30);
+  fill(38,44,56,230);rect(-bw/2+40,sy-bh*0.35-140,120,70);
+  pop();
+  // — panel + títulos —
+  let ta=constrain(map(t,1,4,0,200),0,200);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();rect(cx-560,height*0.66,1120,150,16)}
+  txB(window,'Solver y post-procesamiento',cx,height*0.66+45,58,'gold');
+  txB(window,'Leer resultados con escepticismo — Sesión 4',cx,height*0.66+115,28,'white');
+  // pie: referencia al caso real
+  let al0=txa([8,11],t);
+  if(al0>20){drawingContext.globalAlpha=al0/255;
+    tx(window,'Sleipner A, 1991: un error de malla FEM subestimó los esfuerzos en una celda crítica [1]',cx,height*0.9,19,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 1 — EL SOLVER: directo vs iterativo vs no lineal
+//  Beats: 0=título, 1=directo, 2=iterativo, 3=no lineal + consejo
+// ═══════════════════════════════════════════════════════════════
+function s1(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let cols=[{n:'Directo',c:'blue',d:'Gauss · LU',w:'Robusto: siempre converge si [K] es no singular',x:'O(N³) · ideal < 500K DOF'},
+            {n:'Iterativo',c:'gold',d:'PCG · GMRES',w:'Rápido en modelos grandes bien condicionados',x:'> 1M DOF · puede NO converger'},
+            {n:'No lineal',c:'blue',d:'Newton–Raphson',w:'[K_T(u)]Δu = R(u) · corrige por iteraciones',x:'Requiere buen punto inicial · divergencia posible'}];
+  // tres columnas — aparecen con beats
+  for(let i=0;i<3;i++){
+    let x=cx-430+i*430,y=height*0.30;
+    if(beat>=1+i){let al=txa([0.3+i*0.35,1.4],t);
+      drawingContext.globalAlpha=al/255;
+      let cc=cb(cols[i].c);
+      fill(cc[0],cc[1],cc[2],10);stroke(cc[0],cc[1],cc[2],60);strokeWeight(1);
+      rect(x-150,y,300,330,16);
+      noStroke();fill(cc[0],cc[1],cc[2],230);
+      tx(window,cols[i].n,x,y+60,40,cols[i].c);
+      txM(window,cols[i].d,x,y+115,20,'white');
+      tx(window,cols[i].w,x,y+175,16,'gray');
+      tx(window,cols[i].x,x,y+225,16,'gray');
+      drawingContext.globalAlpha=1}
+  }
+  // consejo (beat 3): CalculiX = directo
+  if(beat>=3){
+    let al=txa([1.0,2.2],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.76;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],10);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],70);strokeWeight(1.5);
+    rect(cx-560,y,1120,120,14);
+    tx(window,'CalculiX usa solver directo (SPOOLES / PARDISO)',cx,y+45,30,'mint');
+    tx(window,'La opción segura para los modelos de este curso',cx,y+90,20,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'El solver: [K]{u} = {F}',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 2 — LA SINGULARIDAD: esquina entrante del soporte en L
+//  Beats: 0=título, 1=perfil L, 2=malla 5mm (σ 300), 3=malla 2.5
+//  (σ 450), 4=malla 1.25 (σ 650) + lección
+// ═══════════════════════════════════════════════════════════════
+function drawL(cx,cy,s){
+  // perfil en L: brazo largo a la derecha, brazo corto arriba; esquina entrante en (0,0)
+  push();translate(cx,cy);
+  stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],150);strokeWeight(2.5);
+  fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],12);
+  let pts=[[0,s*0.35],[s*2.6,s*0.35],[s*2.6,-s*0.9],[s*1.5,-s*0.9],[s*1.5,0],[0,0]];
+  beginShape();for(let p of pts)vertex(p[0],p[1]);endShape(CLOSE);
+  // empotramiento en la cara del brazo corto (derecha)
+  stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],140);strokeWeight(4);
+  line(s*2.6,-s*0.9,s*2.6,s*0.35);
+  stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],70);strokeWeight(2);
+  for(let i=1;i<7;i++){let yy=-s*0.9+i*(s*1.25)/7;line(s*2.6+10,yy,s*2.6+26,yy)}
+  // carga en el extremo del brazo largo (izquierda)
+  stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],200);strokeWeight(3.5);
+  line(-s*0.42,s*0.35+18,-s*0.42,s*0.35+66);
+  fill(cb('gold')[0],cb('gold')[1],cb('gold')[2]);
+  noStroke();triangle(-s*0.42,s*0.35+66,-s*0.42-8,s*0.35+52,-s*0.42+8,s*0.35+52);
+  tx(window,'F = 1000 N',-s*0.42,s*0.35+100,16,'gold');
+  pop();
+}
+function drawMesh(cx,cy,s,sp){
+  // rayos de malla desde la esquina entrante + líneas paralelas
+  push();translate(cx,cy);
+  stroke(cb('white')[0],cb('white')[1],cb('white')[2],70);strokeWeight(1);
+  for(let a=5;a<=85;a+=10){let r=s*0.9*sp;
+    line(0,0,cos(radians(90-a))*r,-sin(radians(90-a))*r)}
+  for(let k=1;k<7;k++){let off=k*sp*s*0.16;
+    line(off,0,off,s*0.35);line(0,-off,s*1.5,-off)}
+  pop();
+}
+function s2(){
+  let t=st,cx=width/2,cy=height*0.42;uFF(t);uFP();
+  let s=140;
+  // perfil L (beat 1 en adelante)
+  if(beat>=1){let al=txa([0.4,1.4],t);drawingContext.globalAlpha=al/255;
+    drawL(cx-80,cy,s);
+    tx(window,'esquina entrante (90°)',cx-80+s*1.55,cy-s*0.95+10,17,'red');
+    drawingContext.globalAlpha=1}
+  // malla que se refina + σ_pico que crece (beats 2,3,4)
+  let levels=[{b:2,sp:1.15,sigma:'≈ 300 MPa',delta:'δ ≈ 0.34 mm'},{b:3,sp:0.8,sigma:'≈ 450 MPa',delta:'δ ≈ 0.31 mm'},{b:4,sp:0.55,sigma:'≈ 650 MPa',delta:'δ ≈ 0.30 mm'}];
+  let curLv=(beat>=2)?levels[Math.min(beat,4)-2]:null;
+  if(curLv){let al=txa([0.4,1.3],t);drawingContext.globalAlpha=al/255;
+    drawMesh(cx-80,cy,s,curLv.sp);
+    drawingContext.globalAlpha=1}
+  if(beat>=2){let al=txa([0.6,1.6],t);drawingContext.globalAlpha=al/255;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],70);strokeWeight(1.5);
+    rect(cx+s*0.75,cy-s*0.62,300,78,12);
+    tx(window,'σ_pico esquina',cx+s*0.75+150,cy-s*0.62+30,20,'red');
+    txB(window,curLv.sigma,cx+s*0.75+150,cy-s*0.62+62,34,'red');
+    drawingContext.globalAlpha=1}
+  // δ estable en mint (beats 2,3,4)
+  if(beat>=2){let al=txa([0.9,1.9],t);drawingContext.globalAlpha=al/255;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],10);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],70);strokeWeight(1.5);
+    rect(cx+s*0.75,cy-s*0.62+96,300,78,12);
+    tx(window,'δ extremo',cx+s*0.75+150,cy-s*0.62+126,20,'mint');
+    txB(window,curLv.delta,cx+s*0.75+150,cy-s*0.62+158,30,'mint');
+    drawingContext.globalAlpha=1}
+  // lección (beat 4)
+  if(beat>=4){let al=txa([0.8,2.0],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.82;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],80);strokeWeight(2);
+    rect(cx-560,y,1120,110,14);
+    tx(window,'⚠ El esfuerzo NO converge en la esquina: refinar no es converger',cx,y+40,30,'red');
+    tx(window,'el desplazamiento se estabiliza · el pico crece sin límite',cx,y+85,20,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'Singularidad: la esquina entrante del soporte en L',cx,height*0.06,38,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 3 — QUÉ HACER: evaluar a 2 mm (hot-spot)
+//  Beats: 0=título, 1=esquina + flecha al punto a 2 mm, 2=valor
+//  estable + hot-spot stress
+// ═══════════════════════════════════════════════════════════════
+function s3(){
+  let t=st,cx=width/2,cy=height*0.42;uFF(t);uFP();
+  let s=140;
+  if(beat>=1){let al=txa([0.4,1.4],t);drawingContext.globalAlpha=al/255;
+    drawL(cx-80,cy,s);
+    // esquina: rojo (no converge) y punto a 2 mm: mint (estable)
+    noStroke();
+    fill(cb('red')[0],cb('red')[1],cb('red')[2]);circle(cx-80,cy,14);
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2]);circle(cx-80+34,cy,11);
+    stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],160);strokeWeight(2);setLineDash([8,7]);
+    line(cx-80,cy,cx-80+34,cy);setLineDash([]);
+    tx(window,'σ no converge aquí',cx-80+s*1.55,cy-s*0.95+10,17,'red');
+    tx(window,'σ a 2 mm de la esquina',cx-80+34,cy-34,17,'mint');
+    drawingContext.globalAlpha=1}
+  if(beat>=2){let al=txa([0.5,1.6],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.70;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],10);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],75);strokeWeight(1.5);
+    rect(cx-560,y,1120,130,14);
+    tx(window,'σ a 2 mm ≈ 150–200 MPa — estable entre mallas',cx,y+45,32,'mint');
+    tx(window,'método: hot-spot stress · distancia característica (guía, cap. 4.4.1)',cx,y+92,20,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'Solución: no evalúe en el punto singular',cx,height*0.06,38,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 4 — TIPOS DE ESFUERZO: ¿cuál reportar?
+//  Beats: 0=título, 1=von Mises, 2=Tresca, 3=principal + error
+// ═══════════════════════════════════════════════════════════════
+function s4(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let cols=[{n:'Von Mises σVM',c:'mint',d:'Energía de distorsión',w:'Fluencia · metales dúctiles'},
+            {n:'Tresca τmax',c:'gold',d:'Cortante máximo',w:'Criterio conservador'},
+            {n:'Principal σ1 / σ3',c:'blue',d:'Tracción / compresión máx.',w:'Frágiles (σ1) · pandeo local (σ3)'}];
+  for(let i=0;i<3;i++){
+    let x=cx-430+i*430,y=height*0.26;
+    if(beat>=1+i){let al=txa([0.3+i*0.35,1.4],t);
+      drawingContext.globalAlpha=al/255;
+      let cc=cb(cols[i].c);
+      fill(cc[0],cc[1],cc[2],10);stroke(cc[0],cc[1],cc[2],60);strokeWeight(1);
+      rect(x-165,y,330,190,14);
+      tx(window,cols[i].n,x,y+50,28,cols[i].c);
+      tx(window,cols[i].d,x,y+105,20,'white');
+      tx(window,cols[i].w,x,y+150,17,'gray');
+      drawingContext.globalAlpha=1}
+  }
+  // error del principiante (beat 3)
+  if(beat>=3){
+    let al=txa([0.6,1.8],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.62;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],75);strokeWeight(1.5);
+    rect(cx-560,y,1120,180,14);
+    tx(window,'⚠ Error de principiante',cx,y+50,32,'red');
+    tx(window,'"von Mises > σy ⇒ la pieza falla" — sin verificar',cx,y+100,22,'white');
+    tx(window,'si el pico es una singularidad numérica (cap. 4.4.3)',cx,y+140,22,'gray');
+    drawingContext.globalAlpha=1}
+  txB(window,'Tipos de esfuerzo: cada uno responde a una pregunta distinta',cx,height*0.06,36,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 5 — CIERRE: lea los resultados como un escéptico
+// ═══════════════════════════════════════════════════════════════
+function s5(){
+  let t=st,cx=width/2,cy=height*0.36;uFF(t);uFP();
+  let burst=constrain(map(t,2,5,0,1),0,1);
+  glow(g=>{if(burst>0){dB(g,cx,cy,430*burst,cb('mint'),6);dB(g,cx,cy,230*burst,cb('white'),3)}});
+  let ta=constrain(map(t,1.5,3.5,0,220),0,220);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();
+    rect(cx-560,cy-70,1120,150,16)}
+  drawingContext.globalAlpha=constrain(map(t,1.5,4,0,1),0,1);
+  txB(window,'Lea los resultados como un escéptico',cx,cy-5,56,'gold');
+  txB(window,'El pico que no converge no es falla: es una señal para mirar más de cerca',cx,cy+60,26,'white');
+  drawingContext.globalAlpha=1;
+  // qué sigue
+  let al=txa([6,8.5],t);
+  if(al>20){drawingContext.globalAlpha=al/255;
+    tx(window,'Sesión 5 → Errores comunes + verificación y validación: el índice GCI',cx,height*0.86,22,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN — 6 escenas
+// ═══════════════════════════════════════════════════════════════
+SNAMES=['Portada','El solver','La singularidad','Hot-spot','Tipos de esfuerzo','Cierre'];
+SBEATS=[1,4,5,3,4,1];
+function initSessions(){scenes=[s0,s1,s2,s3,s4,s5];}
+</script></body></html>

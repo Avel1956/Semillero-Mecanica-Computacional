@@ -24,6 +24,7 @@ Grupo de Investigación SIGMA · Programa de Ingeniería Mecánica
 - [Problema que aborda](#problema-que-aborda)
 - [Metodología](#metodología)
 - [Líneas de operación](#líneas-de-operación)
+- [Avances 2026](#avances-2026)
 - [Cronograma](#cronograma)
 - [Productos esperados](#productos-esperados)
 - [Estructura del repositorio](#estructura-del-repositorio)
@@ -107,17 +108,29 @@ En la formación de ingeniería existe una desconexión entre los fundamentos te
 
 ## Líneas de operación
 
-La operación del semillero se organiza en líneas de trabajo definidas según los intereses del grupo y el contexto del semillero. Cada línea contará con un estudiante responsable que lidere la creación de capacidades y la ejecución del presupuesto asignado.
+La operación del semillero se organiza en líneas de trabajo definidas según los intereses del grupo y el contexto del semillero. Cada línea cuenta con un estudiante responsable que lidera la creación de capacidades y la ejecución del presupuesto asignado. Las líneas y sus proyectos base se acordaron con los estudiantes durante el primer semestre de ejecución (informe de seguimiento de septiembre de 2026).
 
-| Línea | Alcance |
-|---|---|
-| Formación | Programa de talleres y webinarios sobre simulación y modelación computacional. Modalidad asíncrona, con videos de preparación y ejercicios prácticos |
-| Inteligencia artificial | Incorporación de herramientas de inteligencia artificial al trabajo del semillero: apoyo a la programación, al análisis de resultados y a la elaboración de material de formación |
-| Modelado físico | Modelado y fabricación de prototipos y herramientas mediante manufactura aditiva (impresión 3D), como complemento experimental de las simulaciones y apoyo a la divulgación |
-| Control | Instrumentación de experimentos y adquisición de datos con sistemas embebidos, orientada a la validación experimental de los modelos computacionales |
-| Biomecánica | Simulación de problemas de interés biomecánico y desarrollo de proyectos interdisciplinarios con el programa de Ingeniería Biomédica |
+| Línea | Alcance | Proyecto base / trabajo actual |
+|---|---|---|
+| Formación | Programa de talleres y webinarios sobre simulación y modelación computacional. Modalidad asíncrona, con videos de preparación y ejercicios prácticos | [Curso «FEM práctico con FreeCAD»](formacion/README.md) y [solver FEM de armaduras](proyectos/fem-armaduras/README.md) |
+| Inteligencia artificial | Incorporación de herramientas de inteligencia artificial al trabajo del semillero: apoyo a la programación, al análisis de resultados y a la elaboración de material de formación | [Tutor socrático PUJ-IA](proyectos/tutor-socratico/README.md) |
+| Modelado físico | Modelado y fabricación de prototipos y herramientas mediante manufactura aditiva (impresión 3D), como complemento experimental de las simulaciones y apoyo a la divulgación | Diseño y fabricación de prototipos como complemento experimental de las simulaciones ([AeroBio](proyectos/aerobio/README.md)) |
+| Control | Instrumentación de experimentos y adquisición de datos con sistemas embebidos, orientada a la validación experimental de los modelos computacionales | Instrumentación y adquisición de datos para validar los modelos ([AeroBio](proyectos/aerobio/README.md)) |
+| Biomecánica | Simulación de problemas de interés biomecánico y desarrollo de proyectos interdisciplinarios con el programa de Ingeniería Biomédica | Simulación de problemas biomecánicos con Ingeniería Biomédica ([AeroBio](proyectos/aerobio/README.md)) |
 
-**Responsables de área:** por definir.
+El proyecto integrador **AeroBio** reúne las cinco líneas alrededor de un ala bioinspirada en el cóndor andino.
+
+---
+
+## Avances 2026
+
+| # | Resultado | Línea | Estado | Carpeta |
+|---|---|---|---|---|
+| 1 | Solver FEM de armaduras 2D/3D en Python (rigidez matricial, Excel, Streamlit), verificado contra cálculo manual | Formación | Terminado | [`proyectos/fem-armaduras`](proyectos/fem-armaduras/README.md) |
+| 2 | Tutor socrático PUJ-IA y generador de agentes pedagógicos | Inteligencia artificial | En funcionamiento (v0.1.0) | [`proyectos/tutor-socratico`](proyectos/tutor-socratico/README.md) |
+| 3 | Curso «FEM práctico con FreeCAD» de 6 sesiones con ejercicios verificados analíticamente | Formación | Contenido terminado; pendiente publicación asíncrona | [`formacion`](formacion/README.md) |
+| 4 | AeroBio: ala bioinspirada con 70,3 % menos masa que el ala maciza NACA 4412, verificada en CAD | Todas | Modelado terminado; ensayo pendiente | [`proyectos/aerobio`](proyectos/aerobio/README.md) |
+| 5 | Charla de divulgación en el Colegio Militar General Agustín Codazzi (7 nov. 2026, grados 9.º y 11.º) — piloto de «Simulando el Futuro» | Divulgación | Realizada | [`divulgacion`](divulgacion/2026-11-07-charla-cmgac/README.md) |
 
 ---
 
@@ -143,26 +156,32 @@ La operación del semillero se organiza en líneas de trabajo definidas según l
 
 Productos comprometidos en la propuesta registrada ante la convocatoria.
 
-| Categoría | Producto | Cantidad | Año de entrega |
-|---|---|---|---|
-| Activos de propiedad intelectual — Software | Repositorio de códigos básicos documentados que resuelven problemas básicos de mecánica | 1 | Año 1 (30/11/2026) |
-| Activos de propiedad intelectual — Software | Repositorio de simulaciones (FreeCAD) con verificación analítica | 1 | Año 2 (30/11/2027) |
-| Organización de eventos / capacitaciones — Taller | Diseño de la actividad lúdico-pedagógica "Simulando el Futuro" para estudiantes de bachillerato | 1 | Año 1 (30/11/2026) |
-| Otros productos de divulgación | Por definir en el documento oficial | 1 | Año 2 (30/11/2027) |
+| Categoría | Producto | Cantidad | Año de entrega | Estado |
+|---|---|---|---|---|
+| Activos de propiedad intelectual — Software | Repositorio de códigos básicos documentados que resuelven problemas básicos de mecánica | 1 | Año 1 (30/11/2026) | Este repositorio: [`proyectos/`](proyectos/) y [`formacion/`](formacion/) |
+| Activos de propiedad intelectual — Software | Repositorio de simulaciones (FreeCAD) con verificación analítica | 1 | Año 2 (30/11/2027) | Base iniciada con los ejercicios del [curso FEM](formacion/README.md) |
+| Organización de eventos / capacitaciones — Taller | Diseño de la actividad lúdico-pedagógica "Simulando el Futuro" para estudiantes de bachillerato | 1 | Año 1 (30/11/2026) | Diseñada (metodología AeroBio) y piloteada en el CMGAC |
+| Otros productos de divulgación | Por definir en el documento oficial | 1 | Año 2 (30/11/2027) | — |
 
 ---
 
 ## Estructura del repositorio
 
-Estructura planificada. Las carpetas se crearán cuando exista el primer contenido; ninguna carpeta contiene material por adelantado.
+Las carpetas se crean cuando existe el primer contenido; `actas/` y `recursos/` aún no tienen material.
 
 ```text
 Semillero-Mecanica-Computacional/
 │
-├── actas/          Acta de cada sesión de trabajo
-├── formacion/      Material del programa de talleres y webinarios
-├── proyectos/      Trabajo de las líneas de operación
-├── recursos/       Material de referencia del grupo
+├── formacion/
+│   └── curso-open-fem/        Curso «FEM práctico con FreeCAD» (6 sesiones, HTML sin conexión)
+├── proyectos/
+│   ├── fem-armaduras/         Solver FEM de armaduras 2D/3D (código + reporte)
+│   ├── tutor-socratico/       PUJ-IA: resumen y presentaciones (código en repo propio)
+│   └── aerobio/               Proyecto integrador: propuesta y análisis biomecánico
+├── divulgacion/
+│   └── 2026-11-07-charla-cmgac/   Informe y presentación de la charla AeroBio
+├── actas/                     (pendiente) Acta de cada sesión de trabajo
+├── recursos/                  (pendiente) Material de referencia del grupo
 │
 └── README.md
 ```
@@ -175,7 +194,14 @@ Semillero-Mecanica-Computacional/
 |---|---|---|
 | Jaime Andrés Vélez Zea | Tutor del semillero | jaimea.velez@javerianacali.edu.co |
 
-La lista de estudiantes vinculados se publicará cuando esté confirmada.
+**Autores de productos publicados en este repositorio**
+
+| Nombre | Aporte |
+|---|---|
+| Juan Esteban Navarrete | Solver FEM de armaduras 2D/3D |
+| Gabriel Mariño Arcila | Charla e informe de divulgación AeroBio en el CMGAC |
+
+La lista completa de estudiantes vinculados y de responsables de línea se publicará cuando esté confirmada.
 
 ---
 

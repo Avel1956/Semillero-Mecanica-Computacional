@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejercicio 4 — Soporte en L: la singularidad de la esquina entrante (FreeCAD FEM)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Ejercicio 4 · Sesión 4
+  Soporte en L con esquina entrante: solvers, singularidades y
+  lectura escéptica de resultados
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Recalca: Guía de Simulación FEM, caps. 4.3, 4.4, 5 (errores 1 y 6)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#170d12;--bg2:#1d1017;--panel:rgba(29,16,23,.92);--line:rgba(157,180,208,.18);
+  --text:#e4e8ec;--text2:#a89aa5;--blue:#9db4d0;--gold:#ffc857;--mint:#6fcf97;--red:#e05252;
+  --font:'Manrope',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:42px;font-weight:600;margin:10px 0 8px;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:28px;font-weight:600;margin:44px 0 16px;color:var(--gold);display:flex;align-items:center;gap:14px}
+h2 .n{font-family:var(--mono);font-size:18px;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+h3{font-size:21px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+p,li{font-size:17px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:16px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:16px 22px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout.mint .tag{color:var(--mint)}
+.steps{counter-reset:step;list-style:none}
+.steps>li{counter-increment:step;margin:18px 0;padding-left:64px;position:relative;font-size:17px;color:var(--text2)}
+.steps>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue);border:1px solid var(--line);background:rgba(93,156,236,.08)}
+.steps>li strong{color:var(--text)}
+.steps>li em{color:var(--mint);font-style:normal}
+table{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0}
+th{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2)}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14.5px;color:var(--gold)}
+.check{display:flex;gap:12px;align-items:flex-start;background:rgba(72,201,176,.07);border:1px solid rgba(72,201,176,.25);border-radius:10px;padding:16px 20px;margin:14px 0}
+.check::before{content:'✓';color:var(--mint);font-weight:700;flex:0 0 auto}
+.check strong{color:var(--mint)}
+.q{border-left:4px solid var(--gold);background:rgba(232,199,106,.06);padding:16px 22px;border-radius:0 10px 10px 0;margin:14px 0}
+.q .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+kbd{font-family:var(--mono);font-size:13.5px;background:rgba(93,156,236,.12);border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--blue)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t4">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 4 · Ejercicio 4</div>
+  <h1>Soporte en L: la singularidad de la esquina entrante</h1>
+  <div class="meta">Requisitos: FreeCAD 1.0+ instalado (freecad.org) · Workbench FEM · CalculiX · Tiempo: 50–70 min</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-taller"/></svg>&nbsp; Enunciado</h3>
+  <p>Soporte (ménsula) en L de acero: <strong>150 × 80 × 10 mm</strong>, con el corte en <span class="mono">x = 100 mm</span> que deja un brazo corto de 50. Empotrado por la <strong>cara vertical del brazo corto</strong>, con <strong>1000 N</strong> hacia abajo en el extremo del brazo largo. Material: acero, \(E = 210\ \text{GPa}\ (210000\ \text{MPa})\), \(\nu = 0.3\).</p>
+  <p style="margin-top:8px">Preguntas: ¿cuánto se deflecta el extremo del brazo largo? ¿Cuál es el esfuerzo en la <strong>esquina entrante</strong> — y <em>converge</em> al refinar la malla?</p>
+</div>
+
+<h2><span class="n">PASO 1</span> Preparar el entorno</h2>
+<ol class="steps">
+  <li>Verifique que el <strong>solver CalculiX</strong> esté disponible: menú <kbd>FEM</kbd> → <kbd>Preferences</kbd> → pestaña <kbd>CalculiX</kbd>. Si la ruta está vacía, instale CalculiX (calculix.de) y seleccione el ejecutable <span class="mono">ccx.exe</span> (FreeCAD 1.0 puede descargarlo automáticamente).</li>
+  <li>Crear documento nuevo: <kbd>File</kbd> → <kbd>New</kbd>.</li>
+  <li>Anote en su bitácora el <strong>sistema de unidades</strong>: mm · N · MPa (guía, cap. 5, Error 7: unidades inconsistentes).</li>
+</ol>
+
+<h2><span class="n">PASO 2</span> Geometría: el perfil en L con un booleano</h2>
+<ol class="steps">
+  <li>Workbench <kbd>Part</kbd> (lista desplegable superior).</li>
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd>. En la pestaña Datos fije: <span class="mono">Length = 150 mm</span> (X), <span class="mono">Width = 80 mm</span> (Y), <span class="mono">Height = 10 mm</span> (Z).</li>
+  <li>Segundo <kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd> (el "cuchillo" del corte): <span class="mono">Length = 100 mm</span>, <span class="mono">Width = 70 mm</span>, <span class="mono">Height = 10 mm</span>. En la pestaña Datos → Placement fije <span class="mono">Position: x = 0, y = 10, z = 0</span> (así recorta la esquina superior izquierda: región x ∈ [0,100], y ∈ [10,80]).</li>
+  <li><kbd>Part</kbd> → <kbd>Boolean</kbd> → <kbd>Cut</kbd>: Base = primer box, Tool = segundo box. Pulse <kbd>OK</kbd>. Queda el perfil en L: brazo largo de 150 en la base (10 de alto), brazo corto de 50×80 vertical, con la <strong>esquina entrante</strong> en (x=100, y=10).</li>
+  <li>Alternativa equivalente: dibuje el perfil en L con <em>Part Design → Sketch</em> y extruya 10 mm — el resultado es el mismo. Lo importante es que exista la <strong>esquina interior de 90°</strong>.</li>
+  <li>Pulse <kbd>Ctrl+D</kbd> (<em>Fit all</em>).</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.2.1</span>
+Aquí la esquina entrante <strong>es</strong> la zona de interés: es un cambio brusco de sección (concentrador) y por eso NO se redondea en esta primera parte. La guía dice: conserve los radios y filetes en zonas críticas — y también, por ahora, la ausencia de radio para ver la singularidad.</div>
+
+<h2><span class="n">PASO 3</span> Crear el análisis FEM</h2>
+<ol class="steps">
+  <li>Cambie al workbench <kbd>FEM</kbd>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Analysis container</kbd> → <kbd>New analysis</kbd>. Se crea un contenedor con un solver CalculiX por defecto.</li>
+  <li>En el árbol, verifique: <span class="mono">Analysis</span> → <span class="mono">Solver CalculiX</span>.</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.3</span>
+CalculiX resuelve con <strong>solver directo</strong> (SPOOLES / PARDISO): robusto, siempre converge si la matriz es no singular. Es la opción segura para modelos &lt; 500K DOF. Los métodos iterativos (PCG/GMRES) solo se justifican en modelos &gt; 1M DOF y pueden no converger — no los necesitará en este curso.</div>
+
+<h2><span class="n">PASO 4</span> Material: acero</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Material</kbd> → <kbd>Solid material</kbd>.</li>
+  <li>Seleccione el <strong>objeto Cut</strong> (el sólido en L) en el árbol.</li>
+  <li>Elija la plantilla <span class="mono">CalculiX-Steel</span> o cree un material propio: <span class="mono">Young's modulus = 210000 MPa</span>, <span class="mono">Poisson's ratio = 0.3</span>, <span class="mono">Density = 7.85e-9 t/mm³</span>.</li>
+  <li>Acepte. En el árbol debe aparecer <span class="mono">MechanicalMaterial</span> con el sólido asignado.</li>
+</ol>
+
+<h2><span class="n">PASO 5</span> Condición de frontera: empotrar el brazo corto</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint fixed</kbd>.</li>
+  <li>Seleccione la <strong>cara vertical en x = 150 mm</strong> (la cara del extremo del brazo corto, la que "se apoya en la pared"). Acepte.</li>
+  <li>Verifique que el objeto aparezca como <span class="mono">ConstraintFixed</span> en el árbol.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 5 · Error 1 (28%)</span>
+Las CF incorrectas son el error más frecuente de la lista. Un empotramiento perfecto es una abstracción (la guía, cap. 2.3): si empotrara la otra cara o dejara un grado de libertad libre, obtendría desplazamientos absurdos (modo de cuerpo rígido). Verifique que el modelo no tenga movimientos no restringidos antes de correr.</div>
+
+<h2><span class="n">PASO 6</span> Carga: 1000 N en el extremo del brazo largo</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd>.</li>
+  <li>Seleccione la <strong>cara en x = 0 mm</strong> (el extremo libre del brazo largo).</li>
+  <li>Fije <span class="mono">Force = 1000 N</span>. En <strong>Direction</strong>, elija la vertical hacia abajo: <span class="mono">-Y</span> (o <span class="mono">-Z</span> si construyó el perfil en otro plano; use el botón <em>Reverse direction</em> si la flecha apunta hacia arriba).</li>
+  <li>Como la carga actúa sobre la cara completa, FreeCAD la reparte como carga distribuida equivalente.</li>
+</ol>
+
+<h2><span class="n">PASO 7</span> Primera malla (5 mm) y ejecución</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd>. Seleccione el sólido y fije <span class="mono">Maximum element size = 5 mm</span> (si viene 0 = automático, escríbalo explícito).</li>
+  <li>Pulse <kbd>OK</kbd> y luego <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>.</li>
+  <li>Doble clic en <span class="mono">Solver CalculiX</span> del árbol; marque <em>Analysis type = Static</em>; pulse <kbd>Write .inp file</kbd> y luego <kbd>Run CalculiX</kbd>.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 7:</strong> en la pestaña Report debe aparecer <span class="mono">"CalculiX done!"</span> sin errores. Si falla, revise material, CF y carga: que todo esté asignado al sólido Cut.</div></div>
+
+<h2><span class="n">PASO 8</span> Post-proceso: leer la primera corrida</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">CalculiX_static_results</span> → pestaña <em>Displacement</em> → <em>Show</em>, magnitud <span class="mono">Abs</span>. Anote el <strong>desplazamiento máximo</strong> (estará en el extremo del brazo largo).</li>
+  <li>Misma ventana, pestaña <em>Stress</em> → <em>Von Mises</em> → <em>Show</em>. Localice el <strong>pico</strong>: debe estar en la <strong>esquina entrante</strong> (x=100, y=10). Anote el valor máximo de la leyenda.</li>
+  <li>En el árbol, seleccione los resultados y <kbd>FEM</kbd> → <kbd>Post processing</kbd> → <kbd>Warp by filter</kbd> para ver la deformada: el brazo largo se flexiona hacia abajo, el desplazamiento es del orden de <strong>décimas de milímetro</strong>.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 8a:</strong> δ ≈ <strong>0.2–0.5 mm</strong> (décimas de milímetro; el valor exacto depende de su geometría — no es una cifra de catálogo, es un orden de magnitud).</div></div>
+<div class="check"><div><strong>Checkpoint 8b:</strong> el pico de von Mises está en la esquina entrante y ronda los <strong>~300 MPa</strong> con esta malla (orientativo). Anótelo: será su primera fila de la tabla.</div></div>
+
+<h2><span class="n">PASO 9</span> Refinar: 2.5 mm y 1.25 mm — la demostración</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">Mesh</span> del árbol, cambie <span class="mono">Maximum element size = 2.5 mm</span>, <kbd>OK</kbd>, <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd> (puede borrar la malla anterior o sobreescribir).</li>
+  <li>Ejecute de nuevo: doble clic en <span class="mono">Solver CalculiX</span> → <kbd>Write .inp file</kbd> → <kbd>Run CalculiX</kbd>. Espere <span class="mono">"CalculiX done!"</span>.</li>
+  <li>Anote δ<sub>máx</sub> y σ<sub>pico</sub>. Repita el mismo procedimiento con <span class="mono">1.25 mm</span>.</li>
+</ol>
+<table>
+  <thead><tr><th>Malla (Gmsh)</th><th>δ máx extremo (mm)</th><th>σ<sub>pico</sub> esquina (MPa)</th><th>¿Converge?</th></tr></thead>
+  <tbody>
+    <tr><td><strong>5 mm</strong></td><td class="mono">≈ 0.34</td><td class="mono">≈ 300</td><td>—</td></tr>
+    <tr><td><strong>2.5 mm</strong></td><td class="mono">≈ 0.31</td><td class="mono">≈ 450</td><td>δ: tiende a estabilizarse · σ: sube</td></tr>
+    <tr><td><strong>1.25 mm</strong></td><td class="mono">≈ 0.30</td><td class="mono">≈ 650</td><td>δ: estable · σ: SIGUE subiendo</td></tr>
+  </tbody>
+</table>
+<p style="font-size:14.5px;color:var(--text2)">Valores orientativos para mostrar la tendencia: sus números dependerán de la geometría exacta. Lo que debe observar es el <strong>comportamiento</strong>.</p>
+<div class="check"><div><strong>Checkpoint 9a:</strong> el desplazamiento máximo <strong>SÍ converge</strong>: cambia poco entre mallas y se estabiliza en décimas de milímetro.</div></div>
+<div class="check"><div><strong>Checkpoint 9b:</strong> el pico de esfuerzo <strong>NO converge</strong>: crece con cada refinamiento. La malla más fina NO da el valor "verdadero" — es una <strong>singularidad numérica</strong> (guía, cap. 4.4.1).</div></div>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.4.1 y Cap. 5 · Error 6 (7%)</span>
+Un esfuerzo que no converge NO es una predicción confiable. Decidir el diseño con ese pico es el Error 6 de la guía: <strong>interpretación errónea de resultados</strong>. El pico en la esquina NO significa que la pieza falle — es un artefacto matemático del vértice.</div>
+
+<h2><span class="n">PASO 10</span> Leer σ a 2 mm de la esquina (+ opcional: radio)</h2>
+<ol class="steps">
+  <li>Con el mapa de von Mises visible, evalúe el esfuerzo <strong>a 2 mm de la esquina entrante</strong>, por ejemplo sobre el brazo largo en (x = 102, y = 10). En FreeCAD: use la tubería VTK (<em>FEM → Post processing → VTK pipeline</em>) con un filtro <em>Clip</em> (plano de corte) o la sonda <em>Probe</em> sobre el mapa; también puede usar <em>Data along line</em> y leer el valor a esa distancia.</li>
+  <li>Anote el valor con las tres mallas: debe ser <strong>mucho más estable</strong> que el pico (del orden de 150–200 MPa, orientativo). Ese es el valor que se reporta.</li>
+  <li><strong>Opcional (lo hará completo en el taller):</strong> <kbd>Part</kbd> → <kbd>Fillet</kbd> con radio <span class="mono">5 mm</span> sobre la arista de la esquina entrante, y repita las tres mallas: ahora σ<sub>pico</sub> <strong>sí converge</strong>, porque el radio elimina la singularidad.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 10a:</strong> σ a 2 mm de la esquina es razonablemente estable entre mallas (no crece con el refinamiento).</div></div>
+<div class="check"><div><strong>Checkpoint 10b (opcional):</strong> con el fillet de 5 mm, σ<sub>pico</sub> se estabiliza al refinar — comparado con la esquina aguda, la diferencia es la lección del taller 4.</div></div>
+
+<div class="q"><span class="tag">Preguntas de reflexión (para el taller)</span>
+<p>1. ¿Por qué el pico de esfuerzo crece al refinar la malla si el modelo es el mismo? ¿Qué pasaría matemáticamente con una malla infinitamente fina?</p>
+<p>2. ¿Significa el pico de 650 MPa que el soporte falla? ¿Qué información le falta para responder con rigor?</p>
+<p>3. ¿Por qué el desplazamiento converge mientras el esfuerzo no? (Pista: guía, cap. 4.4.2 — los esfuerzos se derivan de los desplazamientos.)</p>
+<p>4. ¿Qué criterio de falla usaría para este acero dúctil: von Mises o principal máxima σ₁? ¿Y si el material fuera fundición gris? (Guía, cap. 4.4.3.)</p>
+<p>5. ¿Qué espera que pase si añade un radio de acuerdo de 5 mm en la esquina? ¿Y uno de 1 mm? ¿Por qué?</p>
+</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 4.3 (el solver: directo/iterativo/no lineal), cap. 4.4.1 (singularidades en esquinas entrantes), cap. 4.4.2 (desplazamientos vs esfuerzos), cap. 4.4.3 (tipos de esfuerzo), cap. 5 (errores 1 y 6). En la Sesión 5 formalizará la convergencia con el índice GCI (cap. 6.2).</div>
+
+<footer>FEM práctico con FreeCAD · Sesión 4 · Ejercicio 4 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

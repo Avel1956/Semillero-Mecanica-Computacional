@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════════════
+   TEMAS DEL CURSO FEM — variación de estilos por sesión
+   Misma arquitectura 16:9; cambian paleta, tipografía y portada.
+   Se activan con  <body data-tema="tN">  (ver fem.js)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── t1 "Blueprint" · Sesión 1 · azul nocturno + oro ── */
+body[data-tema="t1"]{
+  --bg:#0b1220; --bg2:#0e1626;
+  --blue:#5d9cec; --gold:#e8c76a; --mint:#48c9b0; --red:#e0555a;
+  --font-display:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+}
+body[data-tema="t1"] .cover h1{text-align:center}
+body[data-tema="t1"] .cover::after{content:'';position:absolute;bottom:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--blue),var(--gold))}
+
+/* ── t2 "Acero" · Sesión 2 · gris acero + cian ── */
+body[data-tema="t2"]{
+  --bg:#0d1418; --bg2:#111a20;
+  --blue:#4fc3f7; --gold:#ffb74d; --mint:#4dd0b5; --red:#ef5350;
+  --font-display:'Archivo',sans-serif; --font-mono:'JetBrains Mono',monospace;
+}
+body[data-tema="t2"] .cover{text-align:left;align-items:flex-start;padding-left:180px}
+body[data-tema="t2"] .cover h1{font-size:96px}
+body[data-tema="t2"] .cover::after{content:'';position:absolute;left:0;top:0;bottom:0;width:10px;background:linear-gradient(180deg,var(--blue),var(--mint))}
+
+/* ── t3 "Cobre" · Sesión 3 · pizarra técnica + cobre ── */
+body[data-tema="t3"]{
+  --bg:#14110c; --bg2:#1a160f;
+  --blue:#5fb3a1; --gold:#d9a05b; --mint:#8fbf6f; --red:#c96f5e;
+  --font-display:'Sora',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+}
+body[data-tema="t3"] .cover h1{font-size:88px;letter-spacing:-.02em}
+body[data-tema="t3"] .cover .rule{height:3px;width:220px;background:var(--gold)}
+body[data-tema="t3"] .slide-header{border-bottom:3px solid var(--gold)}
+
+/* ── t4 "Alerta" · Sesión 4 · burdeos + ámbar (escepticismo) ── */
+body[data-tema="t4"]{
+  --bg:#170d12; --bg2:#1d1017;
+  --blue:#9db4d0; --gold:#ffc857; --mint:#6fcf97; --red:#e05252;
+  --font-display:'Manrope',sans-serif; --font-mono:'JetBrains Mono',monospace;
+}
+body[data-tema="t4"] .cover h1 .accent{color:var(--red)}
+body[data-tema="t4"] .cover::after{content:'';position:absolute;inset:0;pointer-events:none;border:3px solid rgba(224,82,82,.35);margin:34px}
+body[data-tema="t4"] .card{border-radius:2px}
+
+/* ── t5 "Esmeralda" · Sesión 5 · verde profundo + menta (V&V) ── */
+body[data-tema="t5"]{
+  --bg:#0a1613; --bg2:#0e1d19;
+  --blue:#64b5f6; --gold:#e6c07a; --mint:#3ddc97; --red:#e57373;
+  --font-display:'Outfit',sans-serif; --font-mono:'Space Mono',monospace;
+}
+body[data-tema="t5"] .cover{justify-content:flex-end;text-align:right;padding-bottom:140px}
+body[data-tema="t5"] .cover h1{font-size:92px}
+body[data-tema="t5"] .cover .rule{margin-left:auto}
+body[data-tema="t5"] .callout.mint{border-left-width:6px}
+
+/* ── t6 "Violeta" · Sesión 6 · índigo + dorado (IA / futuro) ── */
+body[data-tema="t6"]{
+  --bg:#100d1c; --bg2:#151129;
+  --blue:#8b9cf7; --gold:#f0c96b; --mint:#53d9b8; --red:#e26a6a;
+  --font-display:'Chivo',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+}
+body[data-tema="t6"] .cover h1{background:linear-gradient(90deg,var(--gold),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
+body[data-tema="t6"] .cover .meta{border:1px solid var(--line);padding:14px 28px;border-radius:40px}
+body[data-tema="t6"] .grid-3 .card{border-radius:18px}

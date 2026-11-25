@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentes IA como Asistentes Pedagógicos — Pontificia Universidad Javeriana Cali</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Javeriana Brand Color Palette */
+      --puj-blue-dark: #002347;     /* Azul Institucional Principal */
+      --puj-blue-medium: #003b73;   /* Azul Secundario */
+      --puj-blue-light: #0056b3;    /* Azul Acento */
+      --puj-gold: #c89211;          /* Dorado Javeriano Principal */
+      --puj-gold-light: #e5ad35;    /* Dorado Acento Claro */
+      --puj-gold-bg: #fffbf0;       /* Fondo Acento Dorado Soft */
+      
+      --bg-page: #f4f6f9;           /* Fondo General Claro Académico */
+      --bg-card: #ffffff;           /* Tarjetas Blancas */
+      --border-color: #e2e8f0;      /* Bordes sutiles */
+      --border-blue: #cbd5e1;
+      
+      --text-dark: #0f172a;         /* Texto Principal */
+      --text-muted: #475569;        /* Texto Secundario */
+      --text-dim: #64748b;          /* Texto Atenuado */
+      
+      --shadow-subtle: 0 4px 12px rgba(0, 35, 71, 0.06);
+      --shadow-card: 0 10px 25px -5px rgba(0, 35, 71, 0.08), 0 4px 6px -2px rgba(0, 35, 71, 0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-dark);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top Decorative Javeriana Gold Line */
+    .top-gold-bar {
+      height: 5px;
+      background: linear-gradient(90deg, var(--puj-gold) 0%, var(--puj-gold-light) 50%, var(--puj-gold) 100%);
+      width: 100%;
+      position: relative;
+      z-index: 40;
+    }
+
+    /* Academic Header */
+    header {
+      position: relative;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 3rem;
+      background: var(--puj-blue-dark);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+    }
+
+    /* Javeriana Crest Representation */
+    .brand-crest {
+      width: 42px;
+      height: 42px;
+      background: #ffffff;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      border: 2px solid var(--puj-gold);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .crest-text {
+      font-family: 'Lora', serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--puj-blue-dark);
+      line-height: 0.9;
+      text-align: center;
+    }
+
+    .crest-sub {
+      font-size: 0.5rem;
+      font-weight: 800;
+      color: var(--puj-gold);
+      letter-spacing: 0.05em;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+    }
+
+    .brand-sub {
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .slide-counter {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--puj-gold-light);
+      background: rgba(200, 146, 17, 0.15);
+      padding: 0.35rem 0.85rem;
+      border-radius: 4px;
+      border: 1px solid var(--puj-gold);
+    }
+
+    .nav-btn {
+      background: var(--puj-blue-medium);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--puj-blue-light);
+      border-color: #ffffff;
+    }
+
+    .btn-gold {
+      background: var(--puj-gold);
+      color: var(--puj-blue-dark);
+      border-color: var(--puj-gold-light);
+      font-weight: 700;
+    }
+
+    .btn-gold:hover {
+      background: var(--puj-gold-light);
+      color: var(--puj-blue-dark);
+    }
+
+    /* Main Slide Container */
+    main {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.75rem 3.5rem;
+    }
+
+    .slides-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1240px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Slide Transition & Layout */
+    .slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(12px);
+      transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    /* Academic Typography */
+    .slide-header {
+      margin-bottom: 1.75rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.85rem;
+      position: relative;
+    }
+
+    .slide-header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 80px;
+      height: 2px;
+      background: var(--puj-gold);
+    }
+
+    .slide-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--puj-gold);
+      margin-bottom: 0.35rem;
+    }
+
+    .slide-title {
+      font-family: 'Lora', serif;
+      font-size: 2.15rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--puj-blue-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .slide-subtitle {
+      font-size: 0.98rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.35rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.15rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-top: 3px solid var(--puj-blue-medium);
+      border-radius: 8px;
+      padding: 1.35rem;
+      box-shadow: var(--shadow-subtle);
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      border-top-color: var(--puj-gold);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .card-accent-gold {
+      border-top-color: var(--puj-gold);
+    }
+
+    .card-icon-academic {
+      font-size: 1.4rem;
+      margin-bottom: 0.75rem;
+      color: var(--puj-blue-dark);
+    }
+
+    .card-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--puj-blue-dark);
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
+    }
+
+    .card-text {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Hero Cover Slide */
+    .hero-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 6px solid var(--puj-blue-dark);
+      border-radius: 8px;
+      padding: 3rem 3.5rem;
+      box-shadow: var(--shadow-card);
+      position: relative;
+    }
+
+    .hero-container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 180px;
+      height: 100%;
+      background: linear-gradient(135deg, transparent 50%, rgba(200, 146, 17, 0.05) 100%);
+      pointer-events: none;
+    }
+
+    .hero-institution {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--puj-gold);
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .hero-title {
+      font-family: 'Lora', serif;
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--puj-blue-dark);
+      line-height: 1.15;
+      margin-bottom: 1.15rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 900px;
+      margin-bottom: 2rem;
+    }
+
+    .hero-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .meta-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .meta-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.2rem;
+    }
+
+    .meta-val {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--puj-blue-dark);
+    }
+
+    /* Comparison Table (Academic Style) */
+    .academic-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .academic-table th {
+      background: var(--puj-blue-dark);
+      color: #ffffff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 0.9rem 1.15rem;
+      text-align: left;
+    }
+
+    .academic-table td {
+      padding: 0.85rem 1.15rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.86rem;
+      color: var(--text-dark);
+    }
+
+    .academic-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .badge-bad {
+      display: inline-block;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .badge-good {
+      display: inline-block;
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Academic Timeline Step Cards */
+    .step-badge {
+      width: 32px;
+      height: 32px;
+      background: var(--puj-blue-dark);
+      color: var(--puj-gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .time-chip {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--puj-blue-dark);
+      background: var(--puj-gold-bg);
+      border: 1px solid rgba(200, 146, 17, 0.4);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    /* Academic Callout Box */
+    .academic-callout {
+      background: var(--puj-gold-bg);
+      border-left: 4px solid var(--puj-gold);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      margin-top: 1rem;
+      font-size: 0.88rem;
+      color: #583c00;
+    }
+
+    /* Live Chat Simulation Box */
+    .sim-box {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-subtle);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 380px;
+    }
+
+    .sim-header {
+      background: #f1f5f9;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--puj-blue-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sim-body {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .sim-msg {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      max-width: 88%;
+    }
+
+    .sim-user {
+      align-self: flex-end;
+      background: var(--puj-blue-medium);
+      color: #ffffff;
+    }
+
+    .sim-agent-bad {
+      align-self: flex-start;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #7f1d1d;
+    }
+
+    .sim-agent-good {
+      align-self: flex-start;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #14532d;
+    }
+
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 30;
+      padding: 0.75rem 3rem;
+      background: var(--puj-blue-dark);
+      color: rgba(255, 255, 255, 0.75);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+    }
+
+    .key-hint {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+    }
+
+    /* Overview Grid Modal */
+    .overview-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 35, 71, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 3.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .overview-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      color: #ffffff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding-bottom: 1rem;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.2rem;
+      overflow-y: auto;
+    }
+
+    .thumb-card {
+      background: #ffffff;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      padding: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .thumb-card:hover {
+      border-color: var(--puj-gold);
+      transform: translateY(-2px);
+    }
+
+    .thumb-card.active {
+      border-color: var(--puj-gold);
+      box-shadow: 0 0 15px rgba(200, 146, 17, 0.5);
+    }
+
+    .thumb-num {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--puj-blue-dark);
+    }
+
+    .thumb-title {
+      font-family: 'Lora', serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--puj-blue-dark);
+      line-height: 1.25;
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      body {
+        overflow: visible !important;
+        height: auto !important;
+        background: #fff !important;
+      }
+      header, footer, .top-gold-bar {
+        display: none !important;
+      }
+      .slide {
+        position: relative !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        page-break-after: always !important;
+        height: 100vh !important;
+        padding: 2.5rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Decorative Gold Accent Bar -->
+  <div class="top-gold-bar"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-crest">
+        <span class="crest-text">PUJ</span>
+        <span class="crest-sub">CALI</span>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">PONTIFICIA UNIVERSIDAD JAVERIANA CALI</div>
+        <div class="brand-sub">Facultad de Ingeniería — Departamento de Ingeniería Civil e Industrial</div>
+      </div>
+    </div>
+    <div class="nav-controls">
+      <div class="slide-counter" id="slideCounter">01 / 10</div>
+      <button class="nav-btn" onclick="toggleOverview()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Vista General
+      </button>
+      <button class="nav-btn" onclick="prevSlide()">❮ Anterior</button>
+      <button class="nav-btn btn-gold" onclick="nextSlide()">Siguiente ❯</button>
+    </div>
+  </header>
+
+  <!-- Main Slide Canvas -->
+  <main>
+    <div class="slides-wrapper">
+
+      <!-- SLIDE 1: PORTADA -->
+      <section class="slide active" id="slide-1">
+        <div class="hero-container">
+          <div class="hero-institution">
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Proyecto de Investigación & Innovación Educativa (Semestre 2026-2)
+          </div>
+          <h1 class="hero-title">Agentes IA como Asistentes Pedagógicos en Ingeniería</h1>
+          <p class="hero-subtitle">
+            Implementación y evaluación de un modelo de <strong>tutoría socrática adaptativa en la Zona de Desarrollo Próximo (ZDP)</strong>, alineado 100% con los contenidos de los cursos del Departamento de Ingeniería Civil e Industrial.
+          </p>
+
+          <div class="hero-meta-grid">
+            <div class="meta-box">
+              <span class="meta-label">Investigador Principal</span>
+              <span class="meta-val">Jaime Andrés Vélez Zea</span>
+              <span style="font-size: 0.78rem; color: var(--text-dim);">Profesor de Planta — Prog. Mecánica</span>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">Unidad Académica</span>
+              <span class="meta-val">Depto. Civil e Industrial</span>
+              <span style="font-size: 0.78rem; color: var(--text-dim);">Facultad de Ingeniería</span>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">Alcance y Escala</span>
+              <span class="meta-val">6–8 Cursos · 150–200 Estudiantes</span>
+              <span style="font-size: 0.78rem; color: var(--text-dim);">3+ Docentes Participantes</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 2: DIAGNÓSTICO ACADÉMICO -->
+      <section class="slide" id="slide-2">
+        <div class="slide-header">
+          <span class="slide-tag">Diagnóstico Institucional</span>
+          <h2 class="slide-title">El Problema del Aprendizaje Fuera del Aula</h2>
+          <p class="slide-subtitle">La atención personalizada fuera de clase enfrenta tres obstáculos pedagógicos estructurales en la formación de ingenieros.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon-academic">📉</div>
+            <h3 class="card-title">Abandono en la ZDP</h3>
+            <p class="card-text">
+              Sin acompañamiento oportuno, el estudiante fuera del aula se desmotiva ante tareas complejas (zona de frustración) o se refugia en tareas sencillas sin avance cognitivo real.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">⚠️</div>
+            <h3 class="card-title">Respuestas Servidas (ChatGPT)</h3>
+            <p class="card-text">
+              El uso no guiado de IA comercial genera ilusión de aprendizaje: la herramienta resuelve directamente el ejercicio, anulando el esfuerzo mental necesario para fijar competencias.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">👁️</div>
+            <h3 class="card-title">Invisibilidad del Proceso</h3>
+            <p class="card-text">
+              El profesor evalúa el producto final (informe o examen), pero no tiene visibilidad sobre las dudas recurrentes, razonamientos erróneos ni puntos de atasco durante la semana.
+            </p>
+          </div>
+        </div>
+
+        <div class="academic-callout">
+          <strong>Contexto Javeriana Cali:</strong> En asignaturas con grupos de 20–40 estudiantes, el docente atiende entre 3 y 4 cursos por semestre, imposibilitando la atención tutorial continua individual fuera de clase.
+        </div>
+      </section>
+
+      <!-- SLIDE 3: LA SOLUCIÓN -->
+      <section class="slide" id="slide-3">
+        <div class="slide-header">
+          <span class="slide-tag">Propuesta de Valor</span>
+          <h2 class="slide-title">¿Qué Queremos Hacer?</h2>
+          <p class="slide-subtitle">Desplegar un asistente pedagógico de inteligencia artificial adaptado y controlado por la universidad.</p>
+        </div>
+
+        <div class="grid-4">
+          <div class="card">
+            <div class="card-icon-academic">🏛️</div>
+            <h3 class="card-title">Tutor Socrático</h3>
+            <p class="card-text">El agente <strong>no entrega la respuesta directa</strong>. Responde mediante preguntas guía que ayudan al estudiante a articular su propio pensamiento.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">📖</div>
+            <h3 class="card-title">Corpus del Docente</h3>
+            <p class="card-text">Con tecnología RAG, el agente solo responde basándose en las guías, talleres y textos oficiales definidos por el profesor del curso.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">📊</div>
+            <h3 class="card-title">Dashboard Docente</h3>
+            <p class="card-text">Permite al profesor rastrear patrones de uso, identificar dudas frecuentes y enviar mensajes de apoyo directo a grupos o estudiantes.</p>
+          </div>
+
+          <div class="card card-accent-gold">
+            <div class="card-icon-academic">💡</div>
+            <h3 class="card-title">Costo $0 Infra</h3>
+            <p class="card-text">Arquitectura ligera (Streamlit Cloud + Supabase). Costo estimado en API de solo <strong>$10–$50 USD</strong> para todo el semestre y 200 estudiantes.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 4: QUADRO COMPARATIVO -->
+      <section class="slide" id="slide-4">
+        <div class="slide-header">
+          <span class="slide-tag">Análisis Comparativo</span>
+          <h2 class="slide-title">ChatGPT Comercial vs. Tutor Socrático Javeriano</h2>
+          <p class="slide-subtitle">Comparación de la propuesta institucional frente al uso de herramientas genéricas de IA.</p>
+        </div>
+
+        <table class="academic-table">
+          <thead>
+            <tr>
+              <th>Criterio Pedagógico y Técnico</th>
+              <th>ChatGPT / Herramientas Comerciales</th>
+              <th>Tutor Socrático Propio (Proyecto PUJ)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Estrategia Pedagógica</strong></td>
+              <td><span class="badge-bad">Respuesta directa servida</span> (elude el razonamiento)</td>
+              <td><span class="badge-good">Preguntas guía en la ZDP</span> (fomenta la articulación)</td>
+            </tr>
+            <tr>
+              <td><strong>Alineación Curricular</strong></td>
+              <td><span class="badge-bad">Conocimiento genérico</span> (alucina o usa otra notación)</td>
+              <td><span class="badge-good">100% Fiel al syllabus y guías del docente</span></td>
+            </tr>
+            <tr>
+              <td><strong>Seguimiento Docente</strong></td>
+              <td><span class="badge-bad">Caja negra total</span> (invisibilidad de interacción)</td>
+              <td><span class="badge-good">Dashboard analítico en tiempo real</span> para el profesor</td>
+            </tr>
+            <tr>
+              <td><strong>Privacidad & Ética</strong></td>
+              <td><span class="badge-bad">Uso comercial de datos estudiantiles</span></td>
+              <td><span class="badge-good">Consentimiento informado y anonimización</span></td>
+            </tr>
+            <tr>
+              <td><strong>Inversión Financiera</strong></td>
+              <td><span class="badge-bad">$20 USD / estudiante / mes</span> ($24.000 USD/semestre)</td>
+              <td><span class="badge-good">$0 en infraestructura · $10-50 USD total en API</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SLIDE 5: SIMULACIÓN DE INTERACCIÓN -->
+      <section class="slide" id="slide-5">
+        <div class="slide-header">
+          <span class="slide-tag">Evidencia Visual</span>
+          <h2 class="slide-title">Demostración de Interacción Estudiantil</h2>
+          <p class="slide-subtitle">Contraste práctico entre la solución pasiva tradicional y el andamiaje socrático del agente.</p>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #991b1b; margin-bottom: 0.4rem;">
+              ❌ ChatGPT Comercial (Sustituye el esfuerzo cognitivo)
+            </div>
+            <div class="sim-box">
+              <div class="sim-header">
+                <span>Respuesta Comercial Genérica</span>
+              </div>
+              <div class="sim-body">
+                <div class="sim-msg sim-user">"Dame la solución del Ejercicio 3 del Taller de Esfuerzos Combinados."</div>
+                <div class="sim-msg sim-agent-bad">
+                  "El esfuerzo normal máximo es σ = 145.2 MPa y la deformación es 0.0012. Aquí tienes la tabla con los resultados para copiar directo en tu informe."
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #166534; margin-bottom: 0.4rem;">
+              ✅ Agente Socrático PUJ (Guía en la ZDP)
+            </div>
+            <div class="sim-box">
+              <div class="sim-header">
+                <span>Tutor Socrático • Mecánica de Sólidos</span>
+              </div>
+              <div class="sim-body">
+                <div class="sim-msg sim-user">"Dame la solución del Ejercicio 3 del Taller de Esfuerzos Combinados."</div>
+                <div class="sim-msg sim-agent-good">
+                  "Para avanzar en el Ejercicio 3: ¿Qué cargas externas están actuando sobre la sección transversal del elemento? Revisa la Guía 4, Sección 2.2 antes de combinar los esfuerzos."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 6: TAREAS DEL PROFESOR PARTICIPANTE -->
+      <section class="slide" id="slide-6">
+        <div class="slide-header">
+          <span class="slide-tag">Compromiso Docente</span>
+          <h2 class="slide-title">¿Qué Tareas tiene Cada Profesor Participante?</h2>
+          <p class="slide-subtitle">El diseño minimiza el tiempo del docente. <strong>Cero sobrecarga de calificación, atenciones técnicas o tareas administrativas.</strong></p>
+        </div>
+
+        <div class="grid-4">
+          <div class="card">
+            <div class="step-badge">1</div>
+            <h3 class="card-title">Aportar el Corpus</h3>
+            <p class="card-text">Compartir en PDF o Word las guías de clase, talleres, syllabus y lecturas para alimentar la base de conocimiento RAG del curso.</p>
+            <span class="time-chip">⏱️ 1 Hora (Única vez)</span>
+          </div>
+
+          <div class="card">
+            <div class="step-badge">2</div>
+            <h3 class="card-title">Capacitación Flash</h3>
+            <p class="card-text">Asistir a una sesión breve de 45 minutos sobre la lectura de métricas y uso del Dashboard Docente.</p>
+            <span class="time-chip">⏱️ 45 Min (Semana 11)</span>
+          </div>
+
+          <div class="card">
+            <div class="step-badge">3</div>
+            <h3 class="card-title">Promover Encuestas</h3>
+            <p class="card-text">Solicitar a los estudiantes diligenciar la encuesta pre (Semana 11) y post (Semana 14) en 5 minutos de clase.</p>
+            <span class="time-chip">⏱️ 10 Min (2 veces)</span>
+          </div>
+
+          <div class="card card-accent-gold">
+            <div class="step-badge">4</div>
+            <h3 class="card-title">Seguimiento (Opcional)</h3>
+            <p class="card-text">Revisar los temas de mayor duda en el dashboard para ajustar o reforzar los conceptos en las clases presenciales.</p>
+            <span class="time-chip">⏱️ 15 Min / semana</span>
+          </div>
+        </div>
+
+        <div class="academic-callout" style="margin-top: 1.25rem;">
+          <strong>Total Tiempo Docente Estimado:</strong> ~2.5 horas distribuidas a lo largo de todo el semestre. El investigador principal asume el soporte técnico, la administración de usuarios y la telemetría.
+        </div>
+      </section>
+
+      <!-- SLIDE 7: EL DASHBOARD DOCENTE -->
+      <section class="slide" id="slide-7">
+        <div class="slide-header">
+          <span class="slide-tag">Herramienta para el Docente</span>
+          <h2 class="slide-title">El Dashboard Docente: Visibilidad Pedagógica</h2>
+          <p class="slide-subtitle">Una ventana analítica para orientar las clases presenciales a partir del trabajo autónomo de los estudiantes.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon-academic">🔍</div>
+            <h3 class="card-title">Detección de Dudas Frecuentes</h3>
+            <p class="card-text">
+              Visualice cuáles talleres, ecuaciones o temas conceptuales están generando mayor volumen de consultas antes de llegar a la sesión presencial.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">✉️</div>
+            <h3 class="card-title">Mensajería Focalizada</h3>
+            <p class="card-text">
+              Envíe pistas metodológicas o aclaraciones desde el dashboard directamente al entorno de chat de los grupos de trabajo.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">🛡️</div>
+            <h3 class="card-title">Atención 24/7 sin Sobrecarga</h3>
+            <p class="card-text">
+              El agente resuelve las dudas en horarios nocturnos o fines de semana, permitiendo al profesor concentrarse en la enseñanza estratégica en el aula.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 8: BENEFICIOS PARA EL DEPARTAMENTO Y LA FACULTAD -->
+      <section class="slide" id="slide-8">
+        <div class="slide-header">
+          <span class="slide-tag">Valor Institucional</span>
+          <h2 class="slide-title">Beneficios para el Departamento y la Facultad</h2>
+          <p class="slide-subtitle">Impacto académico, financiero y de posicionamiento estratégico para la Pontificia Universidad Javeriana Cali.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card card-accent-gold">
+            <div class="card-icon-academic">🏅</div>
+            <h3 class="card-title">Liderazgo en Innovación IA</h3>
+            <p class="card-text">
+              Posiciona a la Facultad de Ingeniería de la PUJ Cali como <strong>referente nacional e internacional</strong> en la integración éticamente responsable de la IA en la enseñanza de la ingeniería.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">📄</div>
+            <h3 class="card-title">Producción Científica Q1/Q2</h3>
+            <p class="card-text">
+              Generación de publicaciones en revistas indexadas (<em>IEEE Transactions on Education</em>, ACOFI) con coautoría para los docentes participantes.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">💵</div>
+            <h3 class="card-title">Eficiencia Financiera</h3>
+            <p class="card-text">
+              Demuestra que la universidad puede implementar IA avanzada a costo $0 de infraestructura, sin contratos de proveedores externos.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">🌱</div>
+            <h3 class="card-title">Retención y Rendimiento</h3>
+            <p class="card-text">
+              Acompañamiento continuo que disminuye la tasa de pérdida y deserción en cursos críticos de ciencias básicas e ingeniería.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">🔄</div>
+            <h3 class="card-title">Recurso Abierto y Replicable</h3>
+            <p class="card-text">
+              El desarrollo técnico, guías y datasets anonimizados quedarán disponibles para ser replicados en otros departamentos de la Universidad.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon-academic">🏛️</div>
+            <h3 class="card-title">Alineación Estratégica PUJ</h3>
+            <p class="card-text">
+              Aporta directamente a los ejes de innovación académica, efectividad en el aprendizaje y transformación digital del Plan Estratégico Institucional.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 9: CRONOGRAMA DE IMPLEMENTACIÓN -->
+      <section class="slide" id="slide-9">
+        <div class="slide-header">
+          <span class="slide-tag">Planificación (2026-2)</span>
+          <h2 class="slide-title">Cronograma de Implementación (17 Semanas)</h2>
+          <p class="slide-subtitle">Hitos principales del proyecto estructurado durante el semestre académico.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <div class="card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 1rem 1.25rem;">
+            <div style="font-family: 'Fira Code', monospace; font-size: 0.85rem; font-weight: 700; color: var(--puj-blue-dark); width: 140px;">Semanas 1–8</div>
+            <div style="flex: 1; padding: 0 1rem;">
+              <strong style="font-size: 0.95rem; color: var(--puj-blue-dark);">Tooling & Desarrollo del MVP</strong>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Construcción de la plataforma, esquemas Supabase, motor RAG y panel de investigación (A cargo del IP).</p>
+            </div>
+            <span class="badge-good">Completo</span>
+          </div>
+
+          <div class="card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-top-color: var(--puj-gold);">
+            <div style="font-family: 'Fira Code', monospace; font-size: 0.85rem; font-weight: 700; color: var(--puj-gold); width: 140px;">Semanas 9–10</div>
+            <div style="flex: 1; padding: 0 1rem;">
+              <strong style="font-size: 0.95rem; color: var(--puj-blue-dark);">Piloto Controlado (Métodos Numéricos & Mecánica de Sólidos)</strong>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Prueba con ~60 estudiantes de cursos propios. Encuesta pre, calibración de prompts y evaluación rápida.</p>
+            </div>
+            <span class="badge-good" style="background: var(--puj-gold-bg); color: var(--puj-blue-dark); border-color: var(--puj-gold);">Fase Piloto</span>
+          </div>
+
+          <div class="card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-top-color: var(--puj-blue-light);">
+            <div style="font-family: 'Fira Code', monospace; font-size: 0.85rem; font-weight: 700; color: var(--puj-blue-light); width: 140px;">Semanas 11–13</div>
+            <div style="flex: 1; padding: 0 1rem;">
+              <strong style="font-size: 0.95rem; color: var(--puj-blue-dark);">Expansión Multi-Curso (Docentes Participantes)</strong>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Incorporación de 3–4 materias adicionales de colegas. Capacitación docente de 45 min y carga de syllabus.</p>
+            </div>
+            <span class="badge-good" style="background: #eff6ff; color: var(--puj-blue-light); border-color: #bfdbfe;">Expansión</span>
+          </div>
+
+          <div class="card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 1rem 1.25rem;">
+            <div style="font-family: 'Fira Code', monospace; font-size: 0.85rem; font-weight: 700; color: var(--text-dim); width: 140px;">Semanas 14–17</div>
+            <div style="flex: 1; padding: 0 1rem;">
+              <strong style="font-size: 0.95rem; color: var(--puj-blue-dark);">Evaluación, Encuesta Post & Redacción de Artículo</strong>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Cierre de recolección de datos, entrevistas a docentes, análisis estadístico y elaboración del borrador del manuscrito.</p>
+            </div>
+            <span class="badge-good" style="background: #f8fafc; color: var(--text-dim); border-color: #cbd5e1;">Cierre</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 10: LLAMADO A LA ACCIÓN & CONTACTO -->
+      <section class="slide" id="slide-10">
+        <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+          <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--puj-gold); margin-bottom: 0.75rem;">
+            Convocatoria Abierta — Semestre 2026-2
+          </div>
+
+          <h2 class="slide-title" style="font-size: 2.5rem; margin-bottom: 1rem;">
+            Convocatoria a Profesores del Departamento
+          </h2>
+
+          <p class="slide-subtitle" style="margin: 0 auto 2rem auto; font-size: 1.1rem;">
+            Invitamos a <strong>3 a 4 profesores</strong> del Departamento de Ingeniería Civil e Industrial a vincular sus asignaturas a la cohorte de expansión de este proyecto.
+          </p>
+
+          <div class="grid-2" style="text-align: left; margin-bottom: 2rem;">
+            <div class="card card-accent-gold">
+              <h4 style="color: var(--puj-blue-dark); font-size: 1rem; margin-bottom: 0.5rem;">🎁 Beneficios Inmediatos para el Docente:</h4>
+              <ul style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.65; padding-left: 1.1rem;">
+                <li>Asistente IA adaptado a sus guías y lecturas de clase.</li>
+                <li>Dashboard de seguimiento de dudas frecuentes.</li>
+                <li>Coautoría en los artículos científicos resultantes.</li>
+                <li>Soporte técnico completo a cargo del proyecto.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h4 style="color: var(--puj-blue-dark); font-size: 1rem; margin-bottom: 0.5rem;">📌 Pasos para Participar:</h4>
+              <ol style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.65; padding-left: 1.1rem;">
+                <li>Manifestar interés preliminar.</li>
+                <li>Compartir los documentos PDF/Word del curso.</li>
+                <li>Coordinar la inducción breve de 45 minutos.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-top: 3px solid var(--puj-gold); padding: 1.25rem 2rem; border-radius: 8px; display: inline-flex; flex-direction: column; gap: 0.25rem; box-shadow: var(--shadow-subtle);">
+            <strong style="font-size: 1.1rem; color: var(--puj-blue-dark);">Jaime Andrés Vélez Zea</strong>
+            <span style="font-size: 0.88rem; color: var(--puj-gold); font-weight: 600;">Investigador Principal • Profesor de Planta</span>
+            <span style="font-size: 0.82rem; color: var(--text-muted);">Departamento de Ingeniería Civil e Industrial — Programa de Mecánica</span>
+            <span style="font-size: 0.82rem; color: var(--puj-blue-dark); font-family: 'Fira Code', monospace; margin-top: 0.2rem;">Pontificia Universidad Javeriana Cali</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div>
+      Pontificia Universidad Javeriana Cali — Facultad de Ingeniería
+    </div>
+    <div style="display: flex; gap: 1rem;">
+      <span>Navegación: <span class="key-hint">←</span> <span class="key-hint">→</span> / <span class="key-hint">Espacio</span></span>
+      <span>Vista general: <span class="key-hint">O</span></span>
+      <span>Pantalla completa: <span class="key-hint">F</span></span>
+    </div>
+  </footer>
+
+  <!-- Overview Modal -->
+  <div class="overview-modal" id="overviewModal">
+    <div class="overview-header">
+      <h3 style="font-family: 'Lora', serif; font-size: 1.3rem; color: #ffffff;">Vista General de Diapositivas — PUJ Cali</h3>
+      <button class="nav-btn btn-gold" onclick="toggleOverview()">Cerrar ✕</button>
+    </div>
+    <div class="overview-grid" id="overviewGrid"></div>
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 10;
+
+    const slides = document.querySelectorAll('.slide');
+    const slideCounter = document.getElementById('slideCounter');
+    const overviewModal = document.getElementById('overviewModal');
+    const overviewGrid = document.getElementById('overviewGrid');
+
+    const slideTitles = [
+      "1. Portada del Proyecto",
+      "2. Diagnóstico Académico",
+      "3. Propuesta de Valor (¿Qué hacer?)",
+      "4. ChatGPT vs. Tutor Socrático PUJ",
+      "5. Demostración de Interacción",
+      "6. Tareas del Profesor Participante",
+      "7. El Dashboard Docente",
+      "8. Beneficios Departamento & Facultad",
+      "9. Cronograma de Implementación",
+      "10. Convocatoria & Contacto"
+    ];
+
+    function initOverview() {
+      overviewGrid.innerHTML = '';
+      slideTitles.forEach((title, idx) => {
+        const num = idx + 1;
+        const card = document.createElement('div');
+        card.className = `thumb-card ${num === currentSlide ? 'active' : ''}`;
+        card.onclick = () => goToSlide(num);
+        card.innerHTML = `
+          <div class="thumb-num">DIAPOSITIVA ${num < 10 ? '0' + num : num}</div>
+          <div class="thumb-title">${title}</div>
+          <div style="font-size: 0.68rem; color: var(--text-dim);">Haz clic para navegar</div>
+        `;
+        overviewGrid.appendChild(card);
+      });
+    }
+
+    function updateSlide() {
+      slides.forEach((slide, idx) => {
+        if (idx + 1 === currentSlide) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      const numStr = currentSlide < 10 ? `0${currentSlide}` : currentSlide;
+      slideCounter.textContent = `${numStr} / ${totalSlides}`;
+
+      const thumbs = overviewGrid.querySelectorAll('.thumb-card');
+      thumbs.forEach((thumb, idx) => {
+        if (idx + 1 === currentSlide) {
+          thumb.classList.add('active');
+        } else {
+          thumb.classList.remove('active');
+        }
+      });
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function goToSlide(num) {
+      currentSlide = num;
+      updateSlide();
+      if (overviewModal.classList.contains('active')) {
+        toggleOverview();
+      }
+    }
+
+    function toggleOverview() {
+      overviewModal.classList.toggle('active');
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        goToSlide(1);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        goToSlide(totalSlides);
+      } else if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        toggleOverview();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullScreen();
+      } else if (e.key === 'Escape') {
+        if (overviewModal.classList.contains('active')) toggleOverview();
+      }
+    });
+
+    initOverview();
+    updateSlide();
+  </script>
+</body>
+</html>

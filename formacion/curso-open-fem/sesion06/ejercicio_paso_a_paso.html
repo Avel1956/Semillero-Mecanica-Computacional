@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejercicio 6 — Ciclo completo: soporte bajo carga combinada (FreeCAD FEM)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Ejercicio 6 · Sesión 6
+  Ciclo completo de simulación: checklist → modelo → malla →
+  solver → convergencia → informe. Soporte en L bajo carga combinada.
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Recalca: Guía de Simulación FEM, caps. 7, 8.1, 8.3, 8.4, 9.4
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#100d1c;--bg2:#151129;--panel:rgba(21,17,41,.92);--line:rgba(139,156,247,.18);
+  --text:#e9e6f2;--text2:#a49dc9;--blue:#8b9cf7;--gold:#f0c96b;--mint:#53d9b8;--red:#e26a6a;
+  --font:'Chivo',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:42px;font-weight:600;margin:10px 0 8px;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:28px;font-weight:600;margin:44px 0 16px;color:var(--gold);display:flex;align-items:center;gap:14px}
+h2 .n{font-family:var(--mono);font-size:18px;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+h3{font-size:21px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+p,li{font-size:17px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:16px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(139,156,247,.07);padding:16px 22px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.warn{border-color:var(--red);background:rgba(226,106,106,.07)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold{border-color:var(--gold);background:rgba(240,201,107,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(83,217,184,.07)}
+.callout.mint .tag{color:var(--mint)}
+.steps{counter-reset:step;list-style:none}
+.steps>li{counter-increment:step;margin:18px 0;padding-left:64px;position:relative;font-size:17px;color:var(--text2)}
+.steps>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue);border:1px solid var(--line);background:rgba(139,156,247,.08)}
+.steps>li strong{color:var(--text)}
+.steps>li em{color:var(--mint);font-style:normal}
+table{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0}
+th{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(139,156,247,.10);color:var(--text2)}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14.5px;color:var(--gold)}
+.check{display:flex;gap:12px;align-items:flex-start;background:rgba(83,217,184,.07);border:1px solid rgba(83,217,184,.25);border-radius:10px;padding:16px 20px;margin:14px 0}
+.check::before{content:'✓';color:var(--mint);font-weight:700;flex:0 0 auto}
+.check strong{color:var(--mint)}
+.q{border-left:4px solid var(--gold);background:rgba(240,201,107,.06);padding:16px 22px;border-radius:0 10px 10px 0;margin:14px 0}
+.q .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+kbd{font-family:var(--mono);font-size:13.5px;background:rgba(139,156,247,.12);border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--blue)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t6">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 6 · Ejercicio 6</div>
+  <h1>Ciclo completo: soporte bajo carga combinada</h1>
+  <div class="meta">Requisitos: FreeCAD 1.0+ instalado (freecad.org) · Workbench FEM · CalculiX · Tiempo: 50–70 min</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-taller"/></svg>&nbsp; Enunciado</h3>
+  <p>Soporte (ménsula) en L de acero de <strong>120 × 80 × 10 mm</strong>, empotrado por la <strong>cara vertical del brazo corto</strong>, sometido a <strong>carga combinada</strong>: <strong>2000 N</strong> en el extremo del brazo largo (flexión, hacia abajo) más <strong>500 N</strong> axiales en la dirección del brazo (tracción). Material: acero, \(E = 210\ \text{GPa}\ (210000\ \text{MPa})\), \(\nu = 0.3\).</p>
+  <p style="margin-top:8px">Este ejercicio sigue el <strong>ciclo completo del cap. 8</strong>: checklist → geometría → material → condiciones → malla → solver → convergencia → <strong>informe</strong>. No omita ningún paso: todos son calificables en el taller 6.</p>
+</div>
+
+<h2><span class="n">PASO 1</span> Checklist pre-simulación: las 5 preguntas</h2>
+<ol class="steps">
+  <li>Responda <strong>por escrito</strong> (en su bitácora) las 5 preguntas del cap. 8.1, adaptadas a este problema:
+    <ul style="padding-left:22px;margin-top:6px">
+      <li><strong>¿Qué quiero saber?</strong> — El desplazamiento del extremo del brazo largo y el esfuerzo máximo combinado.</li>
+      <li><strong>¿Qué física gobierna?</strong> — Elasticidad lineal estática (pequeñas deformaciones; superposición válida).</li>
+      <li><strong>¿Qué precisión necesito?</strong> — ±10% basta para un prediseño; esto fija la malla y la convergencia.</li>
+      <li><strong>¿Contra qué comparo?</strong> — La superposición lineal: σ<sub>axial</sub> + σ<sub>flexión</sub>.</li>
+      <li><strong>¿Cuál es mi hipótesis?</strong> — σ ≈ 25 MPa y δ del orden de 0.2–0.5 mm. Si el FEM difiere mucho, sospechar del modelo, no de la intuición.</li>
+    </ul>
+  </li>
+  <li>Anote el <strong>sistema de unidades</strong>: mm · N · MPa (guía, cap. 5, Error 7).</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 8.1</span>
+El checklist se hace <strong>antes de abrir el software</strong>. Si no puede responder alguna pregunta, no está listo para simular.</div>
+
+<h2><span class="n">PASO 2</span> Geometría: el perfil en L con un booleano</h2>
+<ol class="steps">
+  <li>Workbench <kbd>Part</kbd> (lista desplegable superior).</li>
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd>. En la pestaña Datos fije: <span class="mono">Length = 120 mm</span> (X), <span class="mono">Width = 80 mm</span> (Y), <span class="mono">Height = 10 mm</span> (Z).</li>
+  <li>Segundo <kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd> (el "cuchillo" del corte): <span class="mono">Length = 70 mm</span>, <span class="mono">Width = 70 mm</span>, <span class="mono">Height = 10 mm</span>. En la pestaña Datos → Placement fije <span class="mono">Position: x = 0, y = 10, z = 0</span> (recorta la esquina superior izquierda: región x ∈ [0,70], y ∈ [10,80]).</li>
+  <li><kbd>Part</kbd> → <kbd>Boolean</kbd> → <kbd>Cut</kbd>: Base = primer box, Tool = segundo box. Pulse <kbd>OK</kbd>. Queda el perfil en L: <strong>brazo largo de 120</strong> en la base (10 de alto × 80 de ancho) y <strong>brazo corto de 50×70 vertical</strong> en el extremo derecho, con la esquina entrante en (x=70, y=10).</li>
+  <li>Alternativa equivalente: <em>Part Design → Sketch</em> con el perfil en L y <em>Pad</em> de 10 mm.</li>
+  <li>Pulse <kbd>Ctrl+D</kbd> (<em>Fit all</em>).</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.2.1</span>
+Geometría = <strong>simplificar con criterio</strong>. El soporte real tendría radios de acuerdo, agujeros de montaje y soldaduras; los omitimos porque el objetivo es el comportamiento global del brazo largo (principio de St. Venant). Documente qué eliminó y por qué.</div>
+
+<h2><span class="n">PASO 3</span> Crear el análisis FEM</h2>
+<ol class="steps">
+  <li>Cambie al workbench <kbd>FEM</kbd>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Analysis container</kbd> → <kbd>New analysis</kbd>. Se crea un contenedor con un solver CalculiX por defecto.</li>
+  <li>En el árbol, verifique: <span class="mono">Analysis</span> → <span class="mono">Solver CalculiX</span>.</li>
+</ol>
+
+<h2><span class="n">PASO 4</span> Material: acero con trazabilidad</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Material</kbd> → <kbd>Solid material</kbd>.</li>
+  <li>Seleccione el <strong>objeto Cut</strong> (el sólido en L) en el árbol.</li>
+  <li>Elija la plantilla <span class="mono">CalculiX-Steel</span> o cree un material propio con: <span class="mono">Young's modulus = 210000 MPa</span>, <span class="mono">Poisson's ratio = 0.3</span>, <span class="mono">Density = 7.85e-9 t/mm³</span>.</li>
+  <li>Acepte. En el árbol debe aparecer <span class="mono">MechanicalMaterial</span> con el sólido asignado.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.2</span>
+Anote la <strong>fuente</strong> del E (norma, ensayo, estimación). El E nominal del acero varía 190–210 GPa; en el taller 6 cuantificará el efecto de esa incertidumbre con la sensibilidad a ±10%.</div>
+
+<h2><span class="n">PASO 5</span> Condición de frontera: empotrar el brazo corto</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint fixed</kbd>.</li>
+  <li>Seleccione la <strong>cara vertical en x = 120 mm</strong> (la cara del extremo del brazo corto, la que "se apoya en la pared"). Acepte.</li>
+  <li>Verifique que aparezca <span class="mono">ConstraintFixed</span> en el árbol.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 2.3 · Error 1 (28%)</span>
+El empotramiento perfecto (u=0) es una abstracción. En la reflexión final del informe, discuta: <strong>¿qué tan sensible es el resultado a cómo modelo los apoyos?</strong></div>
+
+<h2><span class="n">PASO 6</span> Cargas combinadas: flexión + axial</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd>.</li>
+  <li>Seleccione la <strong>cara en x = 0 mm</strong> (el extremo libre del brazo largo).</li>
+  <li>Primera carga: fije <span class="mono">Force = 2000 N</span>. En <strong>Direction</strong> elija la vertical hacia abajo: <span class="mono">-Y</span> (si construyó el perfil en otro plano, use <span class="mono">-Z</span> — la dirección que flexiona el brazo largo; use <em>Reverse direction</em> si la flecha apunta al revés). Esta carga produce la flexión.</li>
+  <li>Segunda carga: vuelva a <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd> sobre la misma cara, fije <span class="mono">Force = 500 N</span> y dirección <span class="mono">+X</span> (axial, a lo largo del brazo). Es la tracción combinada.</li>
+  <li>Como cada carga actúa sobre la cara completa, FreeCAD la reparte como carga distribuida equivalente. Verifique que el árbol tenga <strong>dos</strong> <span class="mono">ConstraintForce</span>.</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 2.5</span>
+En análisis <strong>lineal</strong>, las dos cargas se superponen: σ<sub>total</sub> = σ<sub>axial</sub> + σ<sub>flexión</sub>. Esa es la referencia analítica de este ejercicio.</div>
+
+<h2><span class="n">PASO 7</span> Primera malla (5 mm) y ejecución</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd>. Seleccione el sólido y fije <span class="mono">Maximum element size = 5 mm</span> (si viene 0 = automático, escríbalo explícito).</li>
+  <li>Pulse <kbd>OK</kbd> y luego <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>.</li>
+  <li>Doble clic en <span class="mono">Solver CalculiX</span> del árbol; marque <em>Analysis type = Static</em>; pulse <kbd>Write .inp file</kbd> y luego <kbd>Run CalculiX</kbd>.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 7:</strong> en la pestaña Report debe aparecer la línea <span class="mono">"CalculiX done!"</span> sin errores. Si falla, revise que material y CF estén asignados al sólido Cut y que las direcciones de carga sean correctas.</div></div>
+
+<h2><span class="n">PASO 8</span> Post-proceso: leer la primera corrida</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">CalculiX_static_results</span> → pestaña <em>Displacement</em> → <em>Show</em>, magnitud <span class="mono">Abs</span>. Anote el <strong>desplazamiento máximo</strong> (estará en el extremo del brazo largo).</li>
+  <li>Misma ventana, pestaña <em>Stress</em> → <em>Von Mises</em> → <em>Show</em>. Localice la <strong>zona del empotramiento</strong> (raíz del brazo largo) y anote el valor allí, <strong>a 1–2 mm de la esquina entrante</strong> (x=70, y=10), no en el pico.</li>
+  <li>En el árbol, seleccione los resultados y <kbd>FEM</kbd> → <kbd>Post processing</kbd> → <kbd>Warp by filter</kbd> para ver la deformada: el brazo largo se flexiona y se estira axialmente.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 8a:</strong> δ ≈ <strong>0.2–0.5 mm</strong> (orden de magnitud según el modelo exacto — no es una cifra de catálogo).</div></div>
+<div class="check"><div><strong>Checkpoint 8b:</strong> σ von Mises en la zona del empotramiento (a 1–2 mm de la arista) ≈ <strong>20–35 MPa</strong>, consistente con la referencia de ~25 MPa. El pico en la esquina entrante es una <strong>singularidad numérica</strong> (guía, cap. 4.4.1): no lo reporte como esfuerzo de diseño.</div></div>
+
+<h2><span class="n">PASO 9</span> Refinar: malla de 2.5 mm — convergencia</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">Mesh</span> del árbol, cambie <span class="mono">Maximum element size = 2.5 mm</span>, <kbd>OK</kbd>, <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>.</li>
+  <li>Ejecute de nuevo: doble clic en <span class="mono">Solver CalculiX</span> → <kbd>Write .inp file</kbd> → <kbd>Run CalculiX</kbd>. Espere <span class="mono">"CalculiX done!"</span>.</li>
+  <li>Anote δ<sub>máx</sub> y σ<sub>empotramiento</sub> (a 1–2 mm de la arista) y compárelos con los de la malla de 5 mm.</li>
+</ol>
+<table>
+  <thead><tr><th>Malla (Gmsh)</th><th>δ máx extremo (mm)</th><th>σ empotramiento (MPa)</th><th>Cambio en δ</th></tr></thead>
+  <tbody>
+    <tr><td><strong>5 mm</strong></td><td class="mono">____</td><td class="mono">____</td><td>—</td></tr>
+    <tr><td><strong>2.5 mm</strong></td><td class="mono">____</td><td class="mono">____</td><td class="mono">____ %</td></tr>
+  </tbody>
+</table>
+<p style="font-size:14.5px;color:var(--text2)">Complete la tabla con sus valores. Lo que debe observar: δ se estabiliza y σ en la zona del empotramiento cambia poco.</p>
+<div class="check"><div><strong>Checkpoint 9:</strong> la variación de δ entre mallas debe ser <strong>&lt; 10%</strong>. Si cambia más, refine de nuevo (1.25 mm) antes de confiar en el resultado. Ese es el criterio de convergencia que documentará en el informe.</div></div>
+
+<h2><span class="n">PASO 10</span> Verificación analítica: la tabla completa</h2>
+<table>
+  <thead><tr><th>Magnitud</th><th>Fórmula</th><th>Cálculo</th><th>Valor esperado</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Inercia</strong></td><td class="mono">\(I = \frac{bh^{3}}{12}\)</td><td class="mono">\(\frac{10\cdot 80^{3}}{12}\)</td><td class="mono">\(426667\ \text{mm}^4\)</td></tr>
+    <tr><td><strong>Área</strong></td><td class="mono">\(A = b\cdot h\)</td><td class="mono">\(10 \cdot 80\)</td><td class="mono">\(800\ \text{mm}^2\)</td></tr>
+    <tr><td><strong>σ axial</strong></td><td class="mono">\(\sigma_{a} = \frac{F_{a}}{A}\)</td><td class="mono">\(\frac{500}{800}\)</td><td class="mono gold">\(2.5\ \text{MPa}\)</td></tr>
+    <tr><td><strong>Momento máx</strong></td><td class="mono">\(M = F\cdot L\)</td><td class="mono">\(2000 \cdot 120\)</td><td class="mono">\(240000\ \text{N·mm}\)</td></tr>
+    <tr><td><strong>σ flexión</strong></td><td class="mono">\(\sigma_{f} = \frac{Mc}{I},\ c = \frac{h}{2}\)</td><td class="mono">\(\frac{240000\cdot 40}{426667}\)</td><td class="mono gold">\(\approx 22.5\ \text{MPa}\)</td></tr>
+    <tr><td><strong>σ combinada</strong></td><td class="mono">\(\sigma = \sigma_{a} + \sigma_{f}\)</td><td class="mono">\(2.5 + 22.5\)</td><td class="mono gold">\(\approx 25\ \text{MPa}\)</td></tr>
+  </tbody>
+</table>
+<div class="check"><div><strong>Checkpoint 10:</strong> el FEM con la malla fina debe dar σ ≈ <strong>20–35 MPa</strong> en la zona del empotramiento (a 1–2 mm de la arista) y δ del orden de <strong>0.2–0.5 mm</strong>. Si no: revise CF, cargas o material antes de seguir.</div></div>
+
+<h2><span class="n">PASO 11</span> Documentar: el informe de resultados (7 secciones)</h2>
+<ol class="steps">
+  <li>Redacte el informe de este ejercicio con el <strong>formato del cap. 8.3</strong>. Plantilla:
+    <div class="card" style="margin-top:10px">
+      <p><strong>1. Resumen ejecutivo</strong> — qué se simuló, resultado principal (σ ≈ 25 MPa, δ ≈ 0.2–0.5 mm), conclusión.</p>
+      <p><strong>2. Descripción del modelo</strong> — geometría en L (120×80×10), material (E, ν, fuente), malla (Gmsh, 5 y 2.5 mm, nº elementos), CF (empotramiento x=120), cargas (2000 N y 500 N).</p>
+      <p><strong>3. Verificación</strong> — tabla del paso 10: convergencia entre mallas (&lt; 10%) y comparación con la superposición lineal.</p>
+      <p><strong>4. Validación</strong> — comparación con el límite analítico (25 MPa); discuta qué faltaría para validación experimental.</p>
+      <p><strong>5. Resultados</strong> — δ máx, σ von Mises, mapa de colores (captura de pantalla).</p>
+      <p><strong>6. Discusión</strong> — ¿sentido físico? singularidad en la esquina entrante, supuestos (empotramiento perfecto, E nominal).</p>
+      <p><strong>7. Conclusiones y recomendaciones</strong> — ¿cumple el soporte? ¿qué se recomienda (radios, espesor, validación)?</p>
+    </div>
+  </li>
+  <li><strong>Reproducibilidad (cap. 8.4):</strong> guarde el archivo <span class="mono">.FCStd</span> con nombre y fecha, anote la versión de FreeCAD y de CalculiX, y conserve el <span class="mono">.inp</span> generado.</li>
+</ol>
+<div class="callout mint"><span class="tag">Recalca la guía · Cap. 8.3 y 8.4</span>
+El informe es el entregable profesional: sin él, la simulación no existe para quien decide. La reproducibilidad (scripts, Git, parámetros explícitos) es lo que hace al análisis defendible.</div>
+
+<h2><span class="n">PASO 12</span> Opcional: sensibilidad a E ±10%</h2>
+<ol class="steps">
+  <li>Con la malla de 2.5 mm, duplique el análisis o edite el material: <span class="mono">E = 189000 MPa</span> (−10%) y <span class="mono">E = 231000 MPa</span> (+10%).</li>
+  <li>Ejecute cada caso y registre δ. En elasticidad lineal, δ ∝ 1/E: espere variaciones de ≈ ∓10% en δ (la σ no cambia).</li>
+  <li>Concluya: ¿cuánto afecta la incertidumbre del material a su decisión de diseño? (Guía, cap. 6.4 — sensibilidad.)</li>
+</ol>
+
+<div class="q"><span class="tag">Preguntas de reflexión (para el taller 6)</span>
+<p>1. ¿Cuáles son las <strong>3 mayores fuentes de incertidumbre</strong> de este modelo? Ordénelas por impacto estimado.</p>
+<p>2. ¿La σ combinada de 25 MPa es una cota superior o inferior de la σ real? ¿Por qué (recuerde la singularidad y el empotramiento)?</p>
+<p>3. Si el soporte real estuviera atornillado (no empotrado), ¿esperaría σ mayor o menor? ¿Y δ?</p>
+<p>4. ¿Cómo cuantificaría la incertidumbre de la condición de frontera sin simularla? (Pista: guía, cap. 6.4.)</p>
+<p>5. ¿Qué papel jugaría un modelo surrogado en este problema si necesitara explorar 100 combinaciones de carga y espesor? (Guía, cap. 7.2.1.)</p>
+</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 7 (IA: surrogados, PINNs, ROM), cap. 8.1 (checklist), cap. 8.2 (documentación), cap. 8.3 (informe 7 secciones), cap. 8.4 (reproducibilidad), cap. 9.4 (ejercicio integrador). Notebooks complementarios: <span class="mono">notebooks/02_convergencia_malla.ipynb</span> y <span class="mono">notebooks/03_validacion.ipynb</span>.</div>
+
+<footer>FEM práctico con FreeCAD · Sesión 6 · Ejercicio 6 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

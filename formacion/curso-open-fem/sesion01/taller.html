@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller 1 — Viga en voladizo: modelo, verifica y explora</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Taller 1 · Sesión 1
+  Recalca: Guía de Simulación FEM, caps. 2 (CF, constitutivos),
+  5 (errores 1-3), 6.2 (convergencia), 6.4 (sensibilidad)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#0b1220;--bg2:#0e1626;--panel:rgba(13,22,38,.92);--line:rgba(93,156,236,.18);
+  --text:#e4e8ec;--text2:#9aa7b8;--blue:#5d9cec;--gold:#e8c76a;--mint:#48c9b0;--red:#e0555a;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);}
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:40px;font-weight:600;margin:10px 0 8px}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:26px;font-weight:600;margin:40px 0 14px;color:var(--gold)}
+h3{font-size:19px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+p,li{font-size:16.5px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:15px 20px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15.5px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout.mint .tag{color:var(--mint)}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.warn .tag{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2);vertical-align:top}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14px;color:var(--gold)}
+.puntos{text-align:center;font-family:var(--mono);font-size:14px;color:var(--gold);white-space:nowrap}
+.entrega{display:flex;gap:12px;align-items:flex-start;background:rgba(72,201,176,.07);border:1px solid rgba(72,201,176,.25);border-radius:10px;padding:16px 20px;margin:16px 0}
+.entrega .ent-ico{width:1.3em;height:1.3em;flex:0 0 auto;fill:none;stroke:var(--mint);stroke-width:2.2;margin-top:3px}
+.nota{font-family:var(--mono);font-size:14px;color:var(--mint)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t1">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 1 · Taller 1</div>
+  <h1>Taller 1 — Viga en voladizo: modelo, verifica y explora</h1>
+  <div class="meta">Entrega individual o en parejas · Formato: informe PDF/Markdown · Ponderación: ver rúbrica</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-verif"/></svg>&nbsp; Objetivos</h3>
+  <ul>
+    <li>Completar el primer ciclo completo de simulación: fenómeno → modelo → FEM → verificación.</li>
+    <li>Aplicar la <strong>regla de oro</strong> de la guía: tratar el resultado como hipótesis y verificarlo contra la solución analítica.</li>
+    <li>Introducir <strong>convergencia de malla</strong> (cap. 6.2) y <strong>análisis de sensibilidad</strong> (cap. 6.4) con datos propios.</li>
+  </ul>
+</div>
+
+<h2>Parte A — Modelar y verificar</h2>
+<ol style="padding-left:22px">
+  <li>Modele la viga en voladizo del ejercicio 1: <span class="mono">200 × 20 × 10 mm</span>, acero (E = 210 GPa, ν = 0.3), P = 100 N en el extremo libre.</li>
+  <li>Ejecute la simulación con <strong>tres mallas</strong>: tamaño de elemento <span class="mono">10 mm</span>, <span class="mono">5 mm</span> y <span class="mono">2.5 mm</span>.</li>
+  <li>Registre para cada malla: número de nodos/elementos, δ<sub>máx</sub> y σ<sub>máx</sub> (von Mises, leyendo a 2 mm de la arista del empotramiento).</li>
+  <li>Compare con la solución analítica (δ = 0.76 mm, σ = 60 MPa) y calcule el <strong>error porcentual</strong> de cada malla.</li>
+</ol>
+
+<h2>Parte B — Explorar la sensibilidad</h2>
+<ol style="padding-left:22px">
+  <li><strong>Sensibilidad a E:</strong> con la malla de 5 mm, varíe E a <span class="mono">200 GPa</span> y <span class="mono">220 GPa</span>. Registre δ en cada caso. ¿δ ∝ 1/E exactamente? (Guía, cap. 6.4: en problemas lineales la sensibilidad es directa.)</li>
+  <li><strong>Sensibilidad a la carga:</strong> con la misma malla, varíe P a <span class="mono">50 N</span> y <span class="mono">150 N</span>. ¿σ y δ escalan linealmente con P? ¿Esperado en un análisis lineal?</li>
+  <li><strong>Discuta la CF:</strong> en una oración, ¿qué esperaría que cambiara si el empotramiento fuera un soporte elástico (k finita)? No hace falta simularlo — razone con la guía, cap. 2.3.</li>
+</ol>
+
+<h2>Entregables</h2>
+<div class="entrega"><svg class="ent-ico" aria-hidden="true"><use href="#fem-taller"/></svg><div>
+  <p><strong><svg class="fico" style="color:var(--mint);width:1.1em;height:1.1em"><use href="#fem-taller"/></svg>&nbsp; 1. Tabla de resultados</strong> (malla vs. δ, σ, error %) — las tres mallas de la Parte A.</p>
+  <p><strong>2. Gráfica</strong> δ<sub>máx</sub> vs. tamaño de elemento (o vs. número de elementos), marcando el valor analítico como referencia.</p>
+  <p><strong>3. Tabla de sensibilidad</strong> (E y P) con la verificación de proporcionalidad.</p>
+  <p><strong>4. Tres conclusiones</strong> que citen explícitamente la guía (cap. 6.2 convergencia, cap. 6.4 sensibilidad, cap. 2.3 CF).</p>
+</div></div>
+
+<h2>Rúbrica de evaluación</h2>
+<table>
+  <thead><tr><th>Criterio</th><th>Logrado (100%)</th><th>Parcial (60%)</th><th>No logrado (0%)</th><th>Puntos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Modelo FEM correcto</strong><br><span class="mono">Geometría, material, CF, carga</span></td>
+        <td>Análisis completo y funcional; CF y cargas físicamente correctas</td>
+        <td>Análisis funcional con algún error menor (dirección de carga, material)</td>
+        <td>Análisis no ejecuta o CF/cargas incorrectas</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Verificación analítica</strong><br><span class="mono">δ y σ vs. fórmulas</span></td>
+        <td>Error &lt; 5% en la malla fina y análisis del error por malla</td>
+        <td>Error entre 5–15% o verificación incompleta</td>
+        <td>Sin verificación o errores &gt; 15% sin explicación</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Sensibilidad</strong><br><span class="mono">E y P, proporcionalidad</span></td>
+        <td>Datos completos + interpretación correcta de la linealidad</td>
+        <td>Datos completos sin interpretación</td>
+        <td>Parte B ausente</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Discusión y cita de la guía</strong><br><span class="mono">3 conclusiones + CF</span></td>
+        <td>Conclusiones sustentadas y referencias correctas a capítulos</td>
+        <td>Conclusiones presentes sin vínculo a la guía</td>
+        <td>Sin discusión</td><td class="puntos">15</td></tr>
+  </tbody>
+</table>
+<p class="nota">Total: 100 puntos · Entregar antes de la Sesión 2.</p>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 6.2 (procedimiento de convergencia de malla), cap. 6.4 (sensibilidad), cap. 2.3 (CF), cap. 5 (errores 1–3). En la Sesión 5 formalizará esto con el índice GCI.</div>
+
+<footer>FEM práctico con FreeCAD · Taller 1 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

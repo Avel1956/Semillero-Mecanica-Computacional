@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM con FreeCAD — Sesión 6: Flujo de trabajo profesional e IA en simulación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD (6 sesiones)
+  Sesión 6 — Flujo de trabajo profesional e IA en simulación
+  Recalca: Guía Práctica de Simulación en Ingeniería (caps. 7–8)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Estilo: "Violeta" — paleta coherente con VIDEOMN (tema t6)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (THEME) — Violeta · t6
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg: #100d1c;            /* índigo nocturno profundo */
+  --bg2: #151129;
+  --panel: rgba(21,17,41,.92);
+  --line: rgba(139,156,247,.18);
+  --text: #e9e6f2;
+  --text2: #a49dc9;
+  --blue: #8b9cf7;          /* método / datos */
+  --gold: #f0c96b;          /* insight / resultado */
+  --mint: #53d9b8;          /* correcto / validado */
+  --red: #e26a6a;           /* error / peligro */
+  --font-display: 'Chivo', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --title-size: 76px;
+  --subtitle-size: 30px;
+  --body-size: 26px;
+  --slide-padding: 88px;
+  --content-gap: 34px;
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);
+  --duration-normal: .6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* --- PASTE viewport-base.css CONTENTS (fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT BASE DE LA PLANTILLA (1920×1080)
+   ═══════════════════════════════════════════════════════════════ */
+body{font-family:var(--font-display);color:var(--text);background:var(--bg)}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.slide{
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(139,156,247,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(240,201,107,.06), transparent 60%),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  padding:var(--slide-padding);
+}
+/* retícula técnica sutil de fondo */
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(139,156,247,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(139,156,247,.05) 1px,transparent 1px);
+  background-size:96px 96px;
+}
+
+/* header de slide */
+.slide-header{
+  display:flex;align-items:baseline;gap:24px;margin-bottom:42px;
+  border-bottom:1px solid var(--line);padding-bottom:20px;
+}
+.kicker{
+  font-family:var(--font-mono);font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+}
+.slide-num{margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--text2)}
+.slide h2{font-size:var(--title-size);font-weight:600;letter-spacing:-.01em;line-height:1.05;margin-bottom:10px}
+.slide h3{font-size:38px;font-weight:600;margin:0 0 18px;color:var(--text)}
+.slide p,.slide li{font-size:var(--body-size);line-height:1.5;color:var(--text2)}
+.slide strong{color:var(--text);font-weight:600}
+.slide .lead{font-size:30px;color:var(--text);line-height:1.45}
+
+/* ANIMACIONES */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration-normal) var(--ease-out-expo),transform var(--duration-normal) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.reveal:nth-child(1){transition-delay:.08s}
+.reveal:nth-child(2){transition-delay:.16s}
+.reveal:nth-child(3){transition-delay:.24s}
+.reveal:nth-child(4){transition-delay:.32s}
+.reveal:nth-child(5){transition-delay:.40s}
+.reveal:nth-child(6){transition-delay:.48s}
+
+/* tarjetas y grids */
+.grid{display:grid;gap:var(--content-gap)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:30px 32px;backdrop-filter:blur(4px);
+}
+.card h4{font-size:24px;margin-bottom:12px;font-weight:600;letter-spacing:.01em}
+.card p,.card li{font-size:22px;line-height:1.45}
+.card .num{font-family:var(--font-mono);font-size:52px;font-weight:600;line-height:1;margin-bottom:14px}
+.t-blue .num,.t-blue h4{color:var(--blue)}
+.t-gold .num,.t-gold h4{color:var(--gold)}
+.t-mint .num,.t-mint h4{color:var(--mint)}
+.t-red .num,.t-red h4{color:var(--red)}
+
+/* tablas */
+table{width:100%;border-collapse:collapse;font-size:23px}
+th{font-family:var(--font-mono);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);font-weight:600}
+td{padding:13px 16px;border-bottom:1px solid rgba(139,156,247,.10);color:var(--text2);line-height:1.4}
+td strong{color:var(--text)}
+tr:hover td{background:rgba(139,156,247,.05)}
+.mono{font-family:var(--font-mono);font-size:22px}
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.big{font-size:44px;line-height:1.3;color:var(--text)}
+.formula{
+  font-family:var(--font-mono);font-size:40px;color:var(--gold);text-align:center;
+  background:rgba(240,201,107,.07);border:1px solid rgba(240,201,107,.25);
+  border-radius:12px;padding:26px;margin:14px 0;letter-spacing:.01em;
+}
+.formula small{display:block;font-size:20px;color:var(--text2);margin-top:10px;font-family:var(--font-display)}
+
+/* callouts */
+.callout{border-left:4px solid var(--blue);background:rgba(139,156,247,.07);padding:22px 28px;border-radius:0 12px 12px 0;font-size:25px;line-height:1.5}
+.callout.warn{border-color:var(--red);background:rgba(226,106,106,.07)}
+.callout.gold{border-color:var(--gold);background:rgba(240,201,107,.07)}
+.callout.mint{border-color:var(--mint);background:rgba(83,217,184,.07)}
+.callout .tag{font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--blue)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint .tag{color:var(--mint)}
+
+/* portada y cierre */
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;gap:0}
+.cover .course-tag{font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:34px}
+.cover h1{font-size:110px;font-weight:600;line-height:1.04;letter-spacing:-.015em;max-width:1500px}
+.cover h1 .accent{color:var(--gold)}
+.cover .sub{margin-top:30px;font-size:34px;color:var(--text2);max-width:1300px;line-height:1.4}
+.cover .meta{margin-top:56px;font-family:var(--font-mono);font-size:21px;color:var(--text2);letter-spacing:.08em;display:flex;gap:36px;align-items:center}
+.cover .meta span{display:flex;align-items:center;gap:10px}
+.cover .rule{width:120px;height:2px;background:var(--gold);margin-top:40px;opacity:.7}
+
+/* lista de pasos numerados */
+.steps{counter-reset:step;list-style:none;display:grid;gap:20px}
+.steps li{counter-increment:step;display:flex;gap:22px;align-items:flex-start;font-size:25px;color:var(--text2);line-height:1.45}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);flex:0 0 56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--blue);
+  border:1px solid var(--line);background:rgba(139,156,247,.08);
+}
+.steps li strong{color:var(--text)}
+.steps li em{color:var(--mint);font-style:normal}
+
+/* footer chrome del deck */
+.deck-chrome{position:fixed;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:900;pointer-events:none;font-family:var(--font-mono);font-size:16px;color:var(--text2);opacity:.75;background:linear-gradient(transparent,rgba(16,13,28,.9))}
+.deck-chrome .brand{letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.deck-chrome .dots{display:flex;gap:10px;align-items:center}
+.deck-chrome .dots i{width:8px;height:8px;border-radius:50%;background:var(--text2);opacity:.35}
+.deck-chrome .dots i.on{background:var(--gold);opacity:1}
+
+/* imágenes */
+.figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(21,17,41,.6)}
+.figure img{display:block;width:100%;height:100%;object-fit:contain}
+.figure figcaption{padding:14px 20px;font-size:19px;color:var(--text2);font-family:var(--font-mono);letter-spacing:.03em;border-top:1px solid var(--line)}
+</style>
+</head>
+<body data-tema="t6">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ═══════════════════════ SLIDE 1 · PORTADA ═══════════════════════ -->
+<section class="slide cover active">
+  <div class="reveal course-tag">Curso · FEM práctico con FreeCAD · Sesión 6 de 6</div>
+  <h1 class="reveal">Flujo de trabajo <span class="accent">profesional</span><br>e <span class="accent">IA</span> en simulación</h1>
+  <div class="reveal sub">El cierre del curso: checklist, informe de resultados, reproducibilidad<br>y el panorama de la inteligencia artificial aplicada a la simulación.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta">
+    <span>Prof. J. A. Vélez</span><span>·</span><span>PUJ Cali — Mecánica</span><span>·</span><span>Basado en: Guía Práctica de Simulación en Ingeniería (caps. 7–8)</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 2 · AGENDA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 6 · Ruta</span>
+    <span class="slide-num">02 / 19</span>
+  </div>
+  <h2 class="reveal">Agenda de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:36px">
+    <div class="card reveal t-blue"><div class="num">01</div><h4>Flujo profesional</h4><p>Checklist de las 5 preguntas, documentación mínima, el informe de resultados en 7 secciones y la reproducibilidad.</p></div>
+    <div class="card reveal t-gold"><div class="num">02</div><h4>IA en simulación</h4><p>Cuellos de botella de la simulación tradicional y las tecnologías emergentes: surrogados, PINNs, ROM.</p></div>
+    <div class="card reveal t-blue"><div class="num">03</div><h4>Ciclo completo</h4><p>Soporte en L bajo carga combinada: de las 5 preguntas al informe, verificando contra la superposición lineal.</p></div>
+    <div class="card reveal t-mint"><div class="num">04</div><h4>Proyecto integrador</h4><p>Taller 6: geometría propia, convergencia con GCI, sensibilidad y el informe final del curso.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía</span>
+    Esta sesión cierra el curso con los <strong>caps. 7–8 de la Guía de Simulación FEM</strong>: cómo convertir una simulación en una decisión defendible.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 3 · CHECKLIST 5 PREGUNTAS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Flujo profesional · Cap. 8.1</span>
+    <span class="slide-num">03 / 19</span>
+  </div>
+  <h2 class="reveal">Checklist pre-simulación: las 5 preguntas</h2>
+  <p class="lead reveal" style="margin-bottom:30px">Antes de abrir el software, responda estas preguntas. <strong>Si no puede responder alguna, no está listo para simular.</strong></p>
+  <ol class="steps" style="margin-top:8px">
+    <li class="reveal"><strong>¿Qué quiero saber?</strong> — Desplazamiento máximo, factor de seguridad, frecuencia natural, temperatura de operación…</li>
+    <li class="reveal"><strong>¿Qué física gobierna el fenómeno?</strong> — Elástico lineal, plástico, térmico, acoplado…</li>
+    <li class="reveal"><strong>¿Qué precisión necesito?</strong> — ±1% o ±10%: esto determina el refinamiento de malla y el nivel de validación.</li>
+    <li class="reveal"><strong>¿Contra qué voy a comparar?</strong> — Experimento, solución analítica, norma, simulación previa.</li>
+    <li class="reveal"><strong>¿Cuál es mi hipótesis?</strong> — ¿Qué espero que pase? Si el resultado difiere mucho, ¿confío en mi intuición o en la simulación?</li>
+  </ol>
+  <div class="callout warn reveal" style="margin-top:30px">
+    <span class="tag">Recalca la guía · Cap. 8.1</span>
+    La pregunta 5 es la más olvidada y la más valiosa: <strong>sin hipótesis previa, cualquier resultado parece razonable</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 4 · DOCUMENTACIÓN MÍNIMA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Flujo profesional · Cap. 8.2</span>
+    <span class="slide-num">04 / 19</span>
+  </div>
+  <h2 class="reveal">Durante la simulación: documente todo</h2>
+  <p class="lead reveal" style="margin-bottom:30px">Un modelo no documentado es un modelo desechable. En 6 meses, ni usted recordará por qué eligió esa malla o esa condición de frontera.</p>
+  <div class="grid grid-2">
+    <div class="card reveal t-blue">
+      <h4><svg class="fico lg"><use href="#fem-glosario"/></svg>&nbsp; Lo mínimo que debe documentar</h4>
+      <ul style="list-style:none;font-size:23px;line-height:1.65">
+        <li>· Versión del software y del solver usados</li>
+        <li>· Sistema de unidades</li>
+        <li>· Propiedades de material y su <strong>fuente</strong> (norma, ensayo, estimación)</li>
+        <li>· Condiciones de frontera y su justificación física</li>
+      </ul>
+    </div>
+    <div class="card reveal t-blue">
+      <h4><svg class="fico lg"><use href="#fem-conv"/></svg>&nbsp; Y también…</h4>
+      <ul style="list-style:none;font-size:23px;line-height:1.65">
+        <li>· Estadísticas de malla: número de elementos, tipo, calidad (aspect ratio, skewness)</li>
+        <li>· Criterio de convergencia usado</li>
+        <li>· Resultados clave y comparación con la referencia</li>
+        <li>· Fecha, autor y archivo del modelo</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:32px">
+    <span class="tag">Regla de oro</span>
+    Documentar no es burocracia: es lo que hace que un resultado sea <strong>auditable y defendible</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 5 · INFORME 7 SECCIONES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Flujo profesional · Cap. 8.3</span>
+    <span class="slide-num">05 / 19</span>
+  </div>
+  <h2 class="reveal">El informe de resultados: 7 secciones</h2>
+  <div class="grid grid-2" style="margin-top:24px;gap:28px">
+    <div class="figure reveal" style="align-self:stretch;min-height:520px">
+      <img src="../assets/figuras/09_checklist.png" alt="Checklist pre-simulación de la guía: las 5 preguntas fundamentales">
+      <figcaption>Figura 1 — Checklist pre-simulación (Guía, cap. 8.1)</figcaption>
+    </div>
+    <ol class="steps" style="gap:13px">
+      <li class="reveal"><strong>Resumen ejecutivo</strong> — qué se simuló, resultado principal, conclusión.</li>
+      <li class="reveal"><strong>Descripción del modelo</strong> — geometría, materiales, malla, CF y cargas (con figuras).</li>
+      <li class="reveal"><strong>Verificación</strong> — convergencia de malla y comparación con solución analítica.</li>
+      <li class="reveal"><strong>Validación</strong> — datos experimentales o límites físicos conocidos.</li>
+      <li class="reveal"><strong>Resultados</strong> — desplazamientos, esfuerzos, modos: lo relevante al objetivo.</li>
+      <li class="reveal"><strong>Discusión</strong> — ¿tiene sentido físico? ¿Singularidades? ¿Limitaciones?</li>
+      <li class="reveal"><strong>Conclusiones y recomendaciones</strong> — ¿cumple el diseño? ¿Qué se recomienda?</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 6 · REPRODUCIBILIDAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Flujo profesional · Cap. 8.4</span>
+    <span class="slide-num">06 / 19</span>
+  </div>
+  <h2 class="reveal">Reproducibilidad: la simulación como ciencia</h2>
+  <p class="lead reveal" style="margin-bottom:30px">La simulación ingenieril debe ser reproducible. Eso significa tres prácticas concretas:</p>
+  <div class="grid grid-3">
+    <div class="card reveal t-blue">
+      <h4><svg class="fico lg"><use href="#fem-ejer"/></svg>&nbsp; Scripts en lugar de clicks</h4>
+      <p>Use APDL (ANSYS), Python scripting (Abaqus) o macros en lugar de interacción manual. En FreeCAD: <span class="mono">Macros</span> y el archivo <span class="mono">.inp</span> de CalculiX.</p>
+    </div>
+    <div class="card reveal t-gold">
+      <h4><svg class="fico lg"><use href="#fem-ciclo"/></svg>&nbsp; Control de versiones</h4>
+      <p>Guarde los <strong>archivos de entrada</strong> en Git, no solo los PDF de resultados. El modelo es el código fuente de su análisis.</p>
+    </div>
+    <div class="card reveal t-mint">
+      <h4><svg class="fico lg"><use href="#fem-unidades"/></svg>&nbsp; Parámetros explícitos</h4>
+      <p>No use valores por defecto sin entenderlos. Cada parámetro del modelo debe tener un valor intencional y documentado.</p>
+    </div>
+  </div>
+  <div class="callout warn reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía · Cap. 8.4</span>
+    En la carpeta <span class="mono">notebooks/</span> de la guía encontrará ejemplos reproducibles de análisis FEM con Python.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 7 · CUELLOS DE BOTELLA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">IA en simulación · Cap. 7.1</span>
+    <span class="slide-num">07 / 19</span>
+  </div>
+  <h2 class="reveal">Por qué IA: los 3 cuellos de botella</h2>
+  <p class="lead reveal" style="margin-bottom:30px">La simulación tradicional enfrenta tres limitaciones que la IA busca resolver:</p>
+  <div class="grid grid-3">
+    <div class="card reveal t-red">
+      <div class="num"><svg class="fico xl" style="color:var(--red)"><use href="#fem-atencion"/></svg></div>
+      <h4>Costo computacional</h4>
+      <p>Un análisis no lineal 3D puede tomar <strong>horas o días</strong> de cómputo por cada caso.</p>
+    </div>
+    <div class="card reveal t-gold">
+      <div class="num"><svg class="fico xl" style="color:var(--gold)"><use href="#fem-ciclo"/></svg></div>
+      <h4>Exploración del espacio de diseño</h4>
+      <p>Optimizar requiere <strong>cientos o miles de simulaciones</strong> para barrer parámetros.</p>
+    </div>
+    <div class="card reveal t-blue">
+      <div class="num"><svg class="fico xl" style="color:var(--blue)"><use href="#fem-teoria"/></svg></div>
+      <h4>Conocimiento experto</h4>
+      <p>Configurar correctamente una simulación requiere <strong>años de experiencia</strong>.</p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía · Cap. 7.1</span>
+    La inteligencia artificial ofrece soluciones en cada uno de estos frentes — y plantea preguntas nuevas de validación.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 8 · PANORAMA IA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">IA en simulación · Cap. 7</span>
+    <span class="slide-num">08 / 19</span>
+  </div>
+  <h2 class="reveal">Panorama: IA en simulación</h2>
+  <div class="figure reveal" style="max-width:1150px;margin:8px auto 0;height:470px">
+    <img src="../assets/figuras/08_ia_simulacion.png" alt="Panorama de la IA en simulación: surrogados, PINNs, ROM, optimización topológica">
+    <figcaption>Figura 2 — Panorama de la IA en simulación (Guía, cap. 7)</figcaption>
+  </div>
+  <div class="callout mint reveal" style="margin-top:20px">
+    <span class="tag">Hilo conductor</span>
+    Cinco tecnologías convergen: <strong>surrogados, PINNs, ROM, optimización topológica y mallas con IA</strong>. Ninguna elimina al FEM: lo aceleran y lo complementan.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 9 · TECNOLOGÍAS IA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">IA en simulación · Cap. 7.2</span>
+    <span class="slide-num">09 / 19</span>
+  </div>
+  <h2 class="reveal">Tecnologías clave</h2>
+  <table class="reveal" style="margin-top:22px">
+    <thead><tr><th>Tecnología</th><th>Idea central</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Modelos surrogados</strong></td><td>ML (GP, red neuronal) aprende entrada → salida del simulador; predice en <span class="mono">&lt; 1 ms</span></td><td class="mint">Adopción industrial alta</td></tr>
+      <tr><td><strong>PINNs</strong></td><td>La física entra en la función de pérdida; sin malla; problemas inversos</td><td class="gold">Investigación activa</td></tr>
+      <tr><td><strong>ROM + deep learning</strong></td><td>POD + red neuronal: de millones de DOF a unos cientos; gemelos digitales</td><td class="mint">Alta en aeroespacial</td></tr>
+      <tr><td><strong>Optimización topológica con ML</strong></td><td>GANs/VAEs proponen geometrías; FEM las valida (<span class="mono">nTopology, OptiStruct, Tosca</span>)</td><td class="gold">Comercial madura</td></tr>
+      <tr><td><strong>Generación de mallas con IA</strong></td><td>Predice la distribución óptima de tamaño de elemento</td><td class="red">Emergente</td></tr>
+    </tbody>
+  </table>
+  <div class="formula reveal" style="font-size:30px;padding:18px;margin-top:20px">$$\mathcal{L} = \mathcal{L}_{data} + \lambda\, \mathcal{L}_{PDE}$$<small>PINNs: la ecuación diferencial (física) entra en la función de pérdida (Guía, cap. 7.2.2)</small></div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 10 · QUÉ SIGNIFICA PARA EL INGENIERO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">IA en simulación · Cap. 7.3</span>
+    <span class="slide-num">10 / 19</span>
+  </div>
+  <h2 class="reveal">¿Qué significa para el ingeniero?</h2>
+  <div class="grid grid-2" style="margin-top:34px">
+    <div class="card reveal t-red">
+      <h4><svg class="fico lg" style="color:var(--red)"><use href="#fem-atencion"/></svg>&nbsp; La IA no reemplaza el criterio</h4>
+      <p>Un surrogate entrenado con datos de mala calidad produce <strong>predicciones malas a alta velocidad</strong>.</p>
+    </div>
+    <div class="card reveal t-blue">
+      <h4><svg class="fico lg"><use href="#fem-verif"/></svg>&nbsp; V&amp;V aplica también a la IA</h4>
+      <p>¿Con qué datos se entrenó? ¿Cuál es el dominio de validez? ¿Se respetan las leyes físicas?</p>
+    </div>
+    <div class="card reveal t-gold">
+      <h4><svg class="fico lg" style="color:var(--gold)"><use href="#fem-ia"/></svg>&nbsp; Formule buenas preguntas</h4>
+      <p>La IA acelera la exploración, pero saber <strong>qué explorar</strong> sigue siendo una decisión humana.</p>
+    </div>
+    <div class="card reveal t-mint">
+      <h4><svg class="fico lg" style="color:var(--mint)"><use href="#fem-teoria"/></svg>&nbsp; Aprenda los fundamentos</h4>
+      <p>Un ingeniero que entiende FEM + fundamentos de ML vale <strong>más que uno que solo sabe usar software</strong>.</p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía · Cap. 7.3</span>
+    La habilidad más valiosa del futuro próximo: <strong>formular preguntas y validar respuestas</strong> — exactamente lo que este curso entrenó.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 11 · RECURSOS IA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">IA en simulación · Cap. 7.4</span>
+    <span class="slide-num">11 / 19</span>
+  </div>
+  <h2 class="reveal">Recursos para empezar</h2>
+  <table class="reveal" style="margin-top:28px">
+    <thead><tr><th>Recurso</th><th>Tipo</th><th>Enfoque</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Raissi et al. (2019)</strong></td><td class="mono">Paper fundacional</td><td>Physics-Informed Neural Networks (PINNs)</td></tr>
+      <tr><td><strong>Lu et al. (2021)</strong></td><td class="mono">Paper</td><td>DeepONet: operadores neuronales para EDP</td></tr>
+      <tr><td><strong>scikit-learn GP</strong></td><td class="mono">Biblioteca Python</td><td>Gaussian Processes para modelos surrogados</td></tr>
+      <tr><td><strong>MODULO (Stanford)</strong></td><td class="mono">Software</td><td>Reduced Order Models</td></tr>
+      <tr><td><strong>Simulia ROM (Dassault)</strong></td><td class="mono">Comercial</td><td>ROM integrado en 3DEXPERIENCE</td></tr>
+    </tbody>
+  </table>
+  <div class="callout mint reveal" style="margin-top:30px">
+    <span class="tag">Punto de partida</span>
+    No necesita GPU ni clusters: <strong>scikit-learn + un notebook</strong> bastan para construir su primer surrogate con datos de sus propias simulaciones.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 12 · PRÁCTICA: ENUNCIADO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Ejercicio 6</span>
+    <span class="slide-num">12 / 19</span>
+  </div>
+  <h2 class="reveal">Ciclo completo: soporte bajo carga combinada</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal t-blue">
+      <h4><svg class="fico lg"><use href="#fem-esquina"/></svg>&nbsp; Enunciado</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Ménsula (soporte) en L de acero: <span class="mono">120 × 80 × 10 mm</span></li>
+        <li>· Empotrada por la cara vertical del <strong>brazo corto</strong></li>
+        <li>· Carga de flexión: <span class="mono">2000 N</span> en el extremo del brazo largo (dirección <span class="mono">-Z</span>)</li>
+        <li>· Carga axial: <span class="mono">500 N</span> en la dirección del brazo</li>
+        <li>· Acero: <span class="mono">E = 210 GPa, ν = 0.3</span></li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Pregunta de diseño</h4>
+      <p class="big">¿Cuánto se deflecta el extremo y cuál es el esfuerzo máximo combinado?</p>
+      <p style="margin-top:14px">Aplicamos el <strong>ciclo completo del cap. 8</strong>: checklist → modelo → malla → solver → convergencia → informe.</p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:32px">
+    <span class="tag">Recalca la guía · Cap. 9.4</span>
+    Este es el <strong>ejercicio integrador</strong> del curso: un problema de carga combinada donde la superposición lineal da la referencia analítica.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 13 · SOLUCIÓN ANALÍTICA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Verificación</span>
+    <span class="slide-num">13 / 19</span>
+  </div>
+  <h2 class="reveal">La referencia analítica: superposición lineal</h2>
+  <div class="grid grid-2" style="margin-top:20px;gap:20px">
+    <div class="card reveal" style="padding:20px 26px">
+      <h4 class="blue">Inercia de la sección</h4>
+      <div class="formula" style="font-size:22px;padding:12px;margin:10px 0 4px">$$I = \frac{b\,h^{3}}{12} = \frac{10 \cdot 80^{3}}{12} = 426667\ \text{mm}^4$$</div>
+      <p class="mono" style="text-align:center;font-size:16px">Sección del brazo largo: 10 × 80 mm</p>
+    </div>
+    <div class="card reveal" style="padding:20px 26px">
+      <h4 class="blue">Esfuerzo axial</h4>
+      <div class="formula" style="font-size:22px;padding:12px;margin:10px 0 4px">$$\sigma_{axial} = \frac{F}{A} = \frac{500}{800} = 2.5\ \text{MPa}$$</div>
+      <p class="mono" style="text-align:center;font-size:16px">Área: 10 × 80 = 800 mm²</p>
+    </div>
+    <div class="card reveal" style="padding:20px 26px">
+      <h4 class="blue">Esfuerzo por flexión</h4>
+      <div class="formula" style="font-size:20px;padding:12px;margin:10px 0 4px">$$\sigma_{flex} = \frac{M\,c}{I} = \frac{2000 \cdot 120 \cdot 40}{426667} \approx 22.5\ \text{MPa}$$</div>
+      <p class="mono" style="text-align:center;font-size:16px">M = 2000·120 N·mm ; c = 40 mm</p>
+    </div>
+    <div class="card reveal t-gold" style="padding:20px 26px">
+      <h4>Esfuerzo combinado</h4>
+      <div class="formula" style="font-size:22px;padding:12px;margin:10px 0 4px">$$\sigma_{comb} = \sigma_{axial} + \sigma_{flex} \approx 25\ \text{MPa}$$</div>
+      <p class="mono gold" style="text-align:center;font-size:18px">Superposición lineal (elástico lineal)</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:18px">
+    <span class="tag">Objetivo</span>
+    El FEM debe reproducir <strong>σ ≈ 25 MPa</strong> en la zona del empotramiento (malla convergida) y δ del orden de <strong>0.2–0.5 mm</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 14 · PLAN FREECAD CICLO COMPLETO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · FreeCAD</span>
+    <span class="slide-num">14 / 19</span>
+  </div>
+  <h2 class="reveal">El ciclo completo en FreeCAD FEM</h2>
+  <ol class="steps" style="margin-top:22px;gap:13px">
+    <li class="reveal"><strong>Checklist</strong> — responder las 5 preguntas por escrito (bitácora)</li>
+    <li class="reveal"><strong>Geometría</strong> — <em>Part → Box</em> 120×80×10 + <em>Part → Cut</em> para el perfil en L</li>
+    <li class="reveal"><strong>Análisis</strong> — <em>FEM → Analysis container → New analysis</em>; material acero (<span class="mono">E=210000 MPa, ν=0.3</span>)</li>
+    <li class="reveal"><strong>Condiciones</strong> — <em>Constraint fixed</em> en la cara del brazo corto; <em>Constraint force</em>: 2000 N y 500 N</li>
+    <li class="reveal"><strong>Malla</strong> — <em>Gmsh</em>, tamaño de elemento 5 mm → ejecutar</li>
+    <li class="reveal"><strong>Refinar</strong> — malla de 2.5 mm → ejecutar de nuevo (convergencia)</li>
+    <li class="reveal"><strong>Resultados</strong> — δ máx y σ von Mises; comparar con σ ≈ 25 MPa</li>
+    <li class="reveal"><strong>Informe</strong> — documentar con el formato del cap. 8.3 (7 secciones)</li>
+  </ol>
+  <div class="callout warn reveal" style="margin-top:20px">
+    <span class="tag">Atención · Cap. 4.4.1</span>
+    La <strong>esquina entrante</strong> del perfil en L genera una singularidad numérica: el pico de σ allí no converge. Reporte el esfuerzo a 1–2 mm de la arista.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 15 · VALORES ESPERADOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Checkpoints</span>
+    <span class="slide-num">15 / 19</span>
+  </div>
+  <h2 class="reveal">Valores esperados (verificados)</h2>
+  <table class="reveal" style="margin-top:30px">
+    <thead><tr><th>Magnitud</th><th>Valor esperado</th><th>Fuente</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Inercia I</strong></td><td class="mono">426667 mm⁴</td><td class="mono">bh³/12 con b=10, h=80</td></tr>
+      <tr><td><strong>σ axial</strong></td><td class="mono">2.5 MPa</td><td class="mono">F/A = 500/800</td></tr>
+      <tr><td><strong>σ flexión</strong></td><td class="mono">≈ 22.5 MPa</td><td class="mono">M·c/I con M = 2000·120</td></tr>
+      <tr><td><strong>σ combinada</strong></td><td class="mono gold">≈ 25 MPa</td><td>Superposición lineal</td></tr>
+      <tr><td><strong>δ extremo</strong></td><td class="mono">0.2–0.5 mm</td><td>Orden de magnitud (modelo FEM)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout mint reveal" style="margin-top:32px">
+    <span class="tag">Convergencia</span>
+    Entre las mallas de 5 y 2.5 mm, δ debe cambiar <strong>&lt; 10%</strong>. σ en la zona del empotramiento (a 1–2 mm de la arista): <strong>20–35 MPa</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 16 · TALLER 6 ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 6 · Proyecto integrador</span>
+    <span class="slide-num">16 / 19</span>
+  </div>
+  <h2 class="reveal">Taller 6 — Proyecto integrador (cierre del curso)</h2>
+  <div class="card reveal t-gold" style="margin-top:28px">
+    <h4><svg class="fico lg" style="color:var(--gold)"><use href="#fem-taller"/></svg>&nbsp; El encargo</h4>
+    <p>Cada estudiante elige una geometría (soporte, ménsula, chasis simple, viga con agujeros) sometida a <strong>carga combinada</strong>, y la lleva por el ciclo completo del cap. 8.</p>
+  </div>
+  <div class="grid grid-2" style="margin-top:28px;gap:26px">
+    <div class="card reveal t-blue">
+      <h4>Entregables (guía, cap. 9.4)</h4>
+      <ol style="font-size:22px;line-height:1.6;padding-left:24px">
+        <li>Modelo CAD simplificado con justificación</li>
+        <li>Informe de convergencia de malla (3 mallas con GCI)</li>
+        <li>Análisis de sensibilidad a ±10% en E</li>
+        <li>Informe de resultados (formato cap. 8.3, 7 secciones)</li>
+        <li>Reflexión: 3 mayores fuentes de incertidumbre</li>
+      </ol>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>Rúbrica (100 pts)</h4>
+      <ul style="list-style:none;font-size:22px;line-height:1.75">
+        <li>· Modelo y simplificación — <span class="mono">25</span></li>
+        <li>· Convergencia + GCI — <span class="mono">25</span></li>
+        <li>· Sensibilidad — <span class="mono">15</span></li>
+        <li>· Informe completo — <span class="mono">25</span></li>
+        <li>· Reflexión de incertidumbres — <span class="mono">10</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:30px">
+    <span class="tag">Recalca la guía · Cap. 9.4</span>
+    Este taller integra <strong>todo el curso</strong>: geometría (S3), solver y singularidades (S4), V&amp;V con GCI (S5) y el flujo profesional (S6).
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 17 · RESUMEN DEL CURSO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre · El camino recorrido</span>
+    <span class="slide-num">17 / 19</span>
+  </div>
+  <h2 class="reveal">Seis sesiones, un solo flujo</h2>
+  <div class="grid grid-3" style="margin-top:32px;gap:26px">
+    <div class="card reveal t-blue"><div class="num">1</div><h4>Simular</h4><p>Fenómeno → modelo (caps. 1–2).</p></div>
+    <div class="card reveal t-blue"><div class="num">2</div><h4>Discretizar</h4><p>Métodos numéricos, [K]{u}={F} (cap. 3).</p></div>
+    <div class="card reveal t-blue"><div class="num">3</div><h4>Pre-procesar</h4><p>Geometría, material, malla (cap. 4.2).</p></div>
+    <div class="card reveal t-blue"><div class="num">4</div><h4>Resolver y leer</h4><p>Solver, singularidades, escepticismo (caps. 4.3–4.4).</p></div>
+    <div class="card reveal t-blue"><div class="num">5</div><h4>Verificar y validar</h4><p>Convergencia, GCI, sensibilidad (caps. 5–6).</p></div>
+    <div class="card reveal t-gold"><div class="num">6</div><h4>Documentar</h4><p>Checklist, informe, reproducibilidad, IA (caps. 7–8).</p></div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:34px">
+    <span class="tag">El ciclo completo</span>
+    Pregunta → modelo → malla → solver → <strong>verificación → validación → informe</strong>. Ese es el flujo profesional que hoy cierran.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 18 · RECURSOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Materiales</span>
+    <span class="slide-num">18 / 19</span>
+  </div>
+  <h2 class="reveal">Recursos de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue"><svg class="fico lg"><use href="#fem-glosario"/></svg>&nbsp; Guía de referencia</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li>Cap. 7 — IA en simulación (7.1 cuellos, 7.2 tecnologías, 7.3 para el ingeniero)</li>
+        <li>Cap. 8.1 — Checklist pre-simulación</li>
+        <li>Cap. 8.2 — Documentación durante la simulación</li>
+        <li>Cap. 8.3 — Informe de resultados (7 secciones)</li>
+        <li>Cap. 8.4 — Reproducibilidad</li>
+        <li>Cap. 9.4 — Ejercicio integrador</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue"><svg class="fico lg"><use href="#fem-clase"/></svg>&nbsp; Archivos del curso</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li><span class="mono">ejercicio_paso_a_paso.html</span> — ciclo completo guiado</li>
+        <li><span class="mono">taller.html</span> — proyecto integrador + rúbrica</li>
+        <li><span class="mono">video/guion.md</span> — guion del video asíncrono</li>
+        <li>Notebooks guía: <span class="mono">02_convergencia_malla</span>, <span class="mono">03_validacion</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="mono reveal" style="margin-top:30px;color:var(--text2);font-size:20px">Referencias IA: [3] M. Raissi, P. Perdikaris, G. E. Karniadakis, "Physics-informed neural networks", <em>J. Comput. Phys.</em>, 378 (2019) 686–707. [4] L. Lu et al., "Learning nonlinear operators via DeepONet", <em>Nat. Mach. Intell.</em>, 3 (2021) 218–229.</p>
+</section>
+
+<!-- ═══════════════════════ SLIDE 19 · CIERRE ═══════════════════════ -->
+<section class="slide cover">
+  <div class="reveal course-tag">Sesión 6 · Fin — Curso completo</div>
+  <h1 class="reveal">Verifica, <span class="accent">valida</span>,<br>documenta</h1>
+  <div class="reveal sub">La regla de oro del curso: todo resultado de simulación es una hipótesis.<br>Compruébela contra una referencia y déjela por escrito.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta"><span>FEM con FreeCAD · 6 sesiones</span><span>·</span><span>Guía Práctica de Simulación FEM</span><span>·</span><span>Taller 6: proyecto integrador</span></div>
+</section>
+
+</main>
+</div>
+
+<!-- footer chrome: navegación -->
+<div class="deck-chrome" id="deckChrome">
+  <span class="brand">FEM · FreeCAD</span>
+  <span class="dots" id="dots"></span>
+  <span class="hint">← → navegar · P imprimir</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE PRESENTATION CONTROLLER — plantilla frontend-slides
+   ═══════════════════════════════════════════════════════════════ */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.current=0;
+    this.stage=document.getElementById('deckStage');
+    this.dots=document.getElementById('dots');
+    this.buildDots();
+    this.setupScale();
+    this.setupKeys();
+    this.setupTouch();
+    this.show(0);
+  }
+  buildDots(){
+    this.dots.innerHTML=this.slides.map((_,i)=>`<i data-i="${i}"></i>`).join('');
+    this.dots.querySelectorAll('i').forEach(d=>d.addEventListener('click',()=>this.show(+d.dataset.i)));
+  }
+  setupScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();window.addEventListener('resize',scale);
+  }
+  setupKeys(){
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();this.show(this.current+1)}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();this.show(this.current-1)}
+      else if(e.key==='Home'){this.show(0)}
+      else if(e.key==='End'){this.show(this.slides.length-1)}
+      else if(e.key==='p'||e.key==='P'){window.print()}
+    });
+  }
+  setupTouch(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>60)this.show(this.current+(dx<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.querySelectorAll('i').forEach((d,k)=>d.classList.toggle('on',k===this.current));
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

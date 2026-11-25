@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller 2 — Barra escalonada: resortes en serie y verificación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Taller 2 · Sesión 2
+  Recalca: Guía de Simulación FEM, caps. 3.4, 4.1 (la idea del FEM),
+  4.2.1 (St. Venant), 5 (errores 2 y 4)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#0d1418;--bg2:#111a20;--panel:rgba(17,26,32,.92);--line:rgba(79,195,247,.18);
+  --text:#e4e8ec;--text2:#9aa7b8;--blue:#4fc3f7;--gold:#ffb74d;--mint:#4dd0b5;--red:#ef5350;
+  --font-display:'Archivo',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-display);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG tecnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--font-mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:40px;font-weight:600;margin:10px 0 8px}
+.meta{font-family:var(--font-mono);font-size:14px;color:var(--text2)}
+h2{font-size:26px;font-weight:600;margin:40px 0 14px;color:var(--gold)}
+h3{font-size:19px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+p,li{font-size:16.5px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(93,156,236,.07);padding:15px 20px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15.5px}
+.callout .tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.gold{border-color:var(--gold);background:rgba(232,199,106,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(72,201,176,.07)}
+.callout.mint .tag{color:var(--mint)}
+.callout.warn{border-color:var(--red);background:rgba(224,85,90,.07)}
+.callout.warn .tag{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}
+th{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(93,156,236,.10);color:var(--text2);vertical-align:top}
+td strong{color:var(--text)}
+.mono{font-family:var(--font-mono);font-size:14px;color:var(--gold)}
+.puntos{text-align:center;font-family:var(--font-mono);font-size:14px;color:var(--gold);white-space:nowrap}
+.entrega{display:flex;gap:12px;align-items:flex-start;background:rgba(72,201,176,.07);border:1px solid rgba(72,201,176,.25);border-radius:10px;padding:16px 20px;margin:16px 0}
+.entrega::before{content:'';flex:0 0 auto}
+.nota{font-family:var(--font-mono);font-size:14px;color:var(--mint)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--font-mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t2">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 2 · Taller 2</div>
+  <h1>Taller 2 — Barra escalonada: resortes en serie y verificación</h1>
+  <div class="meta">Entrega individual o en parejas · Formato: informe PDF/Markdown · Ponderación: ver rúbrica</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-verif"/></svg>&nbsp; Objetivos</h3>
+  <ul>
+    <li>Replicar a mano el <strong>ensamblaje del FEM</strong>: dos tramos de barra en serie son dos "elementos" — el modelo de resortes en serie es la versión analítica del paso 3 de la guía (cap. 4.1).</li>
+    <li>Verificar que el FEM global reproduce el δ total y los esfuerzos por tramo con error &lt; 10%.</li>
+    <li>Interpretar <strong>por qué el esfuerzo cambia entre tramos</strong> aunque la fuerza sea la misma (\( \sigma = \frac{P}{A} \)).</li>
+  </ul>
+</div>
+
+<h2>Parte A — Modelar y simular</h2>
+<ol style="padding-left:22px">
+  <li>Construya la barra escalonada en FreeCAD: dos cajas en el workbench <span class="mono">Part</span> — tramo 1: <span class="mono">100 × 20 × 10 mm</span> (A₁ = 200 mm²) y tramo 2: <span class="mono">100 × 20 × 20 mm</span> (A₂ = 400 mm²) — colocadas en serie (contiguas en x) y unidas con <span class="mono">Part → Boolean → Union</span>.</li>
+  <li>Análisis FEM: <span class="mono">FEM → New analysis</span>, material acero (<span class="mono">E = 210000 MPa, ν = 0.3</span>) sobre el sólido unido.</li>
+  <li>Condiciones: <span class="mono">Constraint fixed</span> en la cara libre del tramo 1 (x = 0); <span class="mono">Constraint force = 10000 N</span> en la cara libre del tramo 2 (x = 200 mm), dirección axial.</li>
+  <li>Malla <span class="mono">Gmsh</span> con <span class="mono">Maximum element size = 5 mm</span>; ejecute <span class="mono">CalculiX</span> (<em>Write .inp</em> → <em>Run</em>).</li>
+  <li>Registre: δ total (pestaña <em>Displacement</em>, máximo en x = 200 mm) y el esfuerzo von Mises en el <strong>centro de cada tramo</strong> (pestaña <em>Stress</em>), lejos de la unión (St. Venant: a 1–2 anchos del cambio de sección).</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.1 · St. Venant</span>
+En la unión de los tramos hay un <strong>cambio brusco de sección</strong>: ahí el esfuerzo se concentra y no es representativo del tramo. Lea σ₁ y σ₂ a 20–40 mm de la unión.</div>
+
+<h2>Parte B — Verificación analítica: resortes en serie</h2>
+<p>Cada tramo se comporta como un resorte axial de rigidez <span class="mono">\( k = \frac{EA}{L} \)</span>. Dos tramos en serie se combinan como:</p>
+<div class="card">
+  <p class="mono" style="font-size:15px">\( k_1 = \frac{EA_1}{L_1} = \frac{210000\cdot 200}{100} = 420000\ \text{N/mm} \)</p>
+  <p class="mono" style="font-size:15px">\( k_2 = \frac{EA_2}{L_2} = \frac{210000\cdot 400}{100} = 840000\ \text{N/mm} \)</p>
+  <p class="mono" style="font-size:15px">\( k_{\text{eq}} = \frac{k_1\,k_2}{k_1 + k_2} = \frac{420000\cdot 840000}{1260000} = 280000\ \text{N/mm} \)</p>
+  <p class="mono gold" style="font-size:15px">\( \delta = \frac{P}{k_{\text{eq}}} = \frac{10000}{280000} \approx 0.036\ \text{mm} \)</p>
+</div>
+<ol style="padding-left:22px">
+  <li>Verifique los valores de k₁, k₂, k<sub>eq</sub> y δ con sus propias cuentas.</li>
+  <li>Calcule el esfuerzo en cada tramo: <span class="mono">\( \sigma_1 = \frac{P}{A_1} = \frac{10000}{200} = 50\ \text{MPa} \)</span> y <span class="mono">\( \sigma_2 = \frac{P}{A_2} = \frac{10000}{400} = 25\ \text{MPa} \)</span>.</li>
+  <li>Compare δ FEM vs. δ analítica y σ₁, σ₂ FEM vs. analíticos. Calcule el error porcentual de cada uno.</li>
+</ol>
+<div class="callout gold"><span class="tag">La conexión con el FEM</span>
+El modelo de resortes en serie ES el ensamblaje del FEM hecho a mano: cada tramo aporta su rigidez elemental (k₁, k₂) y el sistema global las combina en k<sub>eq</sub>. En el FEM con malla fina, ese mismo ensamblaje se hace con cientos de elementos — mismas leyes, más resolución (guía, cap. 4.1).</div>
+
+<h2>Parte C — Interpretación</h2>
+<ol style="padding-left:22px">
+  <li>Explique con sus palabras <strong>por qué σ cambia entre tramos</strong> mientras la fuerza axial P es la misma en toda la barra (equilibrio de fuerzas). ¿Qué magnitud física es la misma en ambos tramos y cuál cambia?</li>
+  <li>Discuta el alargamiento: ¿qué tramo se alarga más, el 1 o el 2? ¿Coincide con \( k_1 &lt; k_2 \)? ¿Por qué?</li>
+  <li>Relacione con la guía: ¿qué error del cap. 5 podría cometerse si se leyera σ justo en la unión de los tramos? ¿Y si se usara un TET4 con una sola capa de elementos a través del espesor del tramo 2 (20 mm con elementos de 5 mm)?</li>
+</ol>
+
+<h2>Entregables</h2>
+<div class="entrega"><div>
+  <p><strong>1. Tabla de resultados</strong>: δ FEM vs. δ analítica (con error %), σ₁ y σ₂ FEM vs. analíticos (con error %).</p>
+  <p><strong>2. Desarrollo analítico</strong>: \( k_1, k_2, k_{\text{eq}}, \delta \) — y la justificación del modelo de resortes en serie.</p>
+  <p><strong>3. Interpretación</strong>: por qué σ cambia de tramo y por qué el alargamiento se reparte como lo hace.</p>
+  <p><strong>4. Tres conclusiones</strong> que citen explícitamente la guía (cap. 4.1 ensamblaje, cap. 4.2.1 St. Venant, cap. 5 errores 2 y 4).</p>
+</div></div>
+
+<h2>Rúbrica de evaluación</h2>
+<table>
+  <thead><tr><th>Criterio</th><th>Logrado (100%)</th><th>Parcial (60%)</th><th>No logrado (0%)</th><th>Puntos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Modelo FEM correcto</strong><br><span class="mono">Geometría escalonada, material, CF, carga</span></td>
+        <td>Análisis completo y funcional; tramos unidos correctamente; δ y σ por tramo extraídos bien</td>
+        <td>Análisis funcional con algún error menor (dirección de carga, lectura en la unión)</td>
+        <td>Análisis no ejecuta o CF/cargas incorrectas</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Verificación analítica</strong><br><span class="mono">\( k_1, k_2, k_{\text{eq}}, \delta \)</span></td>
+        <td>Error &lt; 10% en δ y en σ de ambos tramos, con desarrollo completo</td>
+        <td>Error entre 10–20% o verificación incompleta</td>
+        <td>Sin verificación o errores &gt; 20% sin explicación</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Interpretación de resultados</strong><br><span class="mono">Por qué σ cambia de tramo</span></td>
+        <td>Explicación física correcta (\( \sigma = \frac{P}{A} \), misma fuerza, distinta área) y lectura de σ lejos de la unión</td>
+        <td>Interpretación parcial o lectura en la zona de concentración sin notarlo</td>
+        <td>No interpreta o atribuye el cambio a causas incorrectas</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Discusión y cita de la guía</strong><br><span class="mono">3 conclusiones + vínculo caps.</span></td>
+        <td>Conclusiones sustentadas con referencias correctas a capítulos</td>
+        <td>Conclusiones presentes sin vínculo a la guía</td>
+        <td>Sin discusión</td><td class="puntos">15</td></tr>
+  </tbody>
+</table>
+<p class="nota">Total: 100 puntos · Entregar antes de la Sesión 3.</p>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 3.4 (FEM y el sistema \( [K]\{u\}=\{F\} \)), cap. 4.1 (discretización, formulación elemental y ensamblaje — el modelo de resortes en serie es el ensamblaje de dos "elementos" hecho a mano), cap. 4.2.1 (St. Venant en la unión de tramos), cap. 5 (error 2: mallado; error 4: tipo de elemento).</div>
+
+<footer>FEM práctico con FreeCAD · Taller 2 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

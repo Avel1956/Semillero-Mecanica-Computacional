@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM con FreeCAD — Sesión 3: Pre-procesamiento: geometría, material y malla</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD (6 sesiones)
+  Sesión 3 — Pre-procesamiento: geometría, material y malla
+  El arte del 60-70% del tiempo de simulación; práctica: placa con agujero
+  Recalca: Guía Práctica de Simulación en Ingeniería (caps. 2.4, 4.2, 5, 9.2)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Estilo: "Blueprint técnico" — paleta coherente con VIDEOMN
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (THEME) — Blueprint técnico
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg: #14110c;            /* pizarra cálida (Cobre, t3) */
+  --bg2: #1a160f;
+  --panel: rgba(20,17,12,.92);
+  --line: rgba(217,160,91,.18);
+  --text: #e8e2d8;
+  --text2: #a89f8f;
+  --blue: #5fb3a1;          /* método / datos */
+  --gold: #d9a05b;          /* insight / resultado */
+  --mint: #8fbf6f;          /* correcto / validado */
+  --red: #c96f5e;           /* error / peligro */
+  --font-display: 'Sora', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --title-size: 76px;
+  --subtitle-size: 30px;
+  --body-size: 26px;
+  --slide-padding: 88px;
+  --content-gap: 34px;
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);
+  --duration-normal: .6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* --- PASTE viewport-base.css CONTENTS (fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT BASE DE LA PLANTILLA (1920×1080)
+   ═══════════════════════════════════════════════════════════════ */
+body{font-family:var(--font-display);color:var(--text);background:var(--bg)}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.slide{
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(95,179,161,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(217,160,91,.06), transparent 60%),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  padding:var(--slide-padding);
+}
+/* retícula técnica sutil de fondo */
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(95,179,161,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(95,179,161,.05) 1px,transparent 1px);
+  background-size:96px 96px;
+}
+
+/* header de slide */
+.slide-header{
+  display:flex;align-items:baseline;gap:24px;margin-bottom:42px;
+  border-bottom:1px solid var(--line);padding-bottom:20px;
+}
+.kicker{
+  font-family:var(--font-mono);font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+}
+.slide-num{margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--text2)}
+.slide h2{font-size:var(--title-size);font-weight:600;letter-spacing:-.01em;line-height:1.05;margin-bottom:10px}
+.slide h3{font-size:38px;font-weight:600;margin:0 0 18px;color:var(--text)}
+.slide p,.slide li{font-size:var(--body-size);line-height:1.5;color:var(--text2)}
+.slide strong{color:var(--text);font-weight:600}
+.slide .lead{font-size:30px;color:var(--text);line-height:1.45}
+
+/* ANIMACIONES */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration-normal) var(--ease-out-expo),transform var(--duration-normal) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.reveal:nth-child(1){transition-delay:.08s}
+.reveal:nth-child(2){transition-delay:.16s}
+.reveal:nth-child(3){transition-delay:.24s}
+.reveal:nth-child(4){transition-delay:.32s}
+.reveal:nth-child(5){transition-delay:.40s}
+.reveal:nth-child(6){transition-delay:.48s}
+
+/* tarjetas y grids */
+.grid{display:grid;gap:var(--content-gap)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:30px 32px;backdrop-filter:blur(4px);
+}
+.card h4{font-size:24px;margin-bottom:12px;font-weight:600;letter-spacing:.01em}
+.card p,.card li{font-size:22px;line-height:1.45}
+.card .num{font-family:var(--font-mono);font-size:52px;font-weight:600;line-height:1;margin-bottom:14px}
+.t-blue .num,.t-blue h4{color:var(--blue)}
+.t-gold .num,.t-gold h4{color:var(--gold)}
+.t-mint .num,.t-mint h4{color:var(--mint)}
+.t-red .num,.t-red h4{color:var(--red)}
+
+/* tablas */
+table{width:100%;border-collapse:collapse;font-size:23px}
+th{font-family:var(--font-mono);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);font-weight:600}
+td{padding:13px 16px;border-bottom:1px solid rgba(95,179,161,.10);color:var(--text2);line-height:1.4}
+td strong{color:var(--text)}
+tr:hover td{background:rgba(95,179,161,.05)}
+.mono{font-family:var(--font-mono);font-size:22px}
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.big{font-size:44px;line-height:1.3;color:var(--text)}
+.formula{
+  font-family:var(--font-mono);font-size:40px;color:var(--gold);text-align:center;
+  background:rgba(217,160,91,.07);border:1px solid rgba(217,160,91,.25);
+  border-radius:12px;padding:26px;margin:14px 0;letter-spacing:.01em;
+}
+.formula small{display:block;font-size:20px;color:var(--text2);margin-top:10px;font-family:var(--font-display)}
+
+/* callouts */
+.callout{border-left:4px solid var(--blue);background:rgba(95,179,161,.07);padding:22px 28px;border-radius:0 12px 12px 0;font-size:25px;line-height:1.5}
+.callout.warn{border-color:var(--red);background:rgba(201,111,94,.07)}
+.callout.gold{border-color:var(--gold);background:rgba(217,160,91,.07)}
+.callout.mint{border-color:var(--mint);background:rgba(143,191,111,.07)}
+.callout .tag{font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--blue)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint .tag{color:var(--mint)}
+
+/* portada y cierre */
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;gap:0}
+.cover .course-tag{font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:34px}
+.cover h1{font-size:110px;font-weight:600;line-height:1.04;letter-spacing:-.015em;max-width:1500px}
+.cover h1 .accent{color:var(--gold)}
+.cover .sub{margin-top:30px;font-size:34px;color:var(--text2);max-width:1300px;line-height:1.4}
+.cover .meta{margin-top:56px;font-family:var(--font-mono);font-size:21px;color:var(--text2);letter-spacing:.08em;display:flex;gap:36px;align-items:center}
+.cover .meta span{display:flex;align-items:center;gap:10px}
+.cover .rule{width:120px;height:2px;background:var(--gold);margin-top:40px;opacity:.7}
+
+/* lista de pasos numerados */
+.steps{counter-reset:step;list-style:none;display:grid;gap:20px}
+.steps li{counter-increment:step;display:flex;gap:22px;align-items:flex-start;font-size:25px;color:var(--text2);line-height:1.45}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);flex:0 0 56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--blue);
+  border:1px solid var(--line);background:rgba(95,179,161,.08);
+}
+.steps li strong{color:var(--text)}
+.steps li em{color:var(--mint);font-style:normal}
+
+/* footer chrome del deck */
+.deck-chrome{position:fixed;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:900;pointer-events:none;font-family:var(--font-mono);font-size:16px;color:var(--text2);opacity:.75;background:linear-gradient(transparent,rgba(20,17,12,.9))}
+.deck-chrome .brand{letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.deck-chrome .dots{display:flex;gap:10px;align-items:center}
+.deck-chrome .dots i{width:8px;height:8px;border-radius:50%;background:var(--text2);opacity:.35}
+.deck-chrome .dots i.on{background:var(--gold);opacity:1}
+
+/* imágenes */
+.figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(20,17,12,.6)}
+.figure img{display:block;width:100%;height:100%;object-fit:contain}
+.figure figcaption{padding:14px 20px;font-size:19px;color:var(--text2);font-family:var(--font-mono);letter-spacing:.03em;border-top:1px solid var(--line)}
+</style>
+</head>
+<body data-tema="t3">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ═══════════════════════ SLIDE 1 · PORTADA ═══════════════════════ -->
+<section class="slide cover active">
+  <div class="reveal course-tag">Curso · FEM práctico con FreeCAD · Sesión 3 de 6</div>
+  <h1 class="reveal">Pre-procesamiento:<br><span class="accent">geometría, material y malla</span></h1>
+  <div class="reveal sub">El 60–70% del tiempo de toda simulación se juega aquí —<br>y determina la calidad del resultado.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta">
+    <span>Prof. J. A. Vélez</span><span>·</span><span>PUJ Cali — Mecánica</span><span>·</span><span>Basado en: Guía Práctica de Simulación en Ingeniería (caps. 2.4, 4.2)</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 2 · AGENDA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 3 · Ruta</span>
+    <span class="slide-num">02 / 21</span>
+  </div>
+  <h2 class="reveal">Agenda de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:36px">
+    <div class="card reveal t-blue"><div class="num">01</div><h4>Geometría</h4><p>Simplificar con criterio: qué eliminar casi siempre y qué conservar siempre. La regla de St. Venant.</p></div>
+    <div class="card reveal t-gold"><div class="num">02</div><h4>Material</h4><p>Propiedades con trazabilidad: acero, aluminio, fundición. El peligro del E "nominal". Modelos constitutivos.</p></div>
+    <div class="card reveal t-blue"><div class="num">03</div><h4>Malla</h4><p>El corazón del FEM: tipos de elemento (TET4, TET10, HEX8…) y las 6 reglas prácticas de mallado.</p></div>
+    <div class="card reveal t-mint"><div class="num">04</div><h4>Práctica</h4><p>Placa con agujero: concentración de esfuerzos. Kt de Peterson, malla fina local y verificación &lt; 5%.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía</span>
+    Cap. 4.2 — <strong>El arte del pre-procesamiento</strong> — es la sección central de esta sesión, junto con cap. 2.4 (modelos constitutivos) y cap. 9.2 (placa con agujero).
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 3 · EL 60-70% DEL TIEMPO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Pre-procesamiento · Cap. 4.2</span>
+    <span class="slide-num">03 / 21</span>
+  </div>
+  <h2 class="reveal">El pre-procesamiento: el 60–70% del tiempo</h2>
+  <p class="lead reveal" style="margin-bottom:34px">En toda simulación profesional, la mayor parte del tiempo <strong>no se resuelve ni se post-procesa: se prepara</strong>. Las decisiones de aquí determinan la calidad de todo lo demás.</p>
+  <div class="grid grid-3">
+    <div class="card reveal t-blue"><div class="num">01</div><h4>Geometría</h4><p>Simplificar con criterio. Si se elimina mal, el error entra aquí y no se detecta jamás en el post-proceso.</p></div>
+    <div class="card reveal t-gold"><div class="num">02</div><h4>Material</h4><p>Propiedades con trazabilidad. Un E equivocado invalida frecuencias, pandeo y desplazamientos.</p></div>
+    <div class="card reveal t-mint"><div class="num">03</div><h4>Malla</h4><p>Discretización: tipo de elemento y reglas prácticas. El 22% de los errores de simulación nace aquí.</p></div>
+  </div>
+  <div class="callout warn reveal" style="margin-top:34px">
+    <span class="tag">El costo del error</span>
+    Un error de pre-proceso se <strong>propaga a todo el análisis</strong> y rara vez se ve en el post-proceso. Por eso esta sesión es, en la práctica, la más importante del curso.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 4 · GEOMETRÍA: ELIMINAR VS CONSERVAR ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Geometría · Cap. 4.2.1</span>
+    <span class="slide-num">04 / 21</span>
+  </div>
+  <h2 class="reveal">Geometría: simplificar con criterio</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal t-red">
+      <h4>Eliminar (casi siempre)</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Roscas de tornillos (modele el cuerpo cilíndrico o use conectores)</li>
+        <li>· Redondeos y chaflanes pequeños, si no están en zona de alta tensión</li>
+        <li>· Logotipos, grabados, texturas superficiales</li>
+        <li>· Agujeros no estructurales (drenaje, accesorios sin carga)</li>
+      </ul>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>Conservar (siempre)</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Cambios bruscos de sección: son concentradores de esfuerzo</li>
+        <li>· Agujeros en zonas de alta tensión</li>
+        <li>· Superficies de contacto entre partes</li>
+        <li>· Filetes y radios en zonas críticas</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:30px">
+    <span class="tag">Recalca la guía · Cap. 4.2.1</span>
+    La pregunta no es "¿puedo eliminarlo?", sino <strong>"¿está lejos de mi zona de interés?"</strong>. Si lo está, eliminarlo es barato; si no, es un error.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 5 · REGLA DE ST. VENANT ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Geometría · Cap. 4.2.1</span>
+    <span class="slide-num">05 / 21</span>
+  </div>
+  <h2 class="reveal">St. Venant: lo local queda local</h2>
+  <div class="grid grid-2" style="margin-top:24px;gap:26px">
+    <div class="figure reveal" style="align-self:center">
+      <img src="../assets/figuras/02_modelo_vs_realidad.png" alt="Realidad vs modelo: la brecha de modelado">
+      <figcaption>Figura 2 — Realidad vs. modelo (Guía, cap. 2.1)</figcaption>
+    </div>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:16px;justify-content:center">
+      <div class="card" style="padding:20px 26px">
+        <h4 class="gold">Regla de St. Venant</h4>
+        <p style="font-size:23px">Los detalles geométricos <strong>solo afectan localmente</strong>. Si su zona de interés está lejos de un detalle que eliminó, el error es despreciable.</p>
+      </div>
+      <div class="card" style="padding:20px 26px">
+        <h4 class="blue">Ejemplo de esta sesión</h4>
+        <p style="font-size:23px">El agujero de la placa es un detalle <strong>local</strong>: a 2–3 diámetros de distancia el esfuerzo vuelve a σ<sub>nominal</sub>. Pero el borde del agujero es <em class="mint">nuestra zona de interés</em>: ahí el detalle se conserva… y se refina.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 6 · MATERIAL CON TRAZABILIDAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Material · Cap. 4.2.2</span>
+    <span class="slide-num">06 / 21</span>
+  </div>
+  <h2 class="reveal">Material: propiedades con trazabilidad</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Material</th><th>E (GPa)</th><th>ν</th><th>ρ (kg/m³)</th><th>Comportamiento</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Acero estructural</strong></td><td class="mono">200–210</td><td class="mono">≈ 0.30</td><td class="mono">≈ 7850</td><td>Dúctil</td></tr>
+      <tr><td><strong>Aleación de aluminio</strong></td><td class="mono">68–72</td><td class="mono">≈ 0.33</td><td class="mono">≈ 2700</td><td>Dúctil</td></tr>
+      <tr><td><strong>Fundición gris</strong></td><td class="mono">80–140</td><td class="mono">≈ 0.26</td><td class="mono">≈ 7100</td><td class="red">Frágil</td></tr>
+    </tbody>
+  </table>
+  <div class="callout blue reveal" style="margin-top:26px">
+    <span class="tag">Recalca la guía · Cap. 4.2.2</span>
+    <strong>Trazabilidad:</strong> anote de dónde salió cada valor — norma (p. ej. ASTM A36), ensayo de laboratorio o estimación. Un análisis sin trazabilidad no es reproducible.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 7 · ERROR FRECUENTE: E NOMINAL ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Material · Cap. 4.2.2</span>
+    <span class="slide-num">07 / 21</span>
+  </div>
+  <h2 class="reveal">El E "nominal" es una trampa</h2>
+  <div class="callout warn reveal" style="margin-top:26px">
+    <span class="tag"><svg class="fico"><use href="#fem-atencion"/></svg>&nbsp; Error frecuente · Cap. 4.2.2</span>
+    Usar el E nominal del acero (200 GPa) cuando la norma del material especifica un rango (190–210 GPa). En análisis de <strong>pandeo o frecuencias naturales</strong>, esa diferencia puede ser crítica.
+  </div>
+  <div class="grid grid-2" style="margin-top:30px">
+    <div class="card reveal t-blue">
+      <h4>¿Por qué duele?</h4>
+      <p>E entra linealmente en la rigidez: \(\delta \propto 1/E\) y las frecuencias \(\propto \sqrt{E}\). Un 5% de error en E es un 5% de error en desplazamientos y ~2.5% en frecuencias.</p>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>La conducta correcta</h4>
+      <p>Busque la hoja de datos o la norma del lote real. Si no la tiene, <strong>declare la incertidumbre</strong> y haga análisis de sensibilidad (como en el Taller 1).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 8 · MODELOS CONSTITUTIVOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Material · Cap. 2.4</span>
+    <span class="slide-num">08 / 21</span>
+  </div>
+  <h2 class="reveal">Modelos constitutivos: cómo responde el material</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Modelo</th><th>¿Cuándo usarlo?</th><th>Limitación</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Elástico lineal</strong></td><td>Pequeñas deformaciones, sin plasticidad</td><td>No captura fluencia ni daño</td></tr>
+      <tr><td><strong>Elasto-plástico (von Mises)</strong></td><td>Metales dúctiles con plasticidad</td><td>No captura daño progresivo</td></tr>
+      <tr><td><strong>Hiperelástico (Mooney-Rivlin)</strong></td><td>Elastómeros, tejidos biológicos</td><td>Requiere datos experimentales de calibración</td></tr>
+      <tr><td><strong>Viscoelástico</strong></td><td>Polímeros, comportamiento dependiente del tiempo</td><td>Complejidad de parámetros</td></tr>
+      <tr><td><strong>Ortotrópico / Anisotrópico</strong></td><td>Maderas, composites, laminados</td><td>Más constantes elásticas que medir</td></tr>
+    </tbody>
+  </table>
+  <div class="callout mint reveal" style="margin-top:26px">
+    <span class="tag">Regla práctica · Cap. 2.4</span>
+    Use el modelo <strong>más simple que capture la física relevante</strong>. El elástico lineal resuelve el 80% de los problemas de diseño con metales — y es el que usaremos hoy.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 9 · MALLADO: EL CORAZÓN DEL FEM ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Mallado · Cap. 4.2.3</span>
+    <span class="slide-num">09 / 21</span>
+  </div>
+  <h2 class="reveal">El mallado: el corazón del FEM</h2>
+  <div class="grid grid-2" style="margin-top:24px;gap:26px">
+    <div class="figure reveal" style="align-self:center">
+      <img src="../assets/figuras/06_tipos_elementos.png" alt="Catálogo de tipos de elemento: TET4, TET10, HEX8, HEX20, TRI3, QUAD4, shell">
+      <figcaption>Figura 6 — Catálogo de tipos de elemento (Guía, cap. 4.2.3)</figcaption>
+    </div>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:16px;justify-content:center">
+      <div class="card" style="padding:20px 26px">
+        <h4 class="blue">¿Por qué "corazón"?</h4>
+        <p style="font-size:23px">Los <strong>desplazamientos</strong> convergen rápido incluso con mallas gruesas; los <strong>esfuerzos</strong> exigen elementos adecuados y mallas finas donde hay gradientes.</p>
+      </div>
+      <div class="card" style="padding:20px 26px">
+        <h4 class="gold">Lo que decide la malla</h4>
+        <p style="font-size:23px">El tipo de elemento fija la precisión; el tamaño local fija la resolución del gradiente. Ambos se eligen <strong>antes</strong> de resolver — y eso es pre-procesamiento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 10 · TIPOS DE ELEMENTO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Mallado · Cap. 4.2.3</span>
+    <span class="slide-num">10 / 21</span>
+  </div>
+  <h2 class="reveal">Tipos de elemento: elija con intención</h2>
+  <table class="reveal" style="margin-top:24px">
+    <thead><tr><th>Elemento</th><th>Orden</th><th>¿Cuándo usarlo?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TET4</strong> (tetraedro lineal)</td><td class="mono">1º</td><td>Mallas automáticas, geometría compleja. <span class="red"><svg class="fico"><use href="#fem-atencion"/></svg>&nbsp; Demasiado rígido</span></td></tr>
+      <tr><td><strong>TET10</strong> (tetraedro cuadrático)</td><td class="mono">2º</td><td><span class="mint">Buen compromiso</span> precisión/automático para 3D complejo</td></tr>
+      <tr><td><strong>HEX8</strong> (hexaedro lineal)</td><td class="mono">1º</td><td>Mallas estructuradas; requiere geometría "barrible"</td></tr>
+      <tr><td><strong>HEX20</strong> (hexaedro cuadrático)</td><td class="mono">2º</td><td>Máxima precisión en 3D estructurado</td></tr>
+      <tr><td><strong>TRI3 / QUAD4</strong></td><td class="mono">1º</td><td>2D: tensión/deformación plana, axi-simetría</td></tr>
+      <tr><td><strong>Shell (S4R, S8R)</strong></td><td class="mono">—</td><td>Paredes delgadas (espesor &lt;&lt; otras dimensiones)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn reveal" style="margin-top:24px">
+    <span class="tag">Recalca la guía · Cap. 5 · Error 4 (10%)</span>
+    El tetraedro lineal <strong>TET4 es demasiado rígido</strong>: subestima esfuerzos y sobreestima rigidez. Para esfuerzos confiables use <strong>TET10</strong> (2º orden).
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 11 · SEIS REGLAS DE MALLADO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Mallado · Cap. 4.2.3</span>
+    <span class="slide-num">11 / 21</span>
+  </div>
+  <h2 class="reveal">Seis reglas prácticas de mallado</h2>
+  <ol class="steps" style="margin-top:26px;gap:14px">
+    <li class="reveal" style="font-size:23px"><strong>Espesor</strong> — mínimo <em>2–3 elementos</em> a través del espesor en paredes delgadas con sólidos</li>
+    <li class="reveal" style="font-size:23px"><strong>Curvatura</strong> — mínimo <em>4–5 elementos</em> en un radio de 90°</li>
+    <li class="reveal" style="font-size:23px"><strong>Transición suave</strong> — el tamaño no debe cambiar más de <em>2×</em> entre elementos adyacentes</li>
+    <li class="reveal" style="font-size:23px"><strong>Gradientes</strong> — refinar donde hay gradientes altos: esquinas entrantes, cambios de sección, contacto</li>
+    <li class="reveal" style="font-size:23px"><strong>Distorsión</strong> — aspect ratio &gt; 10:1 es sospechoso; ángulos &lt; 20° o &gt; 160° son problemáticos</li>
+    <li class="reveal" style="font-size:23px"><strong>Calidad</strong> — chequear antes de resolver: <em>aspect ratio, skewness, Jacobian, warping factor</em></li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════ SLIDE 12 · PRÁCTICA: ENUNCIADO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Ejercicio 3</span>
+    <span class="slide-num">12 / 21</span>
+  </div>
+  <h2 class="reveal">Placa con agujero — el problema</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal t-blue">
+      <h4>Enunciado</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Placa de acero: <span class="mono">200 × 100 × 5 mm</span></li>
+        <li>· Agujero circular central: <span class="mono">Ø 20 mm</span></li>
+        <li>· Tracción uniaxial \(\sigma = 10\ \text{MPa}\) en los extremos</li>
+        <li>· Acero: \(E = 210\ \text{GPa},\ \nu = 0.3\)</li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Pregunta de diseño</h4>
+      <p class="big">¿Cuál es el esfuerzo máximo y dónde ocurre?</p>
+      <p style="margin-top:14px">El agujero convierte un problema "sencillo" en un clásico de <strong>concentración de esfuerzos</strong>: el pico no está en la carga, está en la geometría.</p>
+    </div>
+  </div>
+  <div class="formula reveal" data-katex="K_t = \frac{\sigma_{máx}}{\sigma_{nom}}" style="font-size:34px">$$K_t = \frac{\sigma_{máx}}{\sigma_{nom}}$$<small>Factor de concentración de esfuerzo — catálogos de Peterson</small></div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 13 · SOLUCIÓN ANALÍTICA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Verificación</span>
+    <span class="slide-num">13 / 21</span>
+  </div>
+  <h2 class="reveal">La referencia: Kt de Peterson</h2>
+  <div class="grid grid-3" style="margin-top:24px;gap:26px">
+    <div class="card reveal">
+      <h4 class="blue">Esfuerzo nominal</h4>
+      <div class="formula" data-katex="\sigma_{nom} = \frac{P}{w\,t}" style="font-size:26px;padding:18px">$$\sigma_{nom} = \frac{P}{w\,t}$$<small>F = σ·A = 10·(100·5) = 5000 N</small></div>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">\(\sigma_{nom} = 10\ \text{MPa}\)</p>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Factor de concentración</h4>
+      <div class="formula" data-katex="\frac{d}{w} = \frac{20}{100} = 0.2" style="font-size:26px;padding:18px">$$\frac{d}{w} = \frac{20}{100} = 0.2$$<small>Peterson, placa finita → Kt ≈ 2.42–2.5</small></div>
+      <p class="mono" style="text-align:center;font-size:20px;margin-top:4px">Placa infinita: \(K_t = 3\)</p>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Esfuerzo máximo</h4>
+      <div class="formula" data-katex="\sigma_{máx} = K_t \cdot \sigma_{nom}" style="font-size:26px;padding:18px">$$\sigma_{máx} = K_t \cdot \sigma_{nom}$$<small>≈ 2.5 × 10 MPa</small></div>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">\(\sigma_{máx} \approx 25\ \text{MPa}\)</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:26px">
+    <span class="tag">Objetivo de verificación</span>
+    El FEM con malla fina local debe dar <strong>\(K_t = \sigma_{máx,FEM} / \sigma_{nom}\)</strong> con error &lt; 5% (rango esperado 22–27 MPa). Los <strong>TET10 convergen mejor que los TET4</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 14 · PLAN DE TRABAJO EN FREECAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · FreeCAD</span>
+    <span class="slide-num">14 / 21</span>
+  </div>
+  <h2 class="reveal">Plan de trabajo en FreeCAD FEM</h2>
+  <ol class="steps" style="margin-top:26px;gap:12px">
+    <li class="reveal" style="font-size:23px"><strong>Geometría</strong> — <em>Part → Primitives → Box</em>: 200 × 100 × 5 mm</li>
+    <li class="reveal" style="font-size:23px"><strong>Agujero</strong> — <em>Part → Primitives → Cylinder</em> (Radius 10, Height 50), centrado en (100, 50)</li>
+    <li class="reveal" style="font-size:23px"><strong>Booleano</strong> — <em>Part → Boolean → Cut</em>: Box − Cylinder</li>
+    <li class="reveal" style="font-size:23px"><strong>Análisis</strong> — <em>FEM → Analysis container → New analysis</em>; material acero (<span class="mono">E = 210000 MPa, ν = 0.3</span>)</li>
+    <li class="reveal" style="font-size:23px"><strong>Condiciones</strong> — <em>Constraint fixed</em> en x = 0 (cara completa); <em>Constraint force</em> 5000 N en x = 200 (dirección axial X)</li>
+    <li class="reveal" style="font-size:23px"><strong>Malla</strong> — <em>Gmsh</em> 5 mm + <em>refinamiento local 1.5 mm</em> en las aristas del agujero</li>
+    <li class="reveal" style="font-size:23px"><strong>Solver</strong> — <em>CalculiX</em>: Write .inp → Run → "CalculiX done!"</li>
+    <li class="reveal" style="font-size:23px"><strong>Resultados</strong> — von Mises: σ<sub>máx</sub> en el borde del agujero ≈ 22–27 MPa</li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════ SLIDE 15 · MALLA Y REFINAMIENTO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Convergencia local</span>
+    <span class="slide-num">15 / 21</span>
+  </div>
+  <h2 class="reveal">La malla y el pico de esfuerzo</h2>
+  <table class="reveal" style="margin-top:24px">
+    <thead><tr><th>Malla</th><th>Tamaño global</th><th>Refinamiento agujero</th><th>σ<sub>máx</sub> típico (TET10)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Gruesa</strong></td><td class="mono">10 mm</td><td class="mono">1.5 mm local</td><td class="red">≈ 18–22 MPa — subestima el gradiente</td></tr>
+      <tr><td><strong>Media</strong></td><td class="mono">5 mm</td><td class="mono">1.5 mm local</td><td class="gold">≈ 22–26 MPa — se acerca</td></tr>
+      <tr><td><strong>Fina</strong></td><td class="mono">2.5 mm</td><td class="mono">1.5 mm local</td><td class="mint">≈ 24–27 MPa — convergida (&lt; 5%)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold reveal" style="margin-top:26px">
+    <span class="tag">Recalca la guía · Cap. 4.2.3 · Regla 4</span>
+    El refinamiento local alrededor del agujero es <strong>obligatorio</strong>: ahí viven los gradientes altos. Si el pico cambia poco (&lt; 5%) al refinar, la malla local es suficiente; si cambia mucho, siga refinando.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 16 · MAPA DE ERRORES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Adelanto · Cap. 5</span>
+    <span class="slide-num">16 / 21</span>
+  </div>
+  <h2 class="reveal">Los errores que hoy están en juego</h2>
+  <div class="figure reveal" style="max-width:980px;margin:0 auto">
+    <img src="../assets/figuras/07_errores_comunes.png" alt="Frecuencia de errores comunes en simulación">
+    <figcaption>Figura 7 — Frecuencia de errores en simulación (Guía, cap. 5)</figcaption>
+  </div>
+  <div class="callout gold reveal" style="margin-top:20px">
+    <span class="tag">Top de esta sesión</span>
+    <strong>2. Mallado inadecuado (22%)</strong> · 3. Material erróneo (15%) · <strong>4. Tipo de elemento inapropiado (10%)</strong>. Los tres se combaten en el pre-procesamiento.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 17 · TALLER 3 ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 3 · Entregable</span>
+    <span class="slide-num">17 / 21</span>
+  </div>
+  <h2 class="reveal">Taller 3 — El concentrador de esfuerzos</h2>
+  <div class="grid grid-3" style="margin-top:28px;gap:24px">
+    <div class="card reveal t-blue">
+      <h4>Parte A · Diámetro vs. Kt</h4>
+      <p style="font-size:21px">Simule d = 10, 20 y 30 mm (\(d/w = 0.1,\ 0.2,\ 0.3\)). Calcule el Kt numérico y compárelo con Peterson (≈ 2.7, 2.5, 2.3): observe la tendencia decreciente con d/w.</p>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Parte B · Malla gruesa vs. fina</h4>
+      <p style="font-size:21px">Cuantifique cuánto cambia σ<sub>máx</sub> entre malla gruesa y fina alrededor del agujero. La lección: el refinamiento local es obligatorio donde hay gradientes.</p>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>Parte C · Discusión</h4>
+      <p style="font-size:21px">Tabla Kt numérico vs. teórico + reflexión: ¿por qué la placa infinita da Kt = 3 y la finita menos? ¿Sobre qué esfuerzo nominal calcula Kt?</p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Entregables</span>
+    Informe con tabla Kt numérico vs. teórico, gráfica del efecto de la malla y 3 conclusiones que citen la guía (cap. 4.2; cap. 5, error 2 — mallado 22%). Ver rúbrica en <strong>taller.html</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 18 · RESUMEN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre</span>
+    <span class="slide-num">18 / 21</span>
+  </div>
+  <h2 class="reveal">Lo que debe quedar hoy</h2>
+  <div class="grid grid-3" style="margin-top:30px">
+    <div class="card reveal t-gold"><div class="num">1</div><h4>El pre-proceso manda</h4><p>El 60–70% del tiempo y la calidad del resultado se deciden <strong>antes de resolver</strong>.</p></div>
+    <div class="card reveal t-blue"><div class="num">2</div><h4>Geometría y material</h4><p>Simplifique con criterio (St. Venant) y documente cada propiedad con <strong>trazabilidad</strong>.</p></div>
+    <div class="card reveal t-mint"><div class="num">3</div><h4>La malla es el corazón</h4><p>Elemento correcto (TET10), 6 reglas prácticas y <strong>refinar donde hay gradientes</strong>.</p></div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:34px">
+    <span class="tag">Hoy se verifica con</span>
+    \(\sigma_{máx} \approx 25\ \text{MPa}\ (K_t \approx 2.5,\ \text{Peterson})\) en el borde del agujero de la placa 200 × 100 × 5 mm con F = 5000 N.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 19 · PRÓXIMA SESIÓN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre · Ruta</span>
+    <span class="slide-num">19 / 21</span>
+  </div>
+  <h2 class="reveal">Próxima sesión</h2>
+  <div class="card reveal t-blue" style="margin-top:30px">
+    <h4>Sesión 4 — El solver y el post-procesamiento</h4>
+    <p style="font-size:24px">Qué hace CalculiX cuando usted aprieta "Solve": el ensamblaje de \([K]\{u\} = \{F\}\) y sus solvers directo/iterativo (cap. 4.3). Y cómo leer resultados con escepticismo: singularidades, tipos de esfuerzo y qué reportar (cap. 4.4).</p>
+  </div>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Tarea para la Sesión 4</span>
+    Complete el <strong>Taller 3</strong> (concentrador de esfuerzos) y lleve sus tablas de Kt numérico vs. teórico. Lectura previa: guía caps. 4.3–4.4.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 20 · RECURSOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Materiales</span>
+    <span class="slide-num">20 / 21</span>
+  </div>
+  <h2 class="reveal">Recursos de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue">Guía de referencia</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li>Cap. 2.4 — Modelos constitutivos</li>
+        <li>Cap. 4.2 — El arte del pre-procesamiento</li>
+        <li>Cap. 5 — Errores 2 (mallado 22%), 3 (material 15%), 4 (elemento 10%)</li>
+        <li>Cap. 9.2 — Ejercicio: placa con agujero</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Archivos del curso</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li><span class="mono">ejercicio_paso_a_paso.html</span> — guía detallada</li>
+        <li><span class="mono">taller.html</span> — enunciado + rúbrica</li>
+        <li><span class="mono">video/guion.md</span> — guion del video asíncrono</li>
+        <li>Notebooks guía: <span class="mono">02_convergencia_malla.ipynb</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="mono reveal" style="margin-top:30px;color:var(--text2);font-size:20px">Referencia: W. D. Pilkey y D. F. Pilkey, <em>Peterson's Stress Concentration Factors</em>, 4.ª ed., Wiley, 2008 — figuras de Kt para placa finita con agujero central.</p>
+</section>
+
+<!-- ═══════════════════════ SLIDE 21 · CIERRE ═══════════════════════ -->
+<section class="slide cover">
+  <div class="reveal course-tag">Sesión 3 · Fin</div>
+  <h1 class="reveal">La calidad del resultado<br>se decide <span class="accent">antes de resolver</span></h1>
+  <div class="reveal sub">Próxima sesión: el solver y el post-procesamiento — leer resultados con escepticismo.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta"><span>FEM con FreeCAD · 6 sesiones</span><span>·</span><span>Guía Práctica de Simulación FEM</span></div>
+</section>
+
+</main>
+</div>
+
+<!-- footer chrome: navegación -->
+<div class="deck-chrome" id="deckChrome">
+  <span class="brand">FEM · FreeCAD</span>
+  <span class="dots" id="dots"></span>
+  <span class="hint">← → navegar · P imprimir</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE PRESENTATION CONTROLLER — plantilla frontend-slides
+   ═══════════════════════════════════════════════════════════════ */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.current=0;
+    this.stage=document.getElementById('deckStage');
+    this.dots=document.getElementById('dots');
+    this.buildDots();
+    this.setupScale();
+    this.setupKeys();
+    this.setupTouch();
+    this.show(0);
+  }
+  buildDots(){
+    this.dots.innerHTML=this.slides.map((_,i)=>`<i data-i="${i}"></i>`).join('');
+    this.dots.querySelectorAll('i').forEach(d=>d.addEventListener('click',()=>this.show(+d.dataset.i)));
+  }
+  setupScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();window.addEventListener('resize',scale);
+  }
+  setupKeys(){
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();this.show(this.current+1)}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();this.show(this.current-1)}
+      else if(e.key==='Home'){this.show(0)}
+      else if(e.key==='End'){this.show(this.slides.length-1)}
+      else if(e.key==='p'||e.key==='P'){window.print()}
+    });
+  }
+  setupTouch(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>60)this.show(this.current+(dx<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.querySelectorAll('i').forEach((d,k)=>d.classList.toggle('on',k===this.current));
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

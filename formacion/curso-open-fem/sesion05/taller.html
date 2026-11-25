@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller 5 — Placa con agujero: convergencia con GCI y validación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Taller 5 · Sesión 5
+  Recalca: Guía de Simulación FEM, caps. 5 (errores 1-3, 6, 9),
+  6.2 (GCI), 6.3 (validación con Kt), 6.4 (sensibilidad)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#0a1613;--bg2:#0e1d19;--panel:rgba(14,29,25,.92);--line:rgba(61,220,151,.18);
+  --text:#e4e8ec;--text2:#9fb5ac;--blue:#64b5f6;--gold:#e6c07a;--mint:#3ddc97;--red:#e57373;
+  --font:'Outfit',sans-serif;--mono:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:40px;font-weight:600;margin:10px 0 8px}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:26px;font-weight:600;margin:40px 0 14px;color:var(--gold)}
+h3{font-size:19px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+p,li{font-size:16.5px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(100,181,246,.07);padding:15px 20px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15.5px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.gold{border-color:var(--gold);background:rgba(230,192,122,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(61,220,151,.07)}
+.callout.mint .tag{color:var(--mint)}
+.callout.warn{border-color:var(--red);background:rgba(229,115,115,.07)}
+.callout.warn .tag{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(61,220,151,.10);color:var(--text2);vertical-align:top}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14px;color:var(--gold)}
+.formula{font-family:var(--mono);font-size:22px;color:var(--gold);text-align:center;background:rgba(230,192,122,.07);border:1px solid rgba(230,192,122,.25);border-radius:10px;padding:16px;margin:12px 0}
+.formula small{display:block;font-size:14px;color:var(--text2);margin-top:8px;font-family:var(--font)}
+.puntos{text-align:center;font-family:var(--mono);font-size:14px;color:var(--gold);white-space:nowrap}
+.entrega{display:flex;gap:12px;align-items:flex-start;background:rgba(61,220,151,.07);border:1px solid rgba(61,220,151,.25);border-radius:10px;padding:16px 20px;margin:16px 0}
+.nota{font-family:var(--mono);font-size:14px;color:var(--mint)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t5">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 5 · Taller 5</div>
+  <h1>Taller 5 — Placa con agujero: convergencia con GCI y validación</h1>
+  <div class="meta">Entrega individual o en parejas · Formato: informe PDF/Markdown · Ponderación: ver rúbrica</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-placa"/></svg>&nbsp; Objetivos</h3>
+  <ul>
+    <li>Formalizar la <strong>convergencia de malla</strong> con el índice GCI sobre el esfuerzo máximo (cap. 6.2).</li>
+    <li><strong>Validar</strong> el resultado contra el factor de concentración de esfuerzos \(K_t\) de Peterson (cap. 6.3).</li>
+    <li>Aplicar el <strong>análisis de sensibilidad</strong> al módulo de Young y verificar la invariancia del esfuerzo en lineal (cap. 6.4).</li>
+  </ul>
+</div>
+
+<h2>Enunciado: la placa con agujero (Sesión 3)</h2>
+<p>Placa de \(200 \times 100 \times 5\ \text{mm}\) con agujero central \(d = 20\ \text{mm}\), acero (\(E = 210\ \text{GPa}\), \(\nu = 0.3\)), en tracción: \(\sigma_{nom} = 10\ \text{MPa}\) (fuerza total \(F = 5000\ \text{N}\)). El esfuerzo nominal se define sobre la sección bruta:</p>
+<div class="formula" data-katex="\sigma_{nom} = \frac{F}{t\cdot w} = \frac{5000\ \text{N}}{5\ \text{mm}\cdot 100\ \text{mm}} = 10\ \text{MPa}">$$\sigma_{nom} = \frac{F}{t\cdot w} = \frac{5000\ \text{N}}{5\ \text{mm}\cdot 100\ \text{mm}} = 10\ \text{MPa}$$</div>
+
+<h2>Parte A — Convergencia de malla y GCI sobre σ<sub>máx</sub></h2>
+<ol style="padding-left:22px">
+  <li>Construya la placa (workbench <kbd>Part</kbd> → <kbd>Box</kbd> + <kbd>Cylinder</kbd> d = 20 mm, <kbd>Part</kbd> → <kbd>Cut</kbd>) o reutilice el modelo de la Sesión 3. Aplique <kbd>Constraint fixed</kbd> en una cara corta y <kbd>Constraint force</kbd> de 5000 N en la otra.</li>
+  <li>Genere <strong>tres mallas</strong> con <span class="mono">Maximum element size</span> de <span class="mono">10 mm</span>, <span class="mono">5 mm</span> y <span class="mono">2.5 mm</span>, con <strong>refinamiento local alrededor del agujero</strong> (región de gradiente alto; <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Mesh region</kbd> con tamaño ~2× menor en el anillo del agujero).</li>
+  <li>Ejecute el solver en cada malla (verifique <span class="mono">"CalculiX done!"</span>) y registre \(\sigma_{m\acute{a}x}\) (von Mises, <strong>en el borde del agujero</strong>, punto de máxima concentración) en una tabla: malla, elementos, \(\sigma_{m\acute{a}x}\).</li>
+  <li>Calcule el <strong>GCI</strong> entre mallas consecutivas con \(r \approx 2\), \(p = 2\), \(F_s = 1.25\):</li>
+</ol>
+<div class="formula" data-katex="GCI = F_s\,\frac{|(f_{fina} - f_{media})/f_{media}|}{r^{p}-1}, \qquad \text{criterio: } GCI < 5\%\ (\text{diseño}),\ GCI < 2\%\ (\text{certificación})">$$GCI = F_s\,\frac{|(f_{fina} - f_{media})/f_{media}|}{r^{p}-1}, \qquad \text{criterio: } GCI < 5\%\ (\text{diseño}),\ GCI < 2\%\ (\text{certificación})$$</div>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 6.2</span>
+A diferencia de la deflexión de la viga, el esfuerzo en el borde del agujero converge <strong>más lentamente</strong>: espere GCI mayores que en el ejercicio. Si el GCI supera 5%, refine la malla local del agujero o reporte la tendencia con una cuarta malla.</div>
+
+<h2>Parte B — Validación: factor de concentración K<sub>t</sub></h2>
+<ol style="padding-left:22px">
+  <li>Con la malla convergida (la fina), compare \(\sigma_{m\acute{a}x}\) con la predicción de la teoría de concentración de esfuerzos: \(\sigma_{m\acute{a}x} = K_t \cdot \sigma_{nom}\).</li>
+  <li>Según Peterson (guía, cap. 6.3 y referencias), para \(d/w = 20/100 = 0.2\) en tracción: <strong>\(K_t \approx 2.5\)</strong> → \(\sigma_{m\acute{a}x}^{esperado} \approx 25\ \text{MPa}\).</li>
+  <li>Calcule el <strong>error porcentual</strong> de su malla fina frente a este valor esperado:</li>
+</ol>
+<div class="formula" data-katex="error\ (\%) = \frac{|\sigma_{m\acute{a}x}^{FEM} - K_t\,\sigma_{nom}|}{K_t\,\sigma_{nom}} \times 100">$$error\ (\%) = \frac{|\sigma_{m\acute{a}x}^{FEM} - K_t\,\sigma_{nom}|}{K_t\,\sigma_{nom}} \times 100$$</div>
+<div class="callout mint"><span class="tag">Recalca la guía · Cap. 6.3</span>
+La validación es comparación contra una referencia externa (experimento, benchmark o fórmula publicada). Aquí \(K_t\) de Peterson es su "experimento de papel": documente el origen del valor y su incertidumbre.</div>
+
+<h2>Parte C — Análisis de sensibilidad a E</h2>
+<ol style="padding-left:22px">
+  <li>Con la malla fina, varíe el módulo de Young \(\pm 10\%\): <span class="mono">189 GPa</span> y <span class="mono">231 GPa</span> (edite <span class="mono">MechanicalMaterial</span> y recorra).</li>
+  <li>Registre en cada caso: \(\sigma_{m\acute{a}x}\) y la deflexión máxima \(\delta_{m\acute{a}x}\).</li>
+  <li>Verifique las dos afirmaciones de la teoría lineal (cap. 6.4): <strong>\(\sigma\) NO cambia</strong> (el esfuerzo es independiente de \(E\)) y <strong>\(\delta\) SÍ cambia, \(\propto 1/E\)</strong>.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 6.4 · No linealidad</span>
+Esta invariancia vale en <strong>elasticidad lineal</strong>. Discuta brevemente: ¿qué cambiaría si la placa entrara en plasticidad? (5% en \(\sigma_y\) → 30% en carga de colapso, cap. 6.4).</div>
+
+<h2>Parte D — Informe</h2>
+<div class="entrega"><div>
+  <p><strong><svg class="fico" style="color:var(--mint);width:1.1em;height:1.1em"><use href="#fem-taller"/></svg>&nbsp; Entregue 4 tablas:</strong></p>
+  <p><strong>Tabla 1 — Convergencia:</strong> malla (10/5/2.5 mm) vs. elementos vs. \(\sigma_{m\acute{a}x}\) (MPa).</p>
+  <p><strong>Tabla 2 — GCI:</strong> pares de mallas vs. \(\varepsilon\) vs. GCI (%) vs. criterio (&lt; 5%).</p>
+  <p><strong>Tabla 3 — Validación:</strong> \(\sigma_{m\acute{a}x}^{FEM}\) vs. \(K_t \cdot \sigma_{nom} \approx 25\ \text{MPa}\) vs. error %.</p>
+  <p><strong>Tabla 4 — Sensibilidad:</strong> E (189/210/231 GPa) vs. \(\sigma_{m\acute{a}x}\) vs. \(\delta_{m\acute{a}x}\) vs. verificación \(\delta \propto 1/E\).</p>
+  <p><strong>Conclusiones:</strong> mínimo 3, citando la guía (cap. 6.2 GCI, cap. 6.3 validación, cap. 6.4 sensibilidad).</p>
+</div></div>
+
+<h2>Rúbrica de evaluación</h2>
+<table>
+  <thead><tr><th>Criterio</th><th>Logrado (100%)</th><th>Parcial (60%)</th><th>No logrado (0%)</th><th>Puntos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Modelo FEM correcto</strong><br><span class="mono">Placa, agujero, material, CF, carga</span></td>
+        <td>Análisis completo y funcional en las 3 mallas; refinamiento local correcto</td>
+        <td>Análisis funcional con algún error menor (dirección, refinamiento)</td>
+        <td>Análisis no ejecuta o CF/cargas incorrectas</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Convergencia + GCI</strong><br><span class="mono">Tabla 1 y 2, criterio &lt; 5%</span></td>
+        <td>Tablas completas, GCI calculado con la fórmula y comparado con el criterio</td>
+        <td>GCI calculado sin comparación con el criterio o tablas incompletas</td>
+        <td>Sin estudio de convergencia o GCI ausente</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Validación (Kt)</strong><br><span class="mono">Tabla 3, error %</span></td>
+        <td>Comparación correcta contra Kt·σ<sub>nom</sub> ≈ 25 MPa con error % y discusión</td>
+        <td>Comparación presente sin error % ni discusión del origen de Kt</td>
+        <td>Parte B ausente o comparación incorrecta</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Sensibilidad + discusión</strong><br><span class="mono">Tabla 4, σ invariante, δ ∝ 1/E</span></td>
+        <td>Verificación completa de las dos afirmaciones + discusión de la no linealidad</td>
+        <td>Datos completos sin interpretación ni discusión</td>
+        <td>Parte C ausente</td><td class="puntos">15</td></tr>
+  </tbody>
+</table>
+<p class="nota">Total: 100 puntos · Entregar antes de la Sesión 6.</p>
+
+<div class="callout warn"><span class="tag">Recuerde · Cap. 5 · Errores 1, 2, 6 y 9</span>
+Si su σ<sub>máx</sub> "no converge" o difiere mucho de 25 MPa, revise primero las CF (Error 1) y la lectura del punto de máximo (Error 6): el pico debe leerse en el borde del agujero, no en una esquina singular de la placa. Reportar un único valor sin GCI se evalúa como no logrado en convergencia (Error 9).</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 5 (errores 1, 2, 6 y 9), cap. 6.2 (convergencia y GCI), cap. 6.3 (validación, Kt, métricas), cap. 6.4 (sensibilidad). Notebooks complementarios: <span class="mono">02_convergencia_malla.ipynb</span> y <span class="mono">03_validacion_modelos.ipynb</span>.</div>
+
+<footer>FEM práctico con FreeCAD · Taller 5 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

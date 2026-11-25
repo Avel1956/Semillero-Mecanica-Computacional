@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM práctico con FreeCAD — Curso completo (6 sesiones)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD — Índice maestro (hub)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Basado en: Guía Práctica de Simulación en Ingeniería (caps. 1–9)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="assets/soporte/fem.js"></script>
+<style>
+:root{
+  --bg:#0b1220;--bg2:#0e1626;--panel:rgba(13,22,38,.92);--line:rgba(93,156,236,.18);
+  --text:#e4e8ec;--text2:#9aa7b8;--blue:#5d9cec;--gold:#e8c76a;--mint:#48c9b0;--red:#e0555a;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:
+  radial-gradient(1100px 600px at 85% -10%, rgba(93,156,236,.10), transparent 60%),
+  radial-gradient(900px 500px at -10% 110%, rgba(232,199,106,.06), transparent 60%),
+  linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  color:var(--text);min-height:100vh;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding:56px 32px 100px}
+/* header */
+.hero{border-bottom:1px solid var(--line);padding-bottom:40px;margin-bottom:44px}
+.course-tag{font-family:var(--mono);font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:56px;font-weight:600;letter-spacing:-.015em;margin:14px 0 12px;line-height:1.06}
+h1 .accent{color:var(--gold)}
+.hero p{font-size:20px;color:var(--text2);max-width:900px}
+.hero .meta{margin-top:22px;font-family:var(--mono);font-size:14px;color:var(--text2);display:flex;gap:26px;flex-wrap:wrap}
+.hero .meta b{color:var(--blue);font-weight:600}
+/* secciones */
+h2{font-size:24px;font-weight:600;margin:46px 0 20px;color:var(--gold);display:flex;align-items:center;gap:12px}
+h2 .n{font-family:var(--mono);font-size:15px;color:var(--blue);border:1px solid var(--line);border-radius:7px;padding:3px 10px}
+/* grid de sesiones */
+.sessions{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:26px}
+.sess{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px 30px;transition:transform .25s var(--ease, cubic-bezier(.16,1,.3,1)),border-color .25s;position:relative;overflow:hidden}
+.sess:hover{transform:translateY(-4px);border-color:rgba(93,156,236,.45)}
+.sess::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.35;background-image:linear-gradient(rgba(93,156,236,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(93,156,236,.05) 1px,transparent 1px);background-size:72px 72px}
+.sess .num{font-family:var(--mono);font-size:44px;font-weight:600;line-height:1;color:var(--blue);margin-bottom:12px}
+.sess .tit{font-size:21px;font-weight:600;margin-bottom:8px}
+.sess .cap{font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mint);margin-bottom:12px}
+.sess p{font-size:15.5px;color:var(--text2)}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.links a{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;color:var(--blue);text-decoration:none;background:rgba(93,156,236,.08);border:1px solid rgba(93,156,236,.2);border-radius:8px;padding:9px 12px;transition:background .2s}
+.links a:hover{background:rgba(93,156,236,.18)}
+.links a .ic{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4}
+.links a.wide{grid-column:1/-1}
+.links a.wide:nth-child(4){grid-column:1/-1}
+/* mapeo guía */
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.m{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 20px}
+.m .c{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:600;margin-bottom:4px}
+.m p{font-size:14px;color:var(--text2)}
+/* cards info */
+.info{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:22px;margin-top:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 28px}
+.card h3{font-size:18px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.card ul{list-style:none}
+.card li{font-size:15px;color:var(--text2);padding:6px 0;border-bottom:1px solid rgba(93,156,236,.08)}
+.card li:last-child{border-bottom:none}
+.card li::before{content:'▸ ';color:var(--blue)}
+.callout{border-left:4px solid var(--gold);background:rgba(232,199,106,.07);padding:18px 24px;border-radius:0 12px 12px 0;margin:34px 0 0;font-size:16.5px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--gold)}
+footer{margin-top:70px;border-top:1px solid var(--line);padding-top:24px;font-family:var(--mono);font-size:13px;color:var(--text2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="course-tag">Curso completo · 6 sesiones · Software libre</div>
+  <h1>FEM práctico con <span class="accent">FreeCAD</span></h1>
+  <p>Del fenómeno físico al modelo computacional confiable: un curso práctico de Elementos Finitos con herramientas gratuitas y de código abierto (FreeCAD FEM + CalculiX), que recalca en cada sesión lo aprendido en la <strong>Guía Práctica de Simulación en Ingeniería</strong>.</p>
+  <div class="meta">
+    <span><b>Prof.</b> J. A. Vélez</span>
+    <span><b>Institución</b> PUJ Cali — Mecánica</span>
+    <span><b>Formato</b> Clase + video asíncrono + talleres</span>
+    <span><b>Solver</b> CalculiX (ccx)</span>
+  </div>
+</header>
+
+<h2><span class="n">01</span> Las seis sesiones</h2>
+<div class="sessions">
+
+  <div class="sess">
+    <div class="num">01</div>
+    <div class="tit">¿Qué es simular? Del fenómeno al modelo</div>
+    <div class="cap">Guía caps. 1–2</div>
+    <p>Los tres pilares de la ingeniería, el costo de una mala simulación, la regla de oro. Abstracción, ecuaciones gobernantes, condiciones de frontera y constitutivos. Práctica: viga en voladizo.</p>
+    <div class="links">
+      <a href="sesion01/presentacion.html"><svg class="ic"><use href="#fem-clase"/></svg> Presentación</a>
+      <a href="sesion01/taller.html"><svg class="ic"><use href="#fem-taller"/></svg> Taller 1</a>
+      <a href="sesion01/video/diapositivas.html" class="wide"><svg class="ic"><use href="#fem-video"/></svg> Video (diapositivas) + <span style="color:var(--text2)">guion.md</span></a>
+      <a href="sesion01/ejercicio_paso_a_paso.html" class="wide"><svg class="ic"><use href="#fem-ejer"/></svg> Ejercicio paso a paso</a>
+    </div>
+  </div>
+
+  <div class="sess">
+    <div class="num">02</div>
+    <div class="tit">Métodos numéricos y la idea del FEM</div>
+    <div class="cap">Guía caps. 3–4.1</div>
+    <p>FDM vs FVM vs FEM. Discretización, funciones de forma, ensamblaje y el sistema [K]{u}={F}. Práctica: barra en tracción con verificación analítica.</p>
+    <div class="links">
+      <a href="sesion02/presentacion.html"><svg class="ic"><use href="#fem-clase"/></svg> Presentación</a>
+      <a href="sesion02/taller.html"><svg class="ic"><use href="#fem-taller"/></svg> Taller 2</a>
+      <a href="sesion02/video/diapositivas.html" class="wide"><svg class="ic"><use href="#fem-video"/></svg> Video (diapositivas) + <span style="color:var(--text2)">guion.md</span></a>
+      <a href="sesion02/ejercicio_paso_a_paso.html" class="wide"><svg class="ic"><use href="#fem-ejer"/></svg> Ejercicio paso a paso</a>
+    </div>
+  </div>
+
+  <div class="sess">
+    <div class="num">03</div>
+    <div class="tit">Pre-procesamiento: geometría, material y malla</div>
+    <div class="cap">Guía cap. 4.2</div>
+    <p>El arte del 60–70% del tiempo de simulación: simplificación con criterio, St. Venant, materiales con trazabilidad, tipos de elemento y las 6 reglas de mallado. Práctica: placa con agujero y concentración de esfuerzos.</p>
+    <div class="links">
+      <a href="sesion03/presentacion.html"><svg class="ic"><use href="#fem-clase"/></svg> Presentación</a>
+      <a href="sesion03/taller.html"><svg class="ic"><use href="#fem-taller"/></svg> Taller 3</a>
+      <a href="sesion03/video/diapositivas.html" class="wide"><svg class="ic"><use href="#fem-video"/></svg> Video (diapositivas) + <span style="color:var(--text2)">guion.md</span></a>
+      <a href="sesion03/ejercicio_paso_a_paso.html" class="wide"><svg class="ic"><use href="#fem-ejer"/></svg> Ejercicio paso a paso</a>
+    </div>
+  </div>
+
+  <div class="sess">
+    <div class="num">04</div>
+    <div class="tit">Solver y post-procesamiento: leer con escepticismo</div>
+    <div class="cap">Guía caps. 4.3–4.4</div>
+    <p>Solvers directos, iterativos y no lineales. Singularidades en esquinas entrantes, desplazamientos vs esfuerzos, tipos de esfuerzo (von Mises, Tresca, principal). Práctica: soporte con esquina entrante.</p>
+    <div class="links">
+      <a href="sesion04/presentacion.html"><svg class="ic"><use href="#fem-clase"/></svg> Presentación</a>
+      <a href="sesion04/taller.html"><svg class="ic"><use href="#fem-taller"/></svg> Taller 4</a>
+      <a href="sesion04/video/diapositivas.html" class="wide"><svg class="ic"><use href="#fem-video"/></svg> Video (diapositivas) + <span style="color:var(--text2)">guion.md</span></a>
+      <a href="sesion04/ejercicio_paso_a_paso.html" class="wide"><svg class="ic"><use href="#fem-ejer"/></svg> Ejercicio paso a paso</a>
+    </div>
+  </div>
+
+  <div class="sess">
+    <div class="num">05</div>
+    <div class="tit">Errores comunes + Verificación y Validación</div>
+    <div class="cap">Guía caps. 5–6</div>
+    <p>Taxonomía de errores y los 10 más frecuentes. Verificación (¿resolvemos bien las ecuaciones?) vs validación (¿las ecuaciones correctas?). Convergencia de malla con GCI. Práctica: convergencia con 3 mallas + sensibilidad.</p>
+    <div class="links">
+      <a href="sesion05/presentacion.html"><svg class="ic"><use href="#fem-clase"/></svg> Presentación</a>
+      <a href="sesion05/taller.html"><svg class="ic"><use href="#fem-taller"/></svg> Taller 5</a>
+      <a href="sesion05/video/diapositivas.html" class="wide"><svg class="ic"><use href="#fem-video"/></svg> Video (diapositivas) + <span style="color:var(--text2)">guion.md</span></a>
+      <a href="sesion05/ejercicio_paso_a_paso.html" class="wide"><svg class="ic"><use href="#fem-ejer"/></svg> Ejercicio paso a paso</a>
+    </div>
+  </div>
+
+  <div class="sess">
+    <div class="num">06</div>
+    <div class="tit">Flujo profesional, informe e IA en simulación</div>
+    <div class="cap">Guía caps. 7–8</div>
+    <p>Checklist de las 5 preguntas, documentación, informe de resultados y reproducibilidad. Panorama de IA: surrogados, PINNs, ROM. Práctica: ciclo completo con soporte bajo carga combinada + proyecto integrador.</p>
+    <div class="links">
+      <a href="sesion06/presentacion.html"><svg class="ic"><use href="#fem-clase"/></svg> Presentación</a>
+      <a href="sesion06/taller.html"><svg class="ic"><use href="#fem-taller"/></svg> Taller 6</a>
+      <a href="sesion06/video/diapositivas.html" class="wide"><svg class="ic"><use href="#fem-video"/></svg> Video (diapositivas) + <span style="color:var(--text2)">guion.md</span></a>
+      <a href="sesion06/ejercicio_paso_a_paso.html" class="wide"><svg class="ic"><use href="#fem-ejer"/></svg> Ejercicio paso a paso</a>
+    </div>
+  </div>
+
+</div>
+
+<h2><span class="n">02</span> Mapeo con la Guía de Simulación FEM</h2>
+<div class="map">
+  <div class="m"><div class="c">Cap. 1</div><p>Introducción: qué es simular → Sesión 1</p></div>
+  <div class="m"><div class="c">Cap. 2</div><p>Fenómeno → modelo matemático → Sesión 1</p></div>
+  <div class="m"><div class="c">Cap. 3</div><p>Métodos numéricos → Sesión 2</p></div>
+  <div class="m"><div class="c">Cap. 4</div><p>FEM guía práctica → Sesiones 2–4</p></div>
+  <div class="m"><div class="c">Cap. 5</div><p>Errores comunes → Sesiones 1, 4, 5</p></div>
+  <div class="m"><div class="c">Cap. 6</div><p>Verificación y validación → Sesión 5</p></div>
+  <div class="m"><div class="c">Cap. 7</div><p>IA en simulación → Sesión 6</p></div>
+  <div class="m"><div class="c">Cap. 8</div><p>Flujo de trabajo profesional → Sesión 6</p></div>
+  <div class="m"><div class="c">Cap. 9</div><p>Ejercicios prácticos → Talleres 1–6</p></div>
+  <div class="m"><div class="c">Apéndices</div><p>Unidades y glosario → Todas las sesiones</p></div>
+</div>
+
+<h2><span class="n">03</span> Instalación y requisitos</h2>
+<div class="info">
+  <div class="card">
+    <h3><svg class="ficox" style="width:22px;height:22px;vertical-align:-4px;fill:none;stroke:var(--blue);stroke-width:2.2;margin-right:8px"><use href="#fem-instala"/></svg>Software (gratuito)</h3>
+    <ul>
+      <li><strong>FreeCAD 1.0+</strong> — freecad.org (Windows/Linux/macOS)</li>
+      <li><strong>CalculiX (ccx)</strong> — solver FEM; se configura en FEM → Preferences → CalculiX</li>
+      <li><strong>Gmsh</strong> — generador de mallas (incluido con FreeCAD FEM)</li>
+      <li>Alternativas: PrePoMax, Z88, ANSYS Student</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3><svg class="ficox" style="width:22px;height:22px;vertical-align:-4px;fill:none;stroke:var(--blue);stroke-width:2.2;margin-right:8px"><use href="#fem-taller"/></svg>Entregables por sesión</h3>
+    <ul>
+      <li>presentacion.html — deck para clase</li>
+      <li>video/diapositivas.html — animación p5.js para grabar (OBS)</li>
+      <li>video/guion.md — guion de narración con tiempos</li>
+      <li>ejercicio_paso_a_paso.html — guía con checkpoints y valores esperados</li>
+      <li>taller.html — enunciado + rúbrica (100 puntos)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3><svg class="ficox" style="width:22px;height:22px;vertical-align:-4px;fill:none;stroke:var(--blue);stroke-width:2.2;margin-right:8px"><use href="#fem-glosario"/></svg>Material de apoyo</h3>
+    <ul>
+      <li>Guía Práctica de Simulación en Ingeniería (manuscrito + figuras + notebooks)</li>
+      <li>Notebooks: 01_intro_fem_barra, 02_convergencia_malla, 03_validacion_modelos</li>
+      <li>assets/figuras/ — figuras de la guía reutilizadas</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="tag">Regla de oro (Guía, cap. 1)</span>
+  Trata cada resultado de simulación como una <strong>hipótesis que debe verificarse</strong>, no como una verdad revelada.
+</div>
+
+<footer>
+  <span>FEM práctico con FreeCAD · 6 sesiones · Prof. J. A. Vélez · PUJ Cali</span>
+  <span>Basado en la Guía Práctica de Simulación en Ingeniería (2026)</span>
+</footer>
+
+</div>
+</body>
+</html>

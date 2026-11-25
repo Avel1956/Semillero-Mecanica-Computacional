@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM con FreeCAD — Sesión 2: Métodos numéricos y la idea del FEM</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD (6 sesiones)
+  Sesión 2 — Métodos numéricos y la idea del FEM
+  Recalca: Guía Práctica de Simulación en Ingeniería (caps. 3 y 4.1)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Estilo: "Blueprint técnico" — paleta coherente con VIDEOMN
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (THEME) — Blueprint técnico
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg: #0d1418;            /* gris acero profundo */
+  --bg2: #111a20;
+  --panel: rgba(17,26,32,.92);
+  --line: rgba(79,195,247,.18);
+  --text: #e4e8ec;
+  --text2: #9aa7b8;
+  --blue: #4fc3f7;          /* método / datos */
+  --gold: #ffb74d;          /* insight / resultado */
+  --mint: #4dd0b5;          /* correcto / validado */
+  --red: #ef5350;           /* error / peligro */
+  --font-display: 'Archivo', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --title-size: 76px;
+  --subtitle-size: 30px;
+  --body-size: 26px;
+  --slide-padding: 88px;
+  --content-gap: 34px;
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);
+  --duration-normal: .6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* --- PASTE viewport-base.css CONTENTS (fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT BASE DE LA PLANTILLA (1920×1080)
+   ═══════════════════════════════════════════════════════════════ */
+body{font-family:var(--font-display);color:var(--text);background:var(--bg)}
+/* iconos SVG tecnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.slide{
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(79,195,247,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(255,183,77,.06), transparent 60%),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  padding:var(--slide-padding);
+}
+/* retícula técnica sutil de fondo */
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(79,195,247,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(79,195,247,.05) 1px,transparent 1px);
+  background-size:96px 96px;
+}
+
+/* header de slide */
+.slide-header{
+  display:flex;align-items:baseline;gap:24px;margin-bottom:42px;
+  border-bottom:1px solid var(--line);padding-bottom:20px;
+}
+.kicker{
+  font-family:var(--font-mono);font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+}
+.slide-num{margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--text2)}
+.slide h2{font-size:var(--title-size);font-weight:600;letter-spacing:-.01em;line-height:1.05;margin-bottom:10px}
+.slide h3{font-size:38px;font-weight:600;margin:0 0 18px;color:var(--text)}
+.slide p,.slide li{font-size:var(--body-size);line-height:1.5;color:var(--text2)}
+.slide strong{color:var(--text);font-weight:600}
+.slide .lead{font-size:30px;color:var(--text);line-height:1.45}
+
+/* ANIMACIONES */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration-normal) var(--ease-out-expo),transform var(--duration-normal) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.reveal:nth-child(1){transition-delay:.08s}
+.reveal:nth-child(2){transition-delay:.16s}
+.reveal:nth-child(3){transition-delay:.24s}
+.reveal:nth-child(4){transition-delay:.32s}
+.reveal:nth-child(5){transition-delay:.40s}
+.reveal:nth-child(6){transition-delay:.48s}
+
+/* tarjetas y grids */
+.grid{display:grid;gap:var(--content-gap)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:30px 32px;backdrop-filter:blur(4px);
+}
+.card h4{font-size:24px;margin-bottom:12px;font-weight:600;letter-spacing:.01em}
+.card p,.card li{font-size:22px;line-height:1.45}
+.card .num{font-family:var(--font-mono);font-size:52px;font-weight:600;line-height:1;margin-bottom:14px}
+.t-blue .num,.t-blue h4{color:var(--blue)}
+.t-gold .num,.t-gold h4{color:var(--gold)}
+.t-mint .num,.t-mint h4{color:var(--mint)}
+.t-red .num,.t-red h4{color:var(--red)}
+
+/* tablas */
+table{width:100%;border-collapse:collapse;font-size:23px}
+th{font-family:var(--font-mono);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);font-weight:600}
+td{padding:13px 16px;border-bottom:1px solid rgba(79,195,247,.10);color:var(--text2);line-height:1.4}
+td strong{color:var(--text)}
+tr:hover td{background:rgba(79,195,247,.05)}
+.mono{font-family:var(--font-mono);font-size:22px}
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.big{font-size:44px;line-height:1.3;color:var(--text)}
+.formula{
+  font-family:var(--font-mono);font-size:40px;color:var(--gold);text-align:center;
+  background:rgba(255,183,77,.07);border:1px solid rgba(255,183,77,.25);
+  border-radius:12px;padding:26px;margin:14px 0;letter-spacing:.01em;
+}
+.formula small{display:block;font-size:20px;color:var(--text2);margin-top:10px;font-family:var(--font-display)}
+
+/* callouts */
+.callout{border-left:4px solid var(--blue);background:rgba(79,195,247,.07);padding:22px 28px;border-radius:0 12px 12px 0;font-size:25px;line-height:1.5}
+.callout.warn{border-color:var(--red);background:rgba(239,83,80,.07)}
+.callout.gold{border-color:var(--gold);background:rgba(255,183,77,.07)}
+.callout.mint{border-color:var(--mint);background:rgba(77,208,181,.07)}
+.callout .tag{font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--blue)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint .tag{color:var(--mint)}
+
+/* portada y cierre */
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;gap:0}
+.cover .course-tag{font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:34px}
+.cover h1{font-size:110px;font-weight:600;line-height:1.04;letter-spacing:-.015em;max-width:1500px}
+.cover h1 .accent{color:var(--gold)}
+.cover .sub{margin-top:30px;font-size:34px;color:var(--text2);max-width:1300px;line-height:1.4}
+.cover .meta{margin-top:56px;font-family:var(--font-mono);font-size:21px;color:var(--text2);letter-spacing:.08em;display:flex;gap:36px;align-items:center}
+.cover .meta span{display:flex;align-items:center;gap:10px}
+.cover .rule{width:120px;height:2px;background:var(--gold);margin-top:40px;opacity:.7}
+
+/* lista de pasos numerados */
+.steps{counter-reset:step;list-style:none;display:grid;gap:20px}
+.steps li{counter-increment:step;display:flex;gap:22px;align-items:flex-start;font-size:25px;color:var(--text2);line-height:1.45}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);flex:0 0 56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--blue);
+  border:1px solid var(--line);background:rgba(79,195,247,.08);
+}
+.steps li strong{color:var(--text)}
+.steps li em{color:var(--mint);font-style:normal}
+
+/* footer chrome del deck */
+.deck-chrome{position:fixed;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:900;pointer-events:none;font-family:var(--font-mono);font-size:16px;color:var(--text2);opacity:.75;background:linear-gradient(transparent,rgba(13,20,24,.9))}
+.deck-chrome .brand{letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.deck-chrome .dots{display:flex;gap:10px;align-items:center}
+.deck-chrome .dots i{width:8px;height:8px;border-radius:50%;background:var(--text2);opacity:.35}
+.deck-chrome .dots i.on{background:var(--gold);opacity:1}
+
+/* imágenes */
+.figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(17,26,32,.6)}
+.figure img{display:block;width:100%;height:100%;object-fit:contain}
+.figure figcaption{padding:14px 20px;font-size:19px;color:var(--text2);font-family:var(--font-mono);letter-spacing:.03em;border-top:1px solid var(--line)}
+</style>
+</head>
+<body data-tema="t2">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ═══════════════════════ SLIDE 1 · PORTADA ═══════════════════════ -->
+<section class="slide cover active">
+  <div class="reveal course-tag">Curso · FEM práctico con FreeCAD · Sesión 2 de 6</div>
+  <h1 class="reveal">Métodos numéricos y la idea del <span class="accent">FEM</span></h1>
+  <div class="reveal sub">Discretizar para resolver: de la ecuación continua al sistema algebraico \( [K]\{u\} = \{F\} \).</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta">
+    <span>Prof. J. A. Vélez</span><span>·</span><span>PUJ Cali — Mecánica</span><span>·</span><span>Basado en: Guía Práctica de Simulación en Ingeniería (caps. 3–4.1)</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 2 · AGENDA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 2 · Ruta</span>
+    <span class="slide-num">02 / 20</span>
+  </div>
+  <h2 class="reveal">Agenda de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:36px">
+    <div class="card reveal t-blue"><div class="num">01</div><h4>Teoría</h4><p>¿Por qué métodos numéricos? Las EDP no tienen solución analítica para geometrías reales. FDM, FVM y FEM.</p></div>
+    <div class="card reveal t-gold"><div class="num">02</div><h4>La idea del FEM</h4><p>Discretización, funciones de forma, ensamblaje y el sistema global <strong>\( [K]\{u\}=\{F\} \)</strong>.</p></div>
+    <div class="card reveal t-blue"><div class="num">03</div><h4>Práctica</h4><p>Barra de acero en tracción: σ = 50 MPa y δ ≈ 0.048 mm. Del enunciado al resultado verificado.</p></div>
+    <div class="card reveal t-mint"><div class="num">04</div><h4>Taller 2</h4><p>Barra escalonada: resortes en serie y verificación analítica de cada tramo.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía</span>
+    Esta sesión se apoya en los <strong>capítulos 3 y 4.1</strong>: métodos numéricos y la idea central de discretizar para resolver.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 3 · ¿POR QUÉ MÉTODOS NUMÉRICOS? ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Fundamentos · Cap. 3.1</span>
+    <span class="slide-num">03 / 20</span>
+  </div>
+  <h2 class="reveal">¿Por qué necesitamos métodos numéricos?</h2>
+  <p class="lead reveal" style="margin-bottom:30px">Las ecuaciones gobernantes de la física son <strong>EDP</strong> que solo tienen solución analítica para geometrías y fronteras muy simples.</p>
+  <div class="grid grid-3">
+    <div class="card reveal t-gold"><div class="num">Analítica</div><h4>Funciona si…</h4><p>Geometrías simples: viga, placa, esfera. Existe una <strong>fórmula cerrada</strong> exacta.</p></div>
+    <div class="card reveal t-red"><div class="num">Real</div><h4>Pieza de ingeniería</h4><p>Agujeros, chaflanes, cambios de sección, cargas combinadas: <strong>la fórmula cerrada no existe</strong>.</p></div>
+    <div class="card reveal t-mint"><div class="num">Numérico</div><h4>Aproximamos</h4><p>Discretizar el dominio y resolver un sistema algebraico <strong>con cómputo</strong>.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:32px">
+    <span class="tag">Recalca la guía · Cap. 3.1</span>
+    "Para problemas reales de ingeniería, la solución analítica no existe. Necesitamos aproximaciones numéricas." — Guía, cap. 3.1.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 4 · FDM ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Métodos numéricos · Cap. 3.2</span>
+    <span class="slide-num">04 / 20</span>
+  </div>
+  <h2 class="reveal">Diferencias Finitas (FDM)</h2>
+  <p class="lead reveal">Reemplazar las derivadas por <strong>diferencias</strong> entre puntos de una malla regular.</p>
+  <div class="formula reveal">$$\frac{du}{dx} \approx \frac{u_{i+1} - u_i}{\Delta x}$$</div>
+  <div class="grid grid-3" style="margin-top:22px">
+    <div class="card reveal t-mint"><h4>Fortalezas</h4><p>Simple de entender e implementar. Muy eficiente en dominios rectangulares.</p></div>
+    <div class="card reveal t-red"><h4>Debilidades</h4><p>Requiere malla estructurada (regular); geometrías complejas y fronteras curvas son problemáticas.</p></div>
+    <div class="card reveal t-blue"><h4>¿Cuándo?</h4><p>Transferencia de calor 1D/2D simple, difusión, CFD en dominios regulares.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 5 · FVM ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Métodos numéricos · Cap. 3.3</span>
+    <span class="slide-num">05 / 20</span>
+  </div>
+  <h2 class="reveal">Volúmenes Finitos (FVM)</h2>
+  <p class="lead reveal">Dividir el dominio en <strong>volúmenes de control</strong> y aplicar leyes de conservación (masa, momento, energía) en cada uno.</p>
+  <div class="formula reveal">$$\int_V \nabla\cdot\mathbf{F}\,dV = \oint_S \mathbf{F}\cdot\mathbf{n}\,dS$$</div>
+  <div class="grid grid-3" style="margin-top:22px">
+    <div class="card reveal t-mint"><h4>Fortalezas</h4><p><strong>Conservación garantizada por construcción.</strong> Dominante en CFD comercial (Fluent, CFX, OpenFOAM).</p></div>
+    <div class="card reveal t-red"><h4>Debilidades</h4><p>Mayor complejidad de implementación; precisión en geometrías irregulares exige mallas no estructuradas.</p></div>
+    <div class="card reveal t-blue"><h4>¿Cuándo?</h4><p>Mecánica de fluidos computacional (CFD) y transferencia de calor con convección.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 6 · FEM ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Métodos numéricos · Cap. 3.4</span>
+    <span class="slide-num">06 / 20</span>
+  </div>
+  <h2 class="reveal">Elementos Finitos (FEM)</h2>
+  <p class="lead reveal">Dividir el dominio en <strong>elementos finitos</strong> donde la solución se aproxima con funciones de forma simples; ensamblar todo en un sistema global.</p>
+  <div class="formula reveal">$$[K]\{u\} = \{F\}$$<small>El sistema algebraico global: rigidez × desplazamientos = fuerzas</small></div>
+  <div class="grid grid-3" style="margin-top:22px">
+    <div class="card reveal t-mint"><h4>Fortalezas</h4><p>Geometrías <strong>arbitrarias</strong> con facilidad, base matemática rigurosa, versátil: estructuras, calor, electromagnetismo.</p></div>
+    <div class="card reveal t-red"><h4>Debilidades</h4><p>Más costoso que FDM en problemas simples; exige entender tipos de elemento, funciones de forma e integración numérica.</p></div>
+    <div class="card reveal t-blue"><h4>¿Cuándo?</h4><p>Análisis estructural — <strong>el estándar de la industria</strong> — y problemas con geometría compleja.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 7 · TABLA COMPARATIVA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Métodos numéricos · Cap. 3.5</span>
+    <span class="slide-num">07 / 20</span>
+  </div>
+  <h2 class="reveal">¿Qué método elegir?</h2>
+  <div class="grid grid-2" style="margin-top:24px;gap:28px;align-items:center">
+    <table class="reveal">
+      <thead><tr><th>Criterio</th><th>FDM</th><th>FVM</th><th>FEM</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Geometría compleja</strong></td><td class="red"><span class="mono" style="font-weight:700">✕</span></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td><td class="mint"><svg class="fico"><use href="#fem-verif"/></svg></td></tr>
+        <tr><td><strong>Estructuras</strong></td><td class="red"><span class="mono" style="font-weight:700">✕</span></td><td class="red"><span class="mono" style="font-weight:700">✕</span></td><td class="mint"><svg class="fico"><use href="#fem-verif"/></svg></td></tr>
+        <tr><td><strong>Fluidos (CFD)</strong></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td><td class="mint"><svg class="fico"><use href="#fem-verif"/></svg></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td></tr>
+        <tr><td><strong>Conservación exacta</strong></td><td class="red"><span class="mono" style="font-weight:700">✕</span></td><td class="mint"><svg class="fico"><use href="#fem-verif"/></svg></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td></tr>
+        <tr><td><strong>Facilidad de aprendizaje</strong></td><td class="mint"><svg class="fico"><use href="#fem-verif"/></svg></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td></tr>
+        <tr><td><strong>Rigor matemático</strong></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td><td class="gold"><svg class="fico"><use href="#fem-atencion"/></svg></td><td class="mint"><svg class="fico"><use href="#fem-verif"/></svg></td></tr>
+      </tbody>
+    </table>
+    <div class="figure reveal" style="max-width:680px">
+      <img src="../assets/figuras/05_metodos_numericos.png" alt="Comparación FDM, FVM y FEM">
+      <figcaption>Figura 3 — Comparación de métodos numéricos (Guía, cap. 3)</figcaption>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:26px">
+    <span class="tag">Recalca la guía · Cap. 3.5</span>
+    Para el ingeniero mecánico/estructural, <strong>FEM es su herramienta principal</strong>: es lo que usan ANSYS, Abaqus y SolidWorks Simulation. El resto del curso se enfoca en FEM.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 8 · FEM EN 4 PASOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">La idea del FEM · Cap. 4.1</span>
+    <span class="slide-num">08 / 20</span>
+  </div>
+  <h2 class="reveal">FEM en 4 pasos: discretizar para resolver</h2>
+  <ol class="steps" style="margin-top:26px">
+    <li class="reveal"><strong>Discretizar</strong> — dividir el dominio en elementos finitos conectados por <em>nodos</em></li>
+    <li class="reveal"><strong>Formulación elemental</strong> — en cada elemento, aproximar la solución con funciones de forma: <em>\( u(x) \approx \sum_i N_i(x)\,u_i \)</em></li>
+    <li class="reveal"><strong>Ensamblaje</strong> — combinar las matrices elementales en el sistema global <em>\( [K]\{u\} = \{F\} \)</em></li>
+    <li class="reveal"><strong>Solución</strong> — resolver el sistema para los desplazamientos nodales \( \{u\} \); luego derivar deformaciones y esfuerzos</li>
+  </ol>
+  <div class="callout mint reveal" style="margin-top:28px">
+    <span class="tag">La idea central</span>
+    FEM transforma una EDP (infinitos grados de libertad) en un <strong>sistema algebraico</strong> (finitos grados de libertad) que una computadora puede resolver.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 9 · FUNCIONES DE FORMA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">La idea del FEM · Cap. 4.1</span>
+    <span class="slide-num">09 / 20</span>
+  </div>
+  <h2 class="reveal">Funciones de forma \( N_i(x) \)</h2>
+  <div class="grid grid-2" style="margin-top:20px;gap:28px;align-items:center">
+    <div>
+      <div class="formula reveal" style="font-size:34px;padding:20px">$$u(x) \approx \sum_i N_i(x)\,u_i$$<small>La solución continua se aproxima combinando funciones de forma locales</small></div>
+      <div class="card reveal" style="margin-top:18px">
+        <h4 class="blue">¿Qué hace N<sub>i</sub>(x)?</h4>
+        <p>Polinomio local que vale <strong>1 en el nodo i</strong> y 0 en los demás. Convierte el continuo u(x) en un número finito de incógnitas u<sub>i</sub>: los desplazamientos nodales.</p>
+      </div>
+      <div class="card reveal" style="margin-top:18px">
+        <h4 class="gold">¿Por qué importa?</h4>
+        <p>Determina el <strong>orden del elemento</strong>: un TET4 (lineal) es más rígido que un TET10 (cuadrático). Usted no la elige a mano: el solver la usa internamente.</p>
+      </div>
+    </div>
+    <div class="figure reveal" style="max-width:600px">
+      <img src="../assets/figuras/06_tipos_elementos.png" alt="Catálogo de tipos de elementos finitos">
+      <figcaption>Figura 4 — Catálogo de elementos (Guía, cap. 4.2.3)</figcaption>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 10 · [K]{u}={F} ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">La idea del FEM · Cap. 4.1</span>
+    <span class="slide-num">10 / 20</span>
+  </div>
+  <h2 class="reveal">El sistema global: \( [K]\{u\} = \{F\} \)</h2>
+  <div class="formula reveal" style="font-size:52px">$$[K]\{u\} = \{F\}$$<small>Ensamblaje: cada elemento aporta su rigidez al sistema global</small></div>
+  <div class="grid grid-3" style="margin-top:24px">
+    <div class="card reveal t-blue"><h4>\( [K] \) · Rigidez global</h4><p>Matriz N×N que condensa <strong>material, geometría y malla</strong>. Simétrica y definida positiva en elasticidad lineal.</p></div>
+    <div class="card reveal t-gold"><h4>\( \{u\} \) · Incógnitas</h4><p>Vector de <strong>desplazamientos nodales</strong>. Es lo que el solver calcula.</p></div>
+    <div class="card reveal t-blue"><h4>\( \{F\} \) · Fuerzas</h4><p>Vector de <strong>fuerzas nodales equivalentes</strong>: cargas aplicadas y reacciones en los apoyos.</p></div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:28px">
+    <span class="tag">¿Y después?</span>
+    Con {u} resuelto, se derivan deformaciones ε y esfuerzos σ en cada elemento (cap. 4.3: qué pasa cuando el solver aprieta "Solve").
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 11 · FEM = HERRAMIENTA DEL MECÁNICO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Métodos numéricos · Cap. 3.5</span>
+    <span class="slide-num">11 / 20</span>
+  </div>
+  <h2 class="reveal">El mapa del software: qué usa cada mundo</h2>
+  <table class="reveal" style="margin-top:26px">
+    <thead><tr><th>Software</th><th>Método</th><th>Dominio típico</th></tr></thead>
+    <tbody>
+      <tr><td><strong style="color:var(--mint)">ANSYS, Abaqus, SolidWorks Simulation</strong></td><td class="mono">FEM</td><td>Estructuras, multifísica, no linealidades</td></tr>
+      <tr><td><strong>Fluent, CFX, OpenFOAM</strong></td><td class="mono">FVM</td><td>CFD: fluidos, convección, combustión</td></tr>
+      <tr><td><strong>Códigos académicos / propios</strong></td><td class="mono">FDM</td><td>Calor y difusión en dominios regulares</td></tr>
+      <tr><td><strong style="color:var(--mint)">FreeCAD FEM + CalculiX</strong></td><td class="mono">FEM</td><td>Este curso: aprendizaje y geometrías moderadas</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Recalca la guía · Cap. 3.5</span>
+    "Para el ingeniero mecánico/estructural: FEM es su herramienta principal. Es lo que usan ANSYS, Abaqus y SolidWorks Simulation." — Guía, cap. 3.5.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 12 · PRÁCTICA: ENUNCIADO BARRA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Ejercicio 2</span>
+    <span class="slide-num">12 / 20</span>
+  </div>
+  <h2 class="reveal">Barra en tracción — el problema</h2>
+  <div class="grid grid-2" style="margin-top:26px">
+    <div class="card reveal t-blue">
+      <h4>Enunciado</h4>
+      <ul style="list-style:none;font-size:24px;line-height:1.7">
+        <li>· Barra de acero: <span class="mono">200 × 20 × 10 mm</span> (A = 200 mm²)</li>
+        <li>· Empotrada en un extremo</li>
+        <li>· Carga axial <span class="mono">P = 10 kN (10000 N)</span> en el otro</li>
+        <li>· Acero: <span class="mono">E = 210000 MPa, ν = 0.3</span></li>
+      </ul>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>Pregunta de diseño</h4>
+      <p class="big">¿Cuánto se alarga la barra y cuál es el esfuerzo?</p>
+      <p style="margin-top:14px">Primero a mano (fórmulas de tracción simple), luego en FreeCAD, y <strong>comparamos</strong>.</p>
+    </div>
+  </div>
+  <div class="formula reveal">$$\sigma = \frac{P}{A} \qquad \delta = \frac{PL}{EA} \qquad k = \frac{EA}{L}$$<small>Tracción simple: esfuerzo, alargamiento y rigidez axial</small></div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 13 · SOLUCIÓN ANALÍTICA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Verificación</span>
+    <span class="slide-num">13 / 20</span>
+  </div>
+  <h2 class="reveal">Solución analítica: la referencia</h2>
+  <div class="grid grid-3" style="margin-top:24px;gap:26px">
+    <div class="card reveal">
+      <h4 class="blue">Esfuerzo</h4>
+      <div class="formula" style="font-size:26px;padding:18px">$$\sigma = \frac{P}{A} = \frac{10000}{200}$$</div>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">σ ≈ 50 MPa</p>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Alargamiento</h4>
+      <div class="formula" style="font-size:26px;padding:18px">$$\delta = \frac{PL}{EA}$$<small>10000·200/(210000·200)</small></div>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">δ ≈ 0.048 mm</p>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Rigidez axial</h4>
+      <div class="formula" style="font-size:26px;padding:18px">$$k = \frac{EA}{L}$$<small>210000·200/200</small></div>
+      <p class="mono gold" style="text-align:center;font-size:28px;margin-top:4px">k = 210000 N/mm</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:26px">
+    <span class="tag">Objetivo</span>
+    El FEM debe reproducir estos valores con <strong>error &lt; 10%</strong> con la malla de 5 mm. Si no lo hace: <strong>algo está mal en el modelo</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 14 · PLAN DE TRABAJO EN FREECAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · FreeCAD</span>
+    <span class="slide-num">14 / 20</span>
+  </div>
+  <h2 class="reveal">Plan de trabajo en FreeCAD FEM</h2>
+  <ol class="steps" style="margin-top:22px">
+    <li class="reveal"><strong>Geometría</strong> — <em>Part → Box</em>: 200 × 20 × 10 mm</li>
+    <li class="reveal"><strong>Análisis</strong> — <em>FEM → New analysis</em>; material acero (<span class="mono">E=210000 MPa, ν=0.3</span>)</li>
+    <li class="reveal"><strong>Condiciones</strong> — <em>Constraint fixed</em> en una cara; <em>Constraint force</em> de 10000 N en la opuesta</li>
+    <li class="reveal"><strong>Malla</strong> — <em>Gmsh</em>, tamaño de elemento 5 mm</li>
+    <li class="reveal"><strong>Solver</strong> — <em>CalculiX</em>: escribir input, ejecutar</li>
+    <li class="reveal"><strong>Resultados</strong> — pestañas Displacement y Stress; comparar con σ = 50 MPa y δ ≈ 0.048 mm</li>
+  </ol>
+  <div class="callout warn reveal" style="margin-top:22px">
+    <span class="tag">Recalca la guía · Cap. 4.2.1 · St. Venant</span>
+    Cerca de la cara donde se aplica la fuerza el esfuerzo <strong>no es uniforme</strong>; a 1–2 anchos de distancia sí lo es (≈ 50 MPa). Evalúe σ lejos de la cara cargada.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 15 · MAPA DE ERRORES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Adelanto · Cap. 5</span>
+    <span class="slide-num">15 / 20</span>
+  </div>
+  <h2 class="reveal">Los errores que tocan hoy</h2>
+  <div class="figure reveal" style="max-width:880px;margin:0 auto">
+    <img src="../assets/figuras/07_errores_comunes.png" alt="Frecuencia de errores comunes en simulación">
+    <figcaption>Figura 5 — Frecuencia de errores en simulación (Guía, cap. 5)</figcaption>
+  </div>
+  <div class="callout gold reveal" style="margin-top:20px">
+    <span class="tag">Los dos errores de discretización</span>
+    <strong>Error 2 · Mallado inadecuado (22%)</strong>: resultados que cambian al refinar la malla. <strong>Error 4 · Tipo de elemento inapropiado (10%)</strong>: TET4 demasiado rígido en flexión. Ambos aparecen en la barra en tracción.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 16 · TALLER 2 ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 2 · Entregable</span>
+    <span class="slide-num">16 / 20</span>
+  </div>
+  <h2 class="reveal">Taller 2 — Barra escalonada: resortes en serie</h2>
+  <div class="grid grid-2" style="margin-top:26px">
+    <div class="card reveal">
+      <h4 class="blue">Enunciado</h4>
+      <ul style="font-size:23px;line-height:1.6">
+        <li>Dos tramos en serie: <span class="mono">100×20×10 mm</span> (A₁=200 mm²) y <span class="mono">100×20×20 mm</span> (A₂=400 mm²)</li>
+        <li>Empotrada en un extremo, <span class="mono">P = 10 kN</span> en el otro</li>
+        <li>Predecir δ total con <strong>resortes en serie</strong>: \( k_{\text{eq}} = \frac{k_1\,k_2}{k_1 + k_2} \)</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="gold">Valores de referencia</h4>
+      <ul style="font-size:23px;line-height:1.75">
+        <li><span class="mono">\( k_1 = \frac{EA_1}{L_1} = 420000\ \text{N/mm} \)</span></li>
+        <li><span class="mono">\( k_2 = \frac{EA_2}{L_2} = 840000\ \text{N/mm} \)</span></li>
+        <li><span class="mono">\( k_{\text{eq}} = 280000\ \text{N/mm} \rightarrow \delta \approx 0.036\ \text{mm} \)</span></li>
+        <li><span class="mono">\( \sigma_1 = \frac{P}{A_1} = 50\ \text{MPa} \)</span> · <span class="mono">\( \sigma_2 = \frac{P}{A_2} = 25\ \text{MPa} \)</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Entregables</span>
+    δ total FEM vs. analítica, σ en cada tramo, <strong>explicación de por qué σ cambia</strong> y 3 conclusiones que citen la guía (caps. 4.1, 4.2.1, 5). Ver rúbrica en <strong>taller.html</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 17 · RESUMEN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre</span>
+    <span class="slide-num">17 / 20</span>
+  </div>
+  <h2 class="reveal">Lo que debe quedar hoy</h2>
+  <div class="grid grid-3" style="margin-top:30px">
+    <div class="card reveal t-gold"><div class="num">1</div><h4>Discretizar para resolver</h4><p>Las EDP no se resuelven para piezas reales: FEM las convierte en un sistema algebraico.</p></div>
+    <div class="card reveal t-blue"><div class="num">2</div><h4>Los 4 pasos</h4><p>Discretización → formulación elemental → ensamblaje → solución \( [K]\{u\}=\{F\} \).</p></div>
+    <div class="card reveal t-mint"><div class="num">3</div><h4>Verificar siempre</h4><p>La mano primero: σ = 50 MPa y δ ≈ 0.048 mm. El FEM debe reproducirlos.</p></div>
+  </div>
+  <div class="callout blue reveal" style="margin-top:34px">
+    <span class="tag">Próxima sesión</span>
+    Sesión 3 — <strong>Pre-procesamiento</strong>: geometría con criterio, materiales y mallado. Placa con agujero. Leer guía cap. 4.2.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 18 · PRÓXIMOS PASOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 3 · Adelanto</span>
+    <span class="slide-num">18 / 20</span>
+  </div>
+  <h2 class="reveal">Hacia el pre-procesamiento</h2>
+  <div class="grid grid-3" style="margin-top:30px">
+    <div class="card reveal t-blue"><div class="num">60–70%</div><h4>Del tiempo real</h4><p>El pre-procesamiento (geometría, material, malla) consume la mayor parte de una simulación: ahí se decide su calidad.</p></div>
+    <div class="card reveal t-gold"><div class="num">Placa</div><h4>Con agujero</h4><p>Concentración de esfuerzos: el primer problema donde la mano no basta y el FEM brilla.</p></div>
+    <div class="card reveal t-mint"><div class="num">Prep</div><h4>Para la sesión 3</h4><p>Leer guía <strong>cap. 4.2</strong> (geometría, material, mallado) y cap. 5. Entregar el Taller 2.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:32px">
+    <span class="tag">Recalca la guía · Cap. 4.2</span>
+    Simplificar con criterio (St. Venant), propiedades con trazabilidad y reglas de mallado: los tres pilares del pre-procesamiento profesional.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 19 · REFERENCIAS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Materiales</span>
+    <span class="slide-num">19 / 20</span>
+  </div>
+  <h2 class="reveal">Recursos de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue">Guía de referencia</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li>Cap. 3 — Métodos numéricos: FDM, FVM, FEM</li>
+        <li>Cap. 3.5 — ¿Qué método elegir? (tabla comparativa)</li>
+        <li>Cap. 4.1 — La idea central: discretizar para resolver</li>
+        <li>Cap. 4.2.1 / 4.2.3 — St. Venant y reglas de mallado</li>
+        <li>Cap. 5 — Errores 2 (mallado) y 4 (tipo de elemento)</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Archivos del curso</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li><span class="mono">ejercicio_paso_a_paso.html</span> — barra en tracción</li>
+        <li><span class="mono">taller.html</span> — barra escalonada + rúbrica</li>
+        <li><span class="mono">video/guion.md</span> — guion del video asíncrono</li>
+        <li>Notebooks guía: <span class="mono">02_metodos_numericos.ipynb</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="mono reveal" style="margin-top:30px;color:var(--text2);font-size:20px">Figuras 3–5: Guía Práctica de Simulación en Ingeniería, caps. 3 y 4.2.3 (assets/figuras).</p>
+</section>
+
+<!-- ═══════════════════════ SLIDE 20 · CIERRE ═══════════════════════ -->
+<section class="slide cover">
+  <div class="reveal course-tag">Sesión 2 · Fin</div>
+  <h1 class="reveal">Discretizar<br>para <span class="accent">resolver</span></h1>
+  <div class="reveal sub">La idea del FEM: \( [K]\{u\}=\{F\} \). Próxima sesión: pre-procesamiento — placa con agujero.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta"><span>FEM con FreeCAD · 6 sesiones</span><span>·</span><span>Guía Práctica de Simulación FEM</span></div>
+</section>
+
+</main>
+</div>
+
+<!-- footer chrome: navegación -->
+<div class="deck-chrome" id="deckChrome">
+  <span class="brand">FEM · FreeCAD</span>
+  <span class="dots" id="dots"></span>
+  <span class="hint">← → navegar · P imprimir</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE PRESENTATION CONTROLLER — plantilla frontend-slides
+   ═══════════════════════════════════════════════════════════════ */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.current=0;
+    this.stage=document.getElementById('deckStage');
+    this.dots=document.getElementById('dots');
+    this.buildDots();
+    this.setupScale();
+    this.setupKeys();
+    this.setupTouch();
+    this.show(0);
+  }
+  buildDots(){
+    this.dots.innerHTML=this.slides.map((_,i)=>`<i data-i="${i}"></i>`).join('');
+    this.dots.querySelectorAll('i').forEach(d=>d.addEventListener('click',()=>this.show(+d.dataset.i)));
+  }
+  setupScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();window.addEventListener('resize',scale);
+  }
+  setupKeys(){
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();this.show(this.current+1)}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();this.show(this.current-1)}
+      else if(e.key==='Home'){this.show(0)}
+      else if(e.key==='End'){this.show(this.slides.length-1)}
+      else if(e.key==='p'||e.key==='P'){window.print()}
+    });
+  }
+  setupTouch(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>60)this.show(this.current+(dx<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.querySelectorAll('i').forEach((d,k)=>d.classList.toggle('on',k===this.current));
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

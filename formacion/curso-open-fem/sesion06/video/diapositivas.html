@@ -1,0 +1,285 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S6 - Flujo de trabajo profesional e IA en simulación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — SESIÓN 6 (video asíncrono)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Motor: VIDEOMN engine v2 (compartido). NO editar engine.js.
+  Anclaje visual: línea de producción con sensores y gemelo
+  digital — el flujo completo, del CAD al informe.
+  7 escenas, narración ~11-12 min.
+  Guion: sesion06/video/guion.md
+  ═══════════════════════════════════════════════════════════════ -->
+<script src="../../assets/p5.min.js"></script><script>p5.disableFriendlyErrors=true;</script>
+<script src="../../assets/engine.js"></script>
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#3a3d45;}canvas{display:block;}</style>
+</head><body><script>
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 0 — PORTADA: del CAD al informe (línea de producción)
+//  Anclaje: línea con sensores + pantalla de gemelo digital
+// ═══════════════════════════════════════════════════════════════
+function s0(){
+  let t=st,cx=width/2,cy=height*0.36;uFF(t);uFP();
+  // — línea de producción: banda transportadora con sensores —
+  let by=height*0.30;
+  stroke(cb('gray')[0],cb('gray')[1],cb('gray')[2],70);strokeWeight(3);
+  line(cx-470,by,cx+470,by);
+  // cajas que avanzan
+  for(let i=0;i<5;i++){
+    let bx=cx-430+(i*215+((t*60)%215));
+    let bob=0.35*sin(t*3+i*2.1);
+    fill(50,55,70,200);noStroke();rect(bx-22,by-16-bob,44,16,3);
+    stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],140);strokeWeight(1.5);
+    line(bx-14,by-10-bob,bx+14,by-10-bob);line(bx-14,by-4-bob,bx+14,by-4-bob);
+  }
+  // sensores (haces ópticos)
+  for(let i=0;i<3;i++){
+    let sx=cx-300+i*300;
+    stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],110);strokeWeight(1.4);
+    line(sx,by-90,sx,by+40);
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],200);noStroke();
+    circle(sx,by-90,10);circle(sx,by+40,10);
+  }
+  // pantalla del gemelo digital: malla + aguja de medidor
+  let px=cx+330,py=height*0.30;
+  fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],200);noStroke();rect(px-110,py-95,220,140,10);
+  stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],130);strokeWeight(1.2);
+  for(let gy=0;gy<4;gy++)for(let gx=0;gx<5;gx++)line(px-80+gx*30,py-55+gy*25,px-80+(gx+1)*30,py-55+(gy+1)*25);
+  stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],220);strokeWeight(2);
+  let ang=sin(t*0.7)*0.5+0.6;
+  line(px+45,py+10,px+45+34*cos(ang),py+10-34*sin(ang));
+  // flujo CAD → informe: cajas conectadas
+  let fl=[['CAD','caja'],['Malla','caja'],['Solver','caja'],['Informe','caja']];
+  for(let i=0;i<4;i++){
+    let fx=cx-480+i*240, fy=height*0.62;
+    fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],170);noStroke();rect(fx-80,fy-34,160,68,10);
+    txB(window,fl[i][0],fx,fy+8,26,i===3?'mint':'white');
+    if(i<3){stroke(cb('gray')[0],cb('gray')[1],cb('gray')[2],90);strokeWeight(2);line(fx+80,fy,fx+160,fy)}
+  }
+  // — panel + títulos —
+  let ta=constrain(map(t,1,4,0,200),0,200);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();rect(cx-560,height*0.72,1120,140,16)}
+  txB(window,'Flujo de trabajo profesional e IA',cx,height*0.72+45,56,'gold');
+  txB(window,'Del CAD al informe — Sesión 6, el cierre del curso',cx,height*0.72+110,28,'white');
+  // pie
+  let al0=txa([8,11],t);
+  if(al0>20){drawingContext.globalAlpha=al0/255;
+    tx(window,'Checklist · informe · reproducibilidad · panorama IA',cx,height*0.9,19,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 1 — LAS 5 PREGUNTAS DEL CHECKLIST
+//  Beats: 0..4 = una pregunta por beat (iconos de lista)
+// ═══════════════════════════════════════════════════════════════
+function s1(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let qs=[['¿Qué quiero saber?','desplazamiento, factor de seguridad, frecuencia…'],
+          ['¿Qué física gobierna?','elástico lineal, plástico, térmico…'],
+          ['¿Qué precisión necesito?','±1% o ±10%: define refinamiento y validación'],
+          ['¿Contra qué comparo?','experimento, analítica, norma, simulación previa'],
+          ['¿Cuál es mi hipótesis?','si difiere mucho: ¿intuición o simulación?']];
+  for(let i=0;i<5;i++){
+    if(beat>=i){let al=txa([0.3+i*0.28,1.2],t);
+      drawingContext.globalAlpha=al/255;
+      let y=height*(0.20+i*0.115);
+      fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],150);noStroke();rect(cx-540,y-30,1080,76,12);
+      stroke(cb(i===4?'gold':'blue')[0],cb(i===4?'gold':'blue')[1],cb(i===4?'gold':'blue')[2],200);strokeWeight(2);
+      rect(cx-540,y-30,1080,76,12);
+      fill(cb(i===4?'gold':'blue')[0],cb(i===4?'gold':'blue')[1],cb(i===4?'gold':'blue')[2],230);
+      noStroke();txM(window,String(i+1).padStart(2,'0'),cx-460,y+8,28,i===4?'gold':'blue');
+      tx(window,qs[i][0],cx-250,y+8,28,'white');
+      tx(window,qs[i][1],cx+230,y+8,19,'gray');
+      drawingContext.globalAlpha=1}
+  }
+  txB(window,'Checklist pre-simulación: las 5 preguntas',cx,height*0.07,40,'white');
+  let al2=txa([7.5,9.5],t);
+  if(al2>20&&beat>=4){drawingContext.globalAlpha=al2/255;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],80);strokeWeight(1.5);
+    rect(cx-540,height*0.86,1080,66,10);
+    txB(window,'Si no puede responder alguna, no está listo para simular (cap. 8.1)',cx,height*0.86+34,24,'red');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 2 — EL INFORME DE 7 SECCIONES (se construye con beats)
+//  Beats: 0..6 = una sección por beat
+// ═══════════════════════════════════════════════════════════════
+function s2(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let secs=[['Resumen ejecutivo','qué se simuló, resultado, conclusión'],
+            ['Descripción del modelo','geometría, material, malla, CF, cargas'],
+            ['Verificación','convergencia + solución analítica'],
+            ['Validación','datos experimentales o límites conocidos'],
+            ['Resultados','desplazamientos, esfuerzos, modos'],
+            ['Discusión','¿sentido físico? singularidades, límites'],
+            ['Conclusiones y recomendaciones','¿cumple? ¿qué se recomienda?']];
+  for(let i=0;i<7;i++){
+    if(beat>=i){let al=txa([0.25+i*0.22,1.1],t);
+      drawingContext.globalAlpha=al/255;
+      let y=height*(0.17+i*0.095);
+      fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],140);noStroke();rect(cx-560,y-26,1120,62,10);
+      stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],140);strokeWeight(1.2);
+      rect(cx-560,y-26,1120,62,10);
+      fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],220);noStroke();
+      txM(window,String(i+1).padStart(2,'0'),cx-500,y+8,22,'mint');
+      tx(window,secs[i][0],cx-280,y+8,24,'white');
+      tx(window,secs[i][1],cx+230,y+8,17,'gray');
+      drawingContext.globalAlpha=1}
+  }
+  txB(window,'El informe de resultados: 7 secciones (cap. 8.3)',cx,height*0.07,40,'white');
+  let al2=txa([7.5,9.5],t);
+  if(al2>20&&beat>=6){drawingContext.globalAlpha=al2/255;
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],10);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],80);strokeWeight(1.5);
+    rect(cx-540,height*0.88,1080,58,10);
+    txB(window,'Sin informe, la simulación no existe para quien decide',cx,height*0.88+30,24,'gold');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 3 — REPRODUCIBILIDAD (scripts vs clicks, Git)
+//  Beats: 0=scripts, 1=git, 2=parámetros explícitos
+// ═══════════════════════════════════════════════════════════════
+function s3(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let cards=[['Scripts, no clicks','APDL, Python scripting, macros. El .inp de CalculiX es su script.','blue'],
+             ['Control de versiones','Entradas en Git, no solo PDFs de resultados.','gold'],
+             ['Parámetros explícitos','Nada por defecto sin entenderlo. Todo documentado.','mint']];
+  for(let i=0;i<3;i++){
+    let x=cx-430+i*430,y=height*0.30;
+    if(beat>=i){let al=txa([0.3+i*0.3,1.3],t);
+      drawingContext.globalAlpha=al/255;
+      let cc=cb(cards[i][2]);
+      fill(cc[0],cc[1],cc[2],8);stroke(cc[0],cc[1],cc[2],60);strokeWeight(1.5);
+      rect(x-165,y,330,190,14);
+      tx(window,cards[i][0],x,y+48,26,cards[i][2]);
+      tx(window,cards[i][1],x,y+105,19,'white');
+      drawingContext.globalAlpha=1}
+  }
+  // flecha de tiempos: 6 meses
+  if(beat>=2){let al=txa([1.2,2.2],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.70;
+    setLineDash([10,8]);stroke(cb('red')[0],cb('red')[1],cb('red')[2],140);strokeWeight(2.5);
+    line(cx-400,y,cx+400,y);setLineDash([]);
+    txB(window,'En 6 meses, ni usted recordará por qué eligió esa malla (cap. 8.2)',cx,y+55,24,'red');
+    drawingContext.globalAlpha=1}
+  txB(window,'Reproducibilidad: la simulación como ciencia (cap. 8.4)',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 4 — IA: surrogados → PINNs → ROM (3 tarjetas)
+//  Beats: 0=surrogados, 1=PINNs, 2=ROM
+// ═══════════════════════════════════════════════════════════════
+function s4(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  // tarjeta 1: surrogado — nube de puntos + curva GP
+  if(beat>=0){let al=txa([0.3,1.3],t);drawingContext.globalAlpha=al/255;
+    let x=cx-430,y=height*0.26;
+    fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],8);stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],60);strokeWeight(1.5);
+    rect(x-165,y,330,170,14);
+    noStroke();
+    for(let i=0;i<14;i++){fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],170);circle(x-90+random(180),y+40+random(90),4)}
+    tx(window,'Surrogados',x,y+28,26,'blue');
+    txM(window,'GP aprende entrada → salida',x,y+150,17,'white');
+    txM(window,'predice en < 1 ms (cap. 7.2.1)',x,y+174,15,'gray');
+    drawingContext.globalAlpha=1}
+  // tarjeta 2: PINNs — ecuación de pérdida
+  if(beat>=1){let al=txa([0.3,1.3],t);drawingContext.globalAlpha=al/255;
+    let x=cx,y=height*0.26;
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],8);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],60);strokeWeight(1.5);
+    rect(x-165,y,330,170,14);
+    tx(window,'PINNs',x,y+28,26,'gold');
+    txM(window,'L = L_data + λ·L_PDE',x,y+80,20,'gold');
+    tx(window,'la física entra en la pérdida',x,y+120,17,'white');
+    tx(window,'sin malla · inversos (cap. 7.2.2)',x,y+148,15,'gray');
+    drawingContext.globalAlpha=1}
+  // tarjeta 3: ROM — gemelo digital en tiempo real
+  if(beat>=2){let al=txa([0.3,1.3],t);drawingContext.globalAlpha=al/255;
+    let x=cx+430,y=height*0.26;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],8);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],60);strokeWeight(1.5);
+    rect(x-165,y,330,170,14);
+    tx(window,'ROM + DL',x,y+28,26,'mint');
+    txM(window,'POD + red neuronal',x,y+80,19,'mint');
+    tx(window,'gemelos digitales',x,y+120,17,'white');
+    tx(window,'en tiempo real (cap. 7.2.3)',x,y+148,15,'gray');
+    drawingContext.globalAlpha=1}
+  // flecha de evolución
+  if(beat>=2){let al=txa([1.2,2.2],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.58;
+    stroke(cb('white')[0],cb('white')[1],cb('white')[2],120);strokeWeight(2);
+    line(cx-430,y,cx+430,y);triangle(cx+430,y-8,cx+442,y,cx+430,y+8);
+    txB(window,'de predecir rápido… a respetar la física… a correr en tiempo real',cx,y+40,21,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'IA en simulación: 3 tecnologías (cap. 7.2)',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 5 — QUÉ SIGNIFICA PARA EL INGENIERO (4 lecciones)
+//  Beats: 0..3 = una lección por beat
+// ═══════════════════════════════════════════════════════════════
+function s5(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let les=[['No reemplaza el criterio','datos malos → predicciones malas a alta velocidad','red'],
+           ['V&V aplica a la IA','datos de entrenamiento, dominio de validez, física','blue'],
+           ['Formule buenas preguntas','la IA explora; qué explorar es humano','gold'],
+           ['Aprenda los fundamentos','FEM + ML vale más que solo software','mint']];
+  for(let i=0;i<4;i++){
+    let x=(i%2===0)?cx-300:cx+300,y=height*(0.22+(i<2?0:1)*0.24);
+    if(beat>=i){let al=txa([0.3+i*0.3,1.2],t);
+      drawingContext.globalAlpha=al/255;
+      let cc=cb(les[i][2]);
+      fill(cc[0],cc[1],cc[2],8);stroke(cc[0],cc[1],cc[2],60);strokeWeight(1.5);
+      rect(x-330,y,660,110,14);
+      tx(window,les[i][0],x,y+38,25,les[i][2]);
+      tx(window,les[i][1],x,y+78,18,'white');
+      drawingContext.globalAlpha=1}
+  }
+  txB(window,'¿Qué significa para el ingeniero? (cap. 7.3)',cx,height*0.08,40,'white');
+  let al2=txa([7.5,9.5],t);
+  if(al2>20&&beat>=3){drawingContext.globalAlpha=al2/255;
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],10);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],80);strokeWeight(1.5);
+    rect(cx-540,height*0.86,1080,60,10);
+    txB(window,'La habilidad más valiosa: formular buenas preguntas',cx,height*0.86+32,24,'gold');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 6 — CIERRE: ciclo completo + verifica, valida, documenta
+// ═══════════════════════════════════════════════════════════════
+function s6(){
+  let t=st,cx=width/2,cy=height*0.34;uFF(t);uFP();
+  let burst=constrain(map(t,2,5,0,1),0,1);
+  glow(g=>{if(burst>0){dB(g,cx,cy,430*burst,cb('mint'),6);dB(g,cx,cy,230*burst,cb('white'),3)}});
+  // ciclo completo: 6 nodos del curso en círculo
+  let nodos=['Fenómeno','Modelo','Malla','Solver','V&V','Informe'];
+  for(let i=0;i<6;i++){
+    let a=-Math.PI/2+i*Math.PI/3;
+    let nx=cx+240*Math.cos(a),ny=cy+180*Math.sin(a);
+    let cc=cb(i===5?'gold':'blue');
+    fill(cc[0],cc[1],cc[2],10);stroke(cc[0],cc[1],cc[2],90);strokeWeight(1.5);
+    circle(nx,ny,70);
+    tx(window,nodos[i],nx,ny+7,18,'white');
+  }
+  let ta=constrain(map(t,1.5,3.5,0,220),0,220);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();
+    rect(cx-560,cy-190,1120,150,16)}
+  drawingContext.globalAlpha=constrain(map(t,1.5,4,0,1),0,1);
+  txB(window,'Verifica, valida, documenta',cx,cy-145,56,'gold');
+  txB(window,'Todo resultado de simulación es una hipótesis — compruébela y déjela por escrito',cx,cy-80,24,'white');
+  drawingContext.globalAlpha=1;
+  // qué sigue
+  let al=txa([6,8.5],t);
+  if(al>20){drawingContext.globalAlpha=al/255;
+    fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],170);noStroke();rect(cx-560,height*0.76,1120,90,14);
+    txB(window,'Taller 6 · Proyecto integrador — cierre del curso',cx,height*0.76+30,26,'mint');
+    tx(window,'geometría propia + convergencia GCI + sensibilidad + informe 7 secciones',cx,height*0.76+70,19,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN — 7 escenas
+// ═══════════════════════════════════════════════════════════════
+SNAMES=['Portada','Checklist','Informe','Reproducibilidad','IA','Ingeniero','Cierre'];
+SBEATS=[1,5,7,3,3,4,1];
+function initSessions(){scenes=[s0,s1,s2,s3,s4,s5,s6];}
+</script></body></html>

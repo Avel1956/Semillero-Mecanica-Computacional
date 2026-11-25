@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S2 - Métodos numéricos y la idea del FEM</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — SESIÓN 2 (video asíncrono)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Motor: VIDEOMN engine v2 (compartido). NO editar engine.js.
+  Anclaje visual: barra de acero en la prensa de tracción —
+  la pieza que protagoniza toda la sesión.
+  6 escenas, narración ~11 min. Guion: sesion02/video/guion.md
+  ═══════════════════════════════════════════════════════════════ -->
+<script src="../../assets/p5.min.js"></script><script>p5.disableFriendlyErrors=true;</script>
+<script src="../../assets/engine.js"></script>
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#3a3d45;}canvas{display:block;}</style>
+</head><body><script>
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 0 — PORTADA: la barra de acero en la prensa de tracción
+//  Anclaje: máquina de ensayo — mordazas + barra que se estira
+// ═══════════════════════════════════════════════════════════════
+function s0(){
+  let t=st,cx=width/2,cy=height*0.34,sc=height/1080;uFF(t);uFP();
+  // — prensa: bastidor, mordazas y barra que se estira (escala sc) —
+  let stretch=0.06*sin(t*0.8);
+  // bastidor
+  stroke(cb('gray')[0],cb('gray')[1],cb('gray')[2],70);strokeWeight(3);noFill();
+  rect(cx-150*sc,cy-240*sc,300*sc,480*sc,10);
+  // mordaza superior
+  fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],60);
+  rect(cx-70*sc,cy-235*sc,140*sc,70*sc,6);
+  // mordaza inferior
+  fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],60);
+  rect(cx-70*sc,cy+165*sc,140*sc,70*sc,6);
+  // barra de acero (se estira)
+  let hb=280*sc*(1+stretch);
+  fill(70,78,92,230);noStroke();
+  rect(cx-28*sc,cy-hb/2,56*sc,hb,3);
+  // marcas de medida en la barra (foreshadowing: discretización)
+  stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],110);strokeWeight(1.4);
+  for(let i=0;i<5;i++){let ly=cy-120*sc+i*64*sc;line(cx-28*sc,ly,cx+28*sc,ly)}
+  // flechas de carga (arriba y abajo, alejándose)
+  let ap=(6+sin(t*2)*3)*sc;
+  stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],200);strokeWeight(3.5);
+  line(cx,cy-245*sc-ap,cx,cy-245*sc);line(cx,cy+245*sc+ap,cx,cy+245*sc);
+  fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],200);noStroke();
+  triangle(cx-11*sc,cy-245*sc-ap,cx+11*sc,cy-245*sc-ap,cx,cy-258*sc-ap);
+  triangle(cx-11*sc,cy+245*sc+ap,cx+11*sc,cy+245*sc+ap,cx,cy+258*sc+ap);
+  tx(window,'P',cx+46*sc,cy-240*sc-ap,24,'gold',LEFT);
+  tx(window,'P',cx+46*sc,cy+240*sc+ap,24,'gold',LEFT);
+  // — panel + títulos —
+  let ta=constrain(map(t,1.5,4,0,200),0,200);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();rect(cx-620,height*0.62,1240,160,16)}
+  txB(window,'Métodos numéricos y la idea del FEM',cx,height*0.62+52,58,'gold');
+  txB(window,'Discretizar para resolver — Sesión 2',cx,height*0.62+122,30,'white');
+  // pie: adelanto del sistema global
+  let al0=txa([8,11],t);
+  if(al0>20){drawingContext.globalAlpha=al0/255;
+    txM(window,'[K]{u} = {F}',cx,height*0.9,22,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 1 — ¿POR QUÉ MÉTODOS NUMÉRICOS?
+//  Beats: 0=título+EDP, 1='no hay fórmula para piezas reales',
+//         2='aproximamos' (discretizar)
+// ═══════════════════════════════════════════════════════════════
+function s1(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  // — panel de la ecuación (beat 0) —
+  if(beat>=0){let al=txa([0.3,1.4],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.30;
+    fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],8);stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],60);strokeWeight(1.5);
+    rect(cx-520,y,1040,170,14);
+    tx(window,'Ecuaciones gobernantes: EDP',cx,y+45,30,'white');
+    txM(window,'∇·σ + f = 0     ∂T/∂t = α ∇²T',cx,y+105,30,'blue');
+    tx(window,'solución analítica: solo geometrías simples',cx,y+148,20,'gray');
+    drawingContext.globalAlpha=1}
+  // — beat 1: NO hay fórmula para la pieza real —
+  if(beat>=1){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.52;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],80);strokeWeight(2);
+    rect(cx-560,y,1120,130,14);
+    tx(window,'✗ Una pieza real con agujeros y chaflanes',cx,y+50,26,'red');
+    txB(window,'no tiene fórmula cerrada',cx,y+100,34,'red');
+    drawingContext.globalAlpha=1}
+  // — beat 2: aproximamos —
+  if(beat>=2){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.76;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],10);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],80);strokeWeight(2);
+    rect(cx-560,y,1120,120,14);
+    tx(window,'✓ Entonces aproximamos:',cx,y+48,24,'white');
+    txB(window,'discretizar el dominio y resolver con cómputo',cx,y+95,32,'mint');
+    drawingContext.globalAlpha=1}
+  txB(window,'¿Por qué métodos numéricos?',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 2 — FDM vs FVM vs FEM (tres tarjetas, beat por método)
+//  Beats: 0=título, 1=FDM, 2=FVM, 3=FEM (destacado)
+// ═══════════════════════════════════════════════════════════════
+function s2(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let cards=[{n:'FDM',c:'blue',d:'Diferencias · malla regular',w:'domina: calor 1D/2D'},
+             {n:'FVM',c:'blue',d:'Volúmenes de control · conservación',w:'domina: CFD (Fluent, OpenFOAM)'},
+             {n:'FEM',c:'gold',d:'Elementos + funciones de forma',w:'domina: estructuras — este curso'}];
+  for(let i=0;i<3;i++){
+    let x=cx-430+i*430,y=height*0.30;
+    if(beat>=i+1){let al=txa([0.3+i*0.35,1.4],t);
+      drawingContext.globalAlpha=al/255;
+      let cc=cb(cards[i].c);
+      fill(cc[0],cc[1],cc[2],10);stroke(cc[0],cc[1],cc[2],70);strokeWeight(1.5);
+      rect(x-170,y,340,340,16);
+      noStroke();fill(cc[0],cc[1],cc[2],235);
+      tx(window,cards[i].n,x,y+70,52,cards[i].c);
+      tx(window,cards[i].d,x,y+135,21,'white');
+      tx(window,cards[i].w,x,y+185,19,'gray');
+      if(i===2){txB(window,'← el estándar estructural',x,y+245,22,'gold')}
+      drawingContext.globalAlpha=1}
+  }
+  txB(window,'Tres familias de métodos numéricos',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 3 — LA IDEA DEL FEM (5 beats: dominio → elementos →
+//  nodos → funciones de forma → ensamblaje [K]{u}={F})
+// ═══════════════════════════════════════════════════════════════
+function s3(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let y=height*0.42,x0=cx-430,x1=cx+430,by=height*0.50;
+  // — beat 0: dominio continuo —
+  if(beat>=0){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    // dominio como barra con gradiente (continua)
+    for(let i=0;i<12;i++){let lx=x0+(x1-x0)*i/11;
+      let cc=lerpColor(color(cb('blue')[0],cb('blue')[1],cb('blue')[2]),color(cb('mint')[0],cb('mint')[1],cb('mint')[2]),i/11);
+      fill(cc.levels[0],cc.levels[1],cc.levels[2],90);noStroke();
+      rect(lx,y-20,(x1-x0)/11+1,40)}
+    stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],200);strokeWeight(2.5);noFill();
+    rect(x0,y-22,x1-x0,44,4);
+    tx(window,'dominio continuo · u(x)',cx,y-58,24,'white');
+    tx(window,'la EDP tiene infinitos grados de libertad',cx,y+75,20,'gray');
+    drawingContext.globalAlpha=1}
+  // — beat 1: elementos —
+  if(beat>=1){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],150);strokeWeight(2);
+    for(let i=1;i<5;i++){let lx=x0+(x1-x0)*i/5;line(lx,y-22,lx,y+22)}
+    txB(window,'discretizar: elementos finitos',cx,by+95,26,'white');
+    drawingContext.globalAlpha=1}
+  // — beat 2: nodos —
+  if(beat>=2){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    for(let i=0;i<6;i++){let nx=x0+(x1-x0)*i/5;
+      fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],230);noStroke();circle(nx,y,12);
+      txM(window,'u'+(i+1),nx,y+48,20,'gold')}
+    txB(window,'conectados por nodos — incógnitas u₁…u₆',cx,by+130,24,'white');
+    drawingContext.globalAlpha=1}
+  // — beat 3: funciones de forma (sombrero N_i) —
+  if(beat>=3){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    let nx=x0+(x1-x0)*2/5, baseY=y+8, apexY=baseY-0.17*height;
+    stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],200);strokeWeight(3);noFill();
+    triangle(nx-110,baseY,nx,apexY,nx+110,baseY);
+    setLineDash([8,6]);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],100);strokeWeight(1.5);
+    line(nx-110,baseY,nx+110,baseY);setLineDash([]);
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],230);noStroke();
+    tx(window,'N_i(x)',x1+70,baseY-8,26,'mint');
+    txM(window,'u(x) ≈ Σ N_i(x)·u_i',cx,height*0.14,26,'gold');
+    tx(window,'función de forma: 1 en su nodo, 0 en los demás',cx,height*0.21,20,'gray');
+    drawingContext.globalAlpha=1}
+  // — beat 4: ensamblaje [K]{u}={F} —
+  if(beat>=4){let al=txa([0.3,1.3],t);drawingContext.globalAlpha=al/255;
+    let ey=height*0.80;
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],10);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],90);strokeWeight(2);
+    rect(cx-560,ey-45,1120,100,14);
+    txB(window,'ensamblaje →',cx-330,ey+5,26,'white');
+    txM(window,'[K]{u} = {F}',cx+40,ey+12,46,'gold');
+    tx(window,'matrices elementales → sistema global',cx+40,ey+40,20,'gray');
+    drawingContext.globalAlpha=1}
+  txB(window,'La idea del FEM: discretizar para resolver',cx,height*0.07,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 4 — LA BARRA EN TRACCIÓN
+//  Beats: 0=título, 1=geometría+carga, 2=σ uniforme 50 MPa,
+//         3=alargamiento δ ≈ 0.048 mm
+// ═══════════════════════════════════════════════════════════════
+function s4(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let y=height*0.46,x0=cx-380,x1=cx+380,hw=44;
+  // — beat 0: título + silueta de la barra —
+  if(beat>=0){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],130);strokeWeight(2);noFill();
+    rect(x0,y-hw,x1-x0,2*hw,4);
+    // empotramiento (izquierda)
+    fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],90);
+    rect(x0-16,y-hw-10,16,2*hw+20);
+    for(let i=0;i<5;i++){stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],140);strokeWeight(1.5);
+      line(x0-16+i*4,y-hw-10,x0+i*4-2,y-hw+10);line(x0-16+i*4,y+hw+10,x0+i*4-2,y+hw-10)}
+    drawingContext.globalAlpha=1}
+  // — beat 1: carga y dimensiones —
+  if(beat>=1){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    // flecha de carga hacia la derecha
+    stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],220);strokeWeight(4);
+    line(x1+20,y,x1+110,y);
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],220);noStroke();
+    triangle(x1+110,y-13,x1+110,y+13,x1+134,y);
+    tx(window,'P = 10 kN',x1+150,y-8,26,'gold',LEFT);
+    txB(window,'L = 200 mm · A = 200 mm²',cx,y+hw+52,22,'white');
+    drawingContext.globalAlpha=1}
+  // — beat 2: esfuerzo uniforme (validado) —
+  if(beat>=2){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],70);noStroke();
+    rect(x0,y-hw,x1-x0,2*hw,4);
+    stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],200);strokeWeight(1.5);
+    for(let i=1;i<6;i++){let ly=y-hw+i*(2*hw)/6;line(x0,ly,x1,ly)}
+    let ey=height*0.72;
+    fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],200);noStroke();rect(cx-470,ey-40,940,84,14);
+    txB(window,'σ = P/A = 10000/200',cx,ey-2,34,'gold');
+    txB(window,'σ ≈ 50 MPa · uniforme lejos de la carga',cx,ey+38,24,'mint');
+    drawingContext.globalAlpha=1}
+  // — beat 3: alargamiento —
+  if(beat>=3){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    // deformada exagerada
+    let dx=16;
+    stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],150);strokeWeight(2);noFill();
+    rect(x0,y-hw,dx,2*hw,4); // zona fija sin deformar
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],26);noStroke();
+    rect(x0+dx,y-hw,x1-x0-dx,2*hw,4);
+    stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],120);strokeWeight(1.5);
+    for(let i=1;i<6;i++){let ly=y-hw+i*(2*hw)/6;line(x0+dx,ly,x1,ly)}
+    // contorno original punteado
+    setLineDash([8,6]);stroke(cb('gray')[0],cb('gray')[1],cb('gray')[2],140);strokeWeight(1.5);
+    rect(x0,y-hw,x1-x0,2*hw,4);setLineDash([]);
+    let ey=height*0.72;
+    fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],200);noStroke();rect(cx-470,ey-40,940,120,14);
+    txB(window,'δ = P·L/(E·A) ≈ 0.048 mm',cx,ey-2,34,'gold');
+    txB(window,'k = E·A/L = 210000 N/mm',cx,ey+38,24,'white');
+    txB(window,'δ dibujado exagerado 300× para verlo',cx,ey+72,19,'gray');
+    drawingContext.globalAlpha=1}
+  txB(window,'La barra en tracción',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 5 — CIERRE: FEM = discretizar para resolver
+// ═══════════════════════════════════════════════════════════════
+function s5(){
+  let t=st,cx=width/2,cy=height*0.36;uFF(t);uFP();
+  let burst=constrain(map(t,2,5,0,1),0,1);
+  glow(g=>{if(burst>0){dB(g,cx,cy,440*burst,cb('gold'),6);dB(g,cx,cy,240*burst,cb('white'),3)}});
+  let ta=constrain(map(t,1.5,3.5,0,220),0,220);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();
+    rect(cx-620,cy-75,1240,160,16)}
+  drawingContext.globalAlpha=constrain(map(t,1.5,4,0,1),0,1);
+  txB(window,'FEM = discretizar para resolver',cx,cy-5,56,'gold');
+  txB(window,'[K]{u}={F}: de la EDP continua al sistema algebraico',cx,cy+62,26,'white');
+  drawingContext.globalAlpha=1;
+  // qué sigue
+  let al=txa([6,8.5],t);
+  if(al>20){drawingContext.globalAlpha=al/255;
+    tx(window,'Sesión 3 → Pre-procesamiento: geometría con criterio, materiales y mallado · placa con agujero',cx,height*0.86,22,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN — 6 escenas
+// ═══════════════════════════════════════════════════════════════
+SNAMES=['Portada','¿Por qué numéricos?','FDM · FVM · FEM','La idea del FEM','Barra en tracción','Cierre'];
+SBEATS=[1,3,4,5,4,1];
+function initSessions(){scenes=[s0,s1,s2,s3,s4,s5];}
+</script></body></html>

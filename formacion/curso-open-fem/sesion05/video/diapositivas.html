@@ -1,0 +1,295 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S5 - Errores comunes + Verificación y Validación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — SESIÓN 5 (video asíncrono)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Motor: VIDEOMN engine v2 (compartido). NO editar engine.js.
+  Anclaje visual: ensayo de laboratorio vs simulación — la
+  probeta en la prensa y el informe que debe contar la misma
+  historia que el modelo. 7 escenas, narración ~11-12 min.
+  Guion: sesion05/video/guion.md
+  ═══════════════════════════════════════════════════════════════ -->
+<script src="../../assets/p5.min.js"></script><script>p5.disableFriendlyErrors=true;</script>
+<script src="../../assets/engine.js"></script>
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#3a3d45;}canvas{display:block;}</style>
+</head><body><script>
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 0 — PORTADA: la probeta en la prensa (ensayo de tracción)
+//  Anclaje: el laboratorio y la simulación deben contar la misma
+//  historia — eso es validación.
+// ═══════════════════════════════════════════════════════════════
+function s0(){
+  let t=st,cx=width/2,cy=height*0.44;uFF(t);uFP();
+  // — máquina universal de ensayos: marco + cabezal + probeta —
+  let mw=width*0.16,mh=height*0.42;
+  push();translate(cx-mw/2,cy-mh/2);
+  // columnas del marco
+  fill(52,58,66,230);noStroke();rect(0,0,14,mh);rect(mw-14,0,14,mh);
+  // travesaño superior (celda de carga)
+  fill(44,50,58,240);rect(-10,0,mw+20,26);
+  // probeta en las mordazas: hombros + zona calibrada
+  let gY=70,gH=64;
+  fill(60,66,74,220);rect(-26,gY,20,gH);rect(mw+6,gY,20,gH);
+  fill(90,96,104,240);noStroke();
+  let pW=26,sp=gY+gH+8;
+  rect(-pW/2,sp,26,10);           // hombro superior
+  rect(-pW/2-4,sp+10,34,52);      // cuerpo
+  rect(-pW/2,sp+62,26,10);        // hombro inferior
+  // mordaza inferior que se desplaza (estira)
+  let pull=sin(t*0.8)*6;
+  fill(60,66,74,220);rect(-26,sp+82+pull,20,gH);rect(mw+6,sp+82+pull,20,gH);
+  // flecha de estiramiento
+  stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],200);strokeWeight(2.5);
+  let ay=sp+118+pull;
+  line(cx-mw/2+30,ay,cx-mw/2+30,ay+26);line(cx-mw/2+24,ay+18,cx-mw/2+30,ay+26);line(cx-mw/2+36,ay+18,cx-mw/2+30,ay+26);
+  // zona calibrada resaltada en mint
+  stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],120);strokeWeight(1);
+  line(-pW/2-8,sp+16,-pW/2-8,sp+56);line(pW/2+8,sp+16,pW/2+8,sp+56);
+  line(-pW/2-8,sp+16,pW/2+8,sp+16);line(-pW/2-8,sp+56,pW/2+8,sp+56);
+  pop();
+  // — panel + títulos — (panel oscuro para legibilidad)
+  let ta=constrain(map(t,1,4,0,200),0,200);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();rect(cx-560,height*0.62,1120,170,16)}
+  txB(window,'Errores comunes + Verificación y Validación',cx,height*0.62+45,52,'gold');
+  txB(window,'Del laboratorio al modelo — Sesión 5',cx,height*0.62+115,30,'white');
+  txB(window,'GCI · métricas de validación · sensibilidad',cx,height*0.62+158,22,'gray');
+  // pie: el anclaje
+  let al0=txa([8,11],t);
+  if(al0>20){drawingContext.globalAlpha=al0/255;
+    tx(window,'El ensayo y la simulación deben contar la misma historia — si no, algo está mal en el modelo',cx,height*0.9,20,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 1 — LOS 10 ERRORES: barras de frecuencia animadas
+//  Beats: 0=título, 1..10 = un error por beat (rojo los 3 primeros)
+// ═══════════════════════════════════════════════════════════════
+function s1(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let errs=[['CF incorrectas',28],['Mallado inadecuado',22],['Material erróneo',15],
+            ['Tipo de elemento',10],['Contactos mal definidos',8],['Interpretación',7],
+            ['Unidades inconsistentes',5],['Simplificaciones',3],['Sin convergencia',2],
+            ['No linealidades',1]];
+  let bx=cx-80,by=height*0.13,bh=height*0.62,maxW=width*0.42,rowH=bh/errs.length;
+  // eje de referencia
+  stroke(cb('gray')[0],cb('gray')[1],cb('gray')[2],70);strokeWeight(1);
+  line(bx,by,bx+maxW+10,by);
+  // barras por beat (uno por error)
+  for(let i=0;i<errs.length;i++){
+    if(beat>=i+1){let al=txa([0.3+i*0.2,1.2],t);drawingContext.globalAlpha=al/255;
+      let y=by+10+i*rowH+rowH*0.5,w=maxW*errs[i][1]/28;
+      let cc=(i<3)?cb('red'):cb('blue');
+      fill(cc[0],cc[1],cc[2],16);noStroke();rect(bx-4,y-20,maxW+8,40,6);
+      // barra con pulso
+      let pw=pul(t,2+i*0.3,1,1.06);
+      fill(cc[0],cc[1],cc[2],230);rect(bx,y-13,w*pw,26,5);
+      // etiqueta + valor
+      txM(window,String(i+1).padStart(2,'0')+' · '+errs[i][0],bx-30,y+6,19,i<3?'red':'white',RIGHT);
+      txB(window,errs[i][1]+'%',bx+w+18,y+6,24,i<3?'red':'blue',LEFT);
+      drawingContext.globalAlpha=1}
+  }
+  // lección (beat 10)
+  if(beat>=10){let al=txa([1.2,2.4],t);drawingContext.globalAlpha=al/255;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],75);strokeWeight(1.5);
+    rect(cx-560,height*0.84,1120,86,14);
+    tx(window,'El top 3 concentra el 65% de los casos: CF, malla y material',cx,height*0.84+38,28,'red');
+    tx(window,'los demás completan la lista — conózcalos todos (guía, cap. 5)',cx,height*0.84+70,20,'gray');
+    drawingContext.globalAlpha=1}
+  txB(window,'Los 10 errores más frecuentes en simulación',cx,height*0.06,38,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 2 — VERIFICACIÓN vs VALIDACIÓN (dos preguntas, Roache)
+//  Beats: 0=título, 1=verificación, 2=validación + cita
+// ═══════════════════════════════════════════════════════════════
+function s2(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let y=height*0.26;
+  // — tarjeta verificación (beat 1) —
+  if(beat>=1){let al=txa([0.4,1.4],t);drawingContext.globalAlpha=al/255;
+    let cc=cb('blue');
+    fill(cc[0],cc[1],cc[2],12);stroke(cc[0],cc[1],cc[2],80);strokeWeight(2);
+    rect(cx-560,y,520,300,18);
+    tx(window,'VERIFICACIÓN',cx-300,y+60,30,'blue');
+    tx(window,'¿Resolvemos bien',cx-300,y+140,34,'white');
+    tx(window,'las ecuaciones?',cx-300,y+185,34,'white');
+    tx(window,'dominio matemático · contra analítica / benchmark / MMS',cx-300,y+250,20,'gray');
+    drawingContext.globalAlpha=1}
+  // — tarjeta validación (beat 2) —
+  if(beat>=2){let al=txa([0.4,1.4],t);drawingContext.globalAlpha=al/255;
+    let cc=cb('mint');
+    fill(cc[0],cc[1],cc[2],12);stroke(cc[0],cc[1],cc[2],80);strokeWeight(2);
+    rect(cx+40,y,520,300,18);
+    tx(window,'VALIDACIÓN',cx+300,y+60,30,'mint');
+    tx(window,'¿Las ecuaciones',cx+300,y+140,34,'white');
+    tx(window,'correctas?',cx+300,y+185,34,'white');
+    tx(window,'dominio físico · contra datos experimentales',cx+300,y+250,20,'gray');
+    drawingContext.globalAlpha=1}
+  // — cita de Roache (beat 2) —
+  if(beat>=2){let al=txa([1.6,2.8],t);drawingContext.globalAlpha=al/255;
+    let y2=height*0.70;
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],10);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],80);strokeWeight(1.5);
+    rect(cx-560,y2,1120,150,14);
+    txB(window,'"Verification: are we solving the equations right?',cx,y2+50,26,'gold');
+    txB(window,'Validation: are we solving the right equations?" — P. Roache',cx,y2+95,26,'gold');
+    tx(window,'primero verifique, después valide — en ese orden',cx,y2+132,20,'gray');
+    drawingContext.globalAlpha=1}
+  txB(window,'Verificación ≠ Validación',cx,height*0.07,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 3 — CONVERGENCIA DE MALLA: δ vs elementos → 0.762 mm
+//  Beats: 0=título, 1=gruesa (500), 2=media (2000), 3=fina (8000)
+//  + fórmula GCI en oro
+// ═══════════════════════════════════════════════════════════════
+function s3(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let ox=cx-430,oy=height*0.72,axw=760,axh=height*0.44;
+  // — ejes —
+  stroke(cb('white')[0],cb('white')[1],cb('white')[2],120);strokeWeight(1.5);
+  line(ox,oy,ox+axw,oy);line(ox,oy,ox,oy-axh);
+  tx(window,'elementos (escala log)',ox+axw/2,oy+36,20,'gray');
+  push();translate(ox-46,oy-axh/2);rotate(-HALF_PI);tx(window,'δ (mm)',0,0,20,'gray');pop();
+  // — recta analítica δ = 0.762 (mint, beat 1) —
+  if(beat>=1){let al=txa([0.4,1.2],t);drawingContext.globalAlpha=al/255;
+    let yA=map(0.762,0.74,0.80,oy,oy-axh);
+    setLineDash([10,8]);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],150);strokeWeight(2);
+    line(ox,yA,ox+axw,yA);setLineDash([]);
+    txB(window,'analítico 0.762',ox+axw+16,yA,20,'mint',LEFT);
+    drawingContext.globalAlpha=1}
+  // — puntos de malla por beat: (500,0.778),(2000,0.765),(8000,0.762) —
+  let pts=[[500,0.778],[2000,0.765],[8000,0.762]];
+  let xs=[map(log(500),log(400),log(10000),ox,ox+axw),map(log(2000),log(400),log(10000),ox,ox+axw),map(log(8000),log(400),log(10000),ox,ox+axw)];
+  for(let i=0;i<3;i++){
+    if(beat>=i+1){let al=txa([0.3+i*0.3,1.3],t);drawingContext.globalAlpha=al/255;
+      let px=xs[i],py=map(pts[i][1],0.74,0.80,oy,oy-axh);
+      // conexión con el punto anterior
+      if(i>0&&beat>=i){stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],180);strokeWeight(2.5);
+        line(xs[i-1],map(pts[i-1][1],0.74,0.80,oy,oy-axh),px,py)}
+      noStroke();fill(cb('gold')[0],cb('gold')[1],cb('gold')[2]);circle(px,py,11);
+      fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],200);rect(px+14,py-30,190,44,8);
+      txM(window,pts[i][0]+' el · '+pts[i][1].toFixed(3)+' mm',px+109,py-6,20,i===2?'mint':'gold',LEFT);
+      drawingContext.globalAlpha=1}
+  }
+  // — fórmula GCI en oro (beat 3) —
+  if(beat>=3){let al=txa([1.2,2.4],t);drawingContext.globalAlpha=al/255;
+    let y2=height*0.80;
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],10);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],85);strokeWeight(2);
+    rect(cx-560,y2,1120,120,14);
+    txM(window,'GCI = Fs · |ε| / (r^p − 1)   con Fs=1.25, r=2, p=2',cx,y2+42,30,'gold');
+    txB(window,'GCI (fina–media) ≈ 0.16% · GCI (media–gruesa) ≈ 0.70% — criterio: < 5% diseño',cx,y2+88,26,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'Convergencia de malla: δ se estabiliza en 0.762 mm',cx,height*0.06,38,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 4 — VALIDACIÓN: experimento vs simulación + métricas
+//  Beats: 0=título, 1=puntos experimentales + curva FEM, 2=métricas
+// ═══════════════════════════════════════════════════════════════
+function s4(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let ox=cx-430,oy=height*0.74,axw=760,axh=height*0.46;
+  // — ejes —
+  stroke(cb('white')[0],cb('white')[1],cb('white')[2],120);strokeWeight(1.5);
+  line(ox,oy,ox+axw,oy);line(ox,oy,ox,oy-axh);
+  tx(window,'carga aplicada',ox+axw/2,oy+36,20,'gray');
+  push();translate(ox-46,oy-axh/2);rotate(-HALF_PI);tx(window,'δ (mm)',0,0,20,'gray');pop();
+  // — curva FEM (mint, beat 1): lineal δ ∝ P —
+  if(beat>=1){let al=txa([0.4,1.4],t);drawingContext.globalAlpha=al/255;
+    stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],220);strokeWeight(3);
+    let x0=ox+20,x1=ox+axw-20,y1=oy-axh+30;
+    line(x0,oy-10,x1,y1);
+    tx(window,'FEM (CalculiX)',x1-30,y1-22,20,'mint',RIGHT);
+    drawingContext.globalAlpha=1}
+  // — puntos experimentales con barras de error (beat 1) —
+  if(beat>=1){let al=txa([1.0,2.2],t);drawingContext.globalAlpha=al/255;
+    let exps=[{fx:0.15,vy:0.78},{fx:0.35,vy:0.85},{fx:0.55,vy:0.92},{fx:0.75,vy:0.99},{fx:0.95,vy:1.06}];
+    for(let i=0;i<exps.length;i++){
+      let px=ox+20+exps[i].fx*(axw-40),py=oy-10-(exps[i].vy-0.7)/(1.1-0.7)*axh*0.9;
+      // barra de error
+      stroke(cb('red')[0],cb('red')[1],cb('red')[2],140);strokeWeight(1.5);
+      line(px,py-9,px,py+9);line(px-7,py-9,px+7,py-9);line(px-7,py+9,px+7,py+9);
+      noStroke();fill(cb('red')[0],cb('red')[1],cb('red')[2]);circle(px,py,10);
+    }
+    tx(window,'experimento (con incertidumbre)',ox+axw-30,oy-axh+14,20,'red',RIGHT);
+    drawingContext.globalAlpha=1}
+  // — métricas en mint (beat 2) —
+  if(beat>=2){let al=txa([0.8,2.0],t);drawingContext.globalAlpha=al/255;
+    let y2=height*0.16;
+    fill(cb('mint')[0],cb('mint')[1],cb('mint')[2],10);stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],85);strokeWeight(2);
+    rect(cx-560,y2,1120,110,14);
+    txM(window,'MAE = 0.011 mm   ·   RMSE = 0.014 mm   ·   R² = 0.998',cx,y2+45,30,'mint');
+    tx(window,'métricas cuantitativas: no basta la inspección visual (guía, cap. 6.3)',cx,y2+88,21,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'Validación: la curva FEM debe caer dentro de la incertidumbre experimental',cx,height*0.06,36,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 5 — SENSIBILIDAD: δ ∝ 1/E + warning de no linealidad
+//  Beats: 0=título, 1=tres puntos 189/210/231 GPa, 2=warning rojo
+// ═══════════════════════════════════════════════════════════════
+function s5(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let ox=cx-430,oy=height*0.74,axw=760,axh=height*0.46;
+  // — ejes —
+  stroke(cb('white')[0],cb('white')[1],cb('white')[2],120);strokeWeight(1.5);
+  line(ox,oy,ox+axw,oy);line(ox,oy,ox,oy-axh);
+  tx(window,'E (GPa)',ox+axw/2,oy+36,20,'gray');
+  push();translate(ox-46,oy-axh/2);rotate(-HALF_PI);tx(window,'δ (mm)',0,0,20,'gray');pop();
+  // — curva δ ∝ 1/E (mint, beat 1) —
+  if(beat>=1){let al=txa([0.4,1.4],t);drawingContext.globalAlpha=al/255;
+    stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],160);strokeWeight(2);
+    noFill();
+    beginShape();for(let E=180;E<=240;E+=2){let px=map(E,180,240,ox,ox+axw),d=0.762*210/E,py=map(d,0.66,0.88,oy,oy-axh);vertex(px,py)}endShape();
+    txB(window,'δ ∝ 1/E',ox+axw-20,map(0.762*210/189,0.66,0.88,oy,oy-axh)-14,22,'mint',RIGHT);
+    drawingContext.globalAlpha=1}
+  // — tres puntos: 189→0.847, 210→0.762, 231→0.693 (beat 1) —
+  let sens=[[189,0.847],[210,0.762],[231,0.693]];
+  if(beat>=1){let al=txa([1.0,2.2],t);drawingContext.globalAlpha=al/255;
+    for(let i=0;i<3;i++){
+      let px=map(sens[i][0],180,240,ox,ox+axw),py=map(sens[i][1],0.66,0.88,oy,oy-axh);
+      noStroke();fill(cb('gold')[0],cb('gold')[1],cb('gold')[2]);circle(px,py,12);
+      fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],200);rect(px+14,py-30,220,44,8);
+      txM(window,sens[i][0]+' GPa → '+sens[i][1].toFixed(3)+' mm',px+124,py-6,20,'gold',LEFT);
+    }
+    drawingContext.globalAlpha=1}
+  // — warning no lineal (beat 2) —
+  if(beat>=2){let al=txa([0.8,2.0],t);drawingContext.globalAlpha=al/255;
+    let y2=height*0.80;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],80);strokeWeight(2);
+    rect(cx-560,y2,1120,120,14);
+    tx(window,'En no lineal la sensibilidad se amplifica',cx,y2+42,30,'red');
+    txB(window,'5% en σy → 30% en la carga de colapso · en lineal, 5% en E → ~5% en δ',cx,y2+88,24,'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'Sensibilidad: ¿qué pasa si el dato de entrada está mal?',cx,height*0.06,38,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 6 — CIERRE: verifica, valida, documenta + qué sigue
+// ═══════════════════════════════════════════════════════════════
+function s6(){
+  let t=st,cx=width/2,cy=height*0.36;uFF(t);uFP();
+  let burst=constrain(map(t,2,5,0,1),0,1);
+  glow(g=>{if(burst>0){dB(g,cx,cy,430*burst,cb('mint'),6);dB(g,cx,cy,230*burst,cb('white'),3)}});
+  let ta=constrain(map(t,1.5,3.5,0,220),0,220);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();
+    rect(cx-560,cy-70,1120,150,16)}
+  drawingContext.globalAlpha=constrain(map(t,1.5,4,0,1),0,1);
+  txB(window,'Verifica, valida, documenta',cx,cy-5,58,'gold');
+  txB(window,'Un resultado sin GCI ni validación es una opinión con colores bonitos',cx,cy+60,26,'white');
+  drawingContext.globalAlpha=1;
+  // qué sigue
+  let al=txa([6,8.5],t);
+  if(al>20){drawingContext.globalAlpha=al/255;
+    tx(window,'Sesión 6 → Flujo profesional e IA en simulación: surrogados, PINNs, modelos reducidos',cx,height*0.86,22,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN — 7 escenas
+// ═══════════════════════════════════════════════════════════════
+SNAMES=['Portada','10 errores','V vs V','Convergencia','Validación','Sensibilidad','Cierre'];
+SBEATS=[1,11,2,4,3,3,1];
+function initSessions(){scenes=[s0,s1,s2,s3,s4,s5,s6];}
+</script></body></html>

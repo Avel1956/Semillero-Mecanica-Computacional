@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejercicio 5 — Convergencia de malla con GCI (FreeCAD FEM)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Ejercicio 5 · Sesión 5
+  Convergencia de malla con GCI en la viga en voladizo
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Recalca: Guía de Simulación FEM, caps. 5, 6.2 (GCI), 6.4 (sensibilidad)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#0a1613;--bg2:#0e1d19;--panel:rgba(14,29,25,.92);--line:rgba(61,220,151,.18);
+  --text:#e4e8ec;--text2:#9fb5ac;--blue:#64b5f6;--gold:#e6c07a;--mint:#3ddc97;--red:#e57373;
+  --font:'Outfit',sans-serif;--mono:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:42px;font-weight:600;margin:10px 0 8px;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:28px;font-weight:600;margin:44px 0 16px;color:var(--gold);display:flex;align-items:center;gap:14px}
+h2 .n{font-family:var(--mono);font-size:18px;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+h3{font-size:21px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+p,li{font-size:17px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:16px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(100,181,246,.07);padding:16px 22px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.warn{border-color:var(--red);background:rgba(229,115,115,.07)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold{border-color:var(--gold);background:rgba(230,192,122,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(61,220,151,.07)}
+.callout.mint .tag{color:var(--mint)}
+.steps{counter-reset:step;list-style:none}
+.steps>li{counter-increment:step;margin:18px 0;padding-left:64px;position:relative;font-size:17px;color:var(--text2)}
+.steps>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue);border:1px solid var(--line);background:rgba(61,220,151,.08)}
+.steps>li strong{color:var(--text)}
+.steps>li em{color:var(--mint);font-style:normal}
+table{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0}
+th{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(61,220,151,.10);color:var(--text2)}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14.5px;color:var(--gold)}
+.formula{font-family:var(--mono);font-size:24px;color:var(--gold);text-align:center;background:rgba(230,192,122,.07);border:1px solid rgba(230,192,122,.25);border-radius:10px;padding:18px;margin:14px 0}
+.formula small{display:block;font-size:15px;color:var(--text2);margin-top:8px;font-family:var(--font)}
+.check{display:flex;gap:12px;align-items:flex-start;background:rgba(61,220,151,.07);border:1px solid rgba(61,220,151,.25);border-radius:10px;padding:16px 20px;margin:14px 0}
+.check::before{content:'✓';color:var(--mint);font-weight:700;flex:0 0 auto}
+.check strong{color:var(--mint)}
+.q{border-left:4px solid var(--gold);background:rgba(230,192,122,.06);padding:16px 22px;border-radius:0 10px 10px 0;margin:14px 0}
+.q .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+kbd{font-family:var(--mono);font-size:13.5px;background:rgba(100,181,246,.12);border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--blue)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t5">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 5 · Ejercicio 5</div>
+  <h1>Convergencia de malla con GCI en la viga en voladizo</h1>
+  <div class="meta">Requisitos: FreeCAD 1.0+ instalado (freecad.org) · Workbench FEM · CalculiX · Tiempo: 50–70 min</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-conv"/></svg>&nbsp; Enunciado</h3>
+  <p>La viga en voladizo de la Sesión 1: <strong>200 × 20 × 10 mm</strong>, acero (\(E = 210\ \text{GPa}\), \(\nu = 0.3\)), carga \(P = 100\ \text{N}\) en el extremo libre. Ejecute el análisis con <strong>tres mallas</strong> (10, 5 y 2.5 mm), registre la deflexión máxima \(\delta_{m\acute{a}x}\) en cada una y calcule el <strong>índice GCI</strong> a mano. Luego explore la sensibilidad a \(E\).</p>
+  <p style="margin-top:8px">Objetivo de verificación: \(\delta = PL^{3}/(3EI) = 0.762\ \text{mm}\) · criterio GCI &lt; 5% (guía, cap. 6.2).</p>
+</div>
+
+<h2><span class="n">PASO 1</span> Preparar el entorno</h2>
+<ol class="steps">
+  <li>Verifique que <strong>FreeCAD</strong> y el solver <strong>CalculiX</strong> estén instalados y configurados (si viene de la Sesión 1, ya lo están).</li>
+  <li>Menú <kbd>FEM</kbd> → <kbd>Preferences</kbd> → pestaña <kbd>CalculiX</kbd>: confirme que el ejecutable <span class="mono">ccx.exe</span> esté seleccionado.</li>
+  <li>Crear documento nuevo: <kbd>File</kbd> → <kbd>New</kbd>.</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 5.2 · Error 7 (5%)</span>
+Unidades: trabaje todo en el sistema <strong>mm–N–MPa</strong>: longitud en mm, fuerza en N, esfuerzo en MPa (N/mm²), \(E\) en MPa (210000) y densidad en ton/mm³ (7.85e-9). Mantener un solo sistema evita el Error 7.</div>
+
+<h2><span class="n">PASO 2</span> Geometría: el cubo 200 × 20 × 10</h2>
+<ol class="steps">
+  <li>Workbench <kbd>Part</kbd> (lista desplegable superior).</li>
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd>.</li>
+  <li>En la pestaña Datos fije: <span class="mono">Length = 200 mm</span>, <span class="mono">Width = 20 mm</span>, <span class="mono">Height = 10 mm</span>.</li>
+  <li>Pulse <kbd>Ctrl+D</kbd> para ver todo (<em>Fit all</em>).</li>
+</ol>
+
+<h2><span class="n">PASO 3</span> Análisis FEM y material</h2>
+<ol class="steps">
+  <li>Cambie al workbench <kbd>FEM</kbd>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Analysis container</kbd> → <kbd>New analysis</kbd>. En el árbol: <span class="mono">Analysis</span> → <span class="mono">Solver CalculiX</span>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Material</kbd> → <kbd>Solid material</kbd>; seleccione el Box y use la plantilla <span class="mono">CalculiX-Steel</span> o fije: <span class="mono">Young's modulus = 210000 MPa</span>, <span class="mono">Poisson's ratio = 0.3</span>, <span class="mono">Density = 7.85e-9 t/mm³</span>.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 5.2 · Error 3 (15%)</span>
+Anote la <strong>trazabilidad</strong> del material: de dónde salió cada valor. El E nominal del acero varía 190–210 GPa según la norma — hoy explotaremos esa incertidumbre en el Paso 9.</div>
+
+<h2><span class="n">PASO 4</span> Condiciones de frontera</h2>
+<ol class="steps">
+  <li><strong>Empotramiento:</strong> <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint fixed</kbd> sobre la cara en x = 0.</li>
+  <li><strong>Carga:</strong> <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd> sobre la cara en x = 200 mm, con <span class="mono">Force = 100 N</span> en dirección <span class="mono">-Z</span> (use <em>Reverse direction</em> si la flecha apunta hacia arriba).</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 5.2 · Error 1 (28%)</span>
+Las CF son el error más frecuente. Antes de correr: ¿hay algún <strong>movimiento de cuerpo rígido</strong> sin restringir? El empotramiento fija los 6 grados de libertad de la cara — correcto para este caso.</div>
+
+<h2><span class="n">PASO 5</span> Malla 1: Gmsh con 10 mm</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd>; seleccione el sólido.</li>
+  <li>Fije <span class="mono">Maximum element size = 10 mm</span> (escríbalo explícito; 0 = automático). Deje el <strong>orden del elemento</strong> por defecto (cuadrático — el GCI usa \(p = 2\)).</li>
+  <li>Pulse <kbd>OK</kbd> y luego <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>. Anote nodos/elementos del árbol.</li>
+  <li>Doble clic en <span class="mono">Solver CalculiX</span> → <em>Analysis type = Static</em> → <kbd>Write .inp file</kbd> → <kbd>Run CalculiX</kbd>.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 5:</strong> en la pestaña <em>Report</em> debe aparecer <span class="mono">"CalculiX done!"</span> sin errores. Registre en su tabla: malla 1 (10 mm) → <span class="mono">δ₁ = ____ mm</span>.</div></div>
+
+<h2><span class="n">PASO 6</span> Mallas 2 y 3: 5 mm y 2.5 mm</h2>
+<ol class="steps">
+  <li>Doble clic en el objeto <span class="mono">Mesh</span> del árbol (o <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd> de nuevo) y cambie <span class="mono">Maximum element size = 5 mm</span>. Regenerar (<em>Remesh</em>) y <kbd>Set FEM mesh</kbd>.</li>
+  <li>Corra el solver de nuevo: <kbd>Write .inp file</kbd> → <kbd>Run CalculiX</kbd>. Registre <span class="mono">δ₂ = ____ mm</span>.</li>
+  <li>Repita con <span class="mono">Maximum element size = 2.5 mm</span>: corra y registre <span class="mono">δ₃ = ____ mm</span>.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 6:</strong> <span class="mono">"CalculiX done!"</span> en las tres corridas. Anote también el número de elementos de cada malla: debe crecer aproximadamente ×4 por refinamiento (razón \(r \approx 2\) en tamaño de elemento).</div></div>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 6.2</span>
+Convención del GCI: 3 mallas con razón de refinamiento \(r \approx 2\) (ej. 500, 2000, 8000 elementos). Si su razón real difiere, use \(r = h_{gruesa}/h_{fina}\) en la fórmula.</div>
+
+<h2><span class="n">PASO 7</span> Post-proceso: leer δ y σ en cada malla</h2>
+<ol class="steps">
+  <li>Seleccione <span class="mono">CalculiX_static_results</span> → <kbd>FEM</kbd> → <kbd>Post processing</kbd> → <kbd>Warp by filter</kbd> (deformada).</li>
+  <li>Doble clic en <span class="mono">CalculiX_static_results</span> → pestaña <em>Displacement</em> → <em>Show</em>, magnitud <span class="mono">Abs</span>. Anote el máximo: es \(\delta_{m\acute{a}x}\).</li>
+  <li>Pestaña <em>Stress</em> → <em>Von Mises</em> → <em>Show</em>. Anote \(\sigma_{m\acute{a}x}\) leyendo <strong>a 2 mm de la arista del empotramiento</strong> (singularidad numérica — sesiones 1 y 4).</li>
+  <li>Complete la tabla de convergencia (valores esperados como referencia, ya verificados):</li>
+</ol>
+<table>
+  <thead><tr><th>Malla</th><th>Elementos aprox.</th><th>δ<sub>máx</sub> esperado (mm)</th><th>σ<sub>máx</sub> esperado (MPa)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>10 mm</strong></td><td class="mono">≈ 500</td><td class="mono">0.778</td><td class="mono">≈ 60</td></tr>
+    <tr><td><strong>5 mm</strong></td><td class="mono">≈ 2000</td><td class="mono">0.765</td><td class="mono">≈ 60</td></tr>
+    <tr><td><strong>2.5 mm</strong></td><td class="mono">≈ 8000</td><td class="mono">0.762</td><td class="mono">≈ 60</td></tr>
+  </tbody>
+</table>
+<div class="check"><div><strong>Checkpoint 7:</strong> sus δ deben <strong>converger a ≈ 0.76 mm</strong> al refinar (0.778 → 0.765 → 0.762). Si no lo hacen o crecen, revise CF, material o unidades antes de continuar.</div></div>
+
+<h2><span class="n">PASO 8</span> Calcular el GCI a mano</h2>
+<p>Con las tres deflexiones \(f_{gruesa}, f_{media}, f_{fina}\) (en mm) y \(r = 2\), \(p = 2\), \(F_s = 1.25\):</p>
+<div class="formula" data-katex="\varepsilon = \frac{f_{fina} - f_{media}}{f_{media}}, \qquad GCI = F_s\,\frac{|\varepsilon|}{r^{p}-1} = 1.25\,\frac{|\varepsilon|}{2^{2}-1}">$$\varepsilon = \frac{f_{fina} - f_{media}}{f_{media}}, \qquad GCI = F_s\,\frac{|\varepsilon|}{r^{p}-1} = 1.25\,\frac{|\varepsilon|}{2^{2}-1}$$</div>
+<ol class="steps">
+  <li><strong>GCI (fina–media):</strong> con los valores esperados \(f_{fina} = 0.762\), \(f_{media} = 0.765\): \(\varepsilon = (0.762-0.765)/0.765 = -0.00392\), \(|\varepsilon| = 0.00392\), \(GCI = 1.25 \cdot 0.00392/3 = 0.00163\) → <strong>≈ 0.16%</strong>.</li>
+  <li><strong>GCI (media–gruesa):</strong> \(\varepsilon = (0.765-0.778)/0.778 = -0.01671\), \(GCI = 1.25 \cdot 0.01671/3 = 0.00696\) → <strong>≈ 0.70%</strong>.</li>
+  <li>Repita con <strong>sus propios valores</strong> y complete su tabla con los dos GCI.</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 8:</strong> ambos GCI <strong>&lt; 5%</strong> (criterio de diseño detallado, cap. 6.2). Si su GCI supera 5%, refine una malla más antes de confiar en el resultado. Compare además δ de la malla fina con \(\delta = 0.762\ \text{mm}\): el error debe ser &lt; 2%.</div></div>
+
+<h2><span class="n">PASO 9</span> Sensibilidad a E: σ no cambia, δ sí</h2>
+<ol class="steps">
+  <li>Con la malla de <strong>2.5 mm</strong>, edite el material: doble clic en <span class="mono">MechanicalMaterial</span> → cambie <span class="mono">Young's modulus = 189000 MPa</span> (E − 10%).</li>
+  <li>Corra el solver y registre \(\delta\) y \(\sigma_{m\acute{a}x}\).</li>
+  <li>Cambie a <span class="mono">231000 MPa</span> (E + 10%), corra y registre de nuevo.</li>
+  <li>Vuelva a <span class="mono">210000 MPa</span> al terminar.</li>
+</ol>
+<table>
+  <thead><tr><th>E (GPa)</th><th>δ<sub>máx</sub> esperado (mm)</th><th>σ<sub>máx</sub> (MPa)</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">189 (−10%)</td><td class="mono">0.847</td><td class="mono">≈ 60 (igual)</td></tr>
+    <tr><td class="mono">210 (nominal)</td><td class="mono">0.762</td><td class="mono">≈ 60</td></tr>
+    <tr><td class="mono">231 (+10%)</td><td class="mono">0.693</td><td class="mono">≈ 60 (igual)</td></tr>
+  </tbody>
+</table>
+<div class="check"><div><strong>Checkpoint 9:</strong> \(\delta\) escala con \(1/E\) exactamente (en lineal: \(\delta = PL^{3}/(3EI)\)) — verifique \(0.762 \cdot 210/189 = 0.847\) y \(0.762 \cdot 210/231 = 0.693\). Y \(\sigma\) <strong>NO cambia</strong>: en elasticidad lineal el esfuerzo no depende de \(E\). Si \(\sigma\) cambió, revise su procedimiento.</div></div>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 6.4 · No linealidad</span>
+Esta insensibilidad de \(\sigma\) a \(E\) vale en <strong>lineal</strong>. En problemas no lineales la sensibilidad puede amplificarse: 5% en \(\sigma_y\) → 30% en la carga de colapso. No extrapole la regla fuera de su dominio.</div>
+
+<h2><span class="n">PASO 10</span> Síntesis: tabla final y reflexión</h2>
+<table>
+  <thead><tr><th>Malla (mm)</th><th>Elementos</th><th>δ (mm)</th><th>ε vs previa</th><th>GCI</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">10</td><td class="mono">≈ 500</td><td class="mono">0.778</td><td class="mono">—</td><td class="mono">—</td></tr>
+    <tr><td class="mono">5</td><td class="mono">≈ 2000</td><td class="mono">0.765</td><td class="mono">0.0167</td><td class="mono gold">≈ 0.70%</td></tr>
+    <tr><td class="mono">2.5</td><td class="mono">≈ 8000</td><td class="mono">0.762</td><td class="mono">0.0039</td><td class="mono gold">≈ 0.16%</td></tr>
+  </tbody>
+</table>
+<div class="q"><span class="tag">Preguntas de reflexión (para el taller)</span>
+<p>1. ¿Qué le dice el GCI de 0.16% sobre la malla fina? ¿Cuánto error de discretización estima en δ?</p>
+<p>2. ¿Por qué el GCI (fina–media) es menor que el GCI (media–gruesa)? ¿Qué tendencia esperaría con una cuarta malla de 1.25 mm?</p>
+<p>3. ¿Cuál de los 10 errores del cap. 5 está evitando al hacer este estudio? ¿Y cuál no puede evitarse con convergencia?</p>
+<p>4. Si duplicara la carga a 200 N, ¿cambiarían los GCI? ¿Por qué?</p>
+</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 5 (taxonomía y errores 1, 2, 3, 7 y 9), cap. 6.2 (procedimiento de convergencia y GCI), cap. 6.4 (sensibilidad lineal δ ∝ 1/E). Notebook complementario: <span class="mono">notebooks/02_convergencia_malla.ipynb</span>.</div>
+
+<footer>FEM práctico con FreeCAD · Sesión 5 · Ejercicio 5 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

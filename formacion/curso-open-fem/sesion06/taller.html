@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller 6 — Proyecto integrador: ciclo completo de simulación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Taller 6 · Sesión 6
+  Proyecto integrador (cierre del curso). Recalca: Guía de
+  Simulación FEM, caps. 6.2 (GCI), 7 (IA), 8.1 (checklist),
+  8.3 (informe), 8.4 (reproducibilidad), 9.4 (integrador)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#100d1c;--bg2:#151129;--panel:rgba(21,17,41,.92);--line:rgba(139,156,247,.18);
+  --text:#e9e6f2;--text2:#a49dc9;--blue:#8b9cf7;--gold:#f0c96b;--mint:#53d9b8;--red:#e26a6a;
+  --font:'Chivo',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:40px;font-weight:600;margin:10px 0 8px}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:26px;font-weight:600;margin:40px 0 14px;color:var(--gold)}
+h3{font-size:19px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+p,li{font-size:16.5px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(139,156,247,.07);padding:15px 20px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15.5px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.gold{border-color:var(--gold);background:rgba(240,201,107,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(83,217,184,.07)}
+.callout.mint .tag{color:var(--mint)}
+.callout.warn{border-color:var(--red);background:rgba(226,106,106,.07)}
+.callout.warn .tag{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(139,156,247,.10);color:var(--text2);vertical-align:top}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14px;color:var(--gold)}
+.puntos{text-align:center;font-family:var(--mono);font-size:14px;color:var(--gold);white-space:nowrap}
+.entrega{display:flex;gap:12px;align-items:flex-start;background:rgba(83,217,184,.07);border:1px solid rgba(83,217,184,.25);border-radius:10px;padding:16px 20px;margin:16px 0}
+.nota{font-family:var(--mono);font-size:14px;color:var(--mint)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t6">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 6 · Taller 6</div>
+  <h1>Taller 6 — Proyecto integrador: ciclo completo de simulación</h1>
+  <div class="meta">Entrega individual · Formato: informe PDF/Markdown + archivos .FCStd e .inp · Ponderación: ver rúbrica · Cierre del curso</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-verif"/></svg>&nbsp; Objetivos</h3>
+  <ul>
+    <li>Llevar una pieza propia por el <strong>ciclo completo del cap. 8</strong>: checklist → modelo simplificado → malla → solver → convergencia → informe.</li>
+    <li>Aplicar la <strong>verificación formal con GCI</strong> (cap. 6.2) y el <strong>análisis de sensibilidad</strong> (cap. 6.4) a una geometría elegida por usted.</li>
+    <li>Producir un <strong>informe profesional de 7 secciones</strong> (cap. 8.3) y reflexionar sobre las incertidumbres del modelo (cap. 7.3 y 8.1).</li>
+  </ul>
+</div>
+
+<h2>Contexto — el ejercicio integrador (guía, cap. 9.4)</h2>
+<p>Este taller cierra el curso. Cada estudiante elige una <strong>geometría de interés</strong> sometida a <strong>carga combinada</strong> (al menos dos cargas en direcciones distintas: flexión + axial, flexión + torsión, o dos flexiones), la simplifica con criterio, la simula con tres mallas y entrega el informe completo. La referencia analítica puede ser parcial (superposición lineal, fórmula de flexión) — lo importante es el <strong>proceso</strong>: verificar, validar, documentar.</p>
+
+<h2>Parte A — Geometría y simplificación</h2>
+<ol style="padding-left:22px">
+  <li>Elija una pieza: <strong>soporte, ménsula, chasis simple o viga con agujeros</strong> (o una equivalente propuesta por usted y aprobada por el profesor). Debe quedar sometida a <strong>carga combinada</strong>.</li>
+  <li>Construya el modelo CAD en FreeCAD (workbench <kbd>Part</kbd> o <kbd>Part Design</kbd>) y <strong>simplifique</strong>: elimine radios, chaflanes y detalles lejos de la zona de interés (cap. 4.2.1, St. Venant), pero <strong>conserve</strong> los concentradores que estén en zona crítica.</li>
+  <li>Documente <strong>qué eliminó y por qué</strong> (una tabla: detalle / decisión / justificación). Este es el entregable 1.</li>
+</ol>
+
+<h2>Parte B — Convergencia de malla con GCI</h2>
+<ol style="padding-left:22px">
+  <li>Ejecute el análisis con <strong>tres mallas</strong> de tamaño decreciente (p. ej. 5, 2.5 y 1.25 mm, o tres tamaños en razón ~1.5–2). Mantenga fijas CF, cargas y material.</li>
+  <li>Registre para cada malla: número de nodos/elementos, δ<sub>máx</sub> y σ<sub>máx</sub> (von Mises, en la ubicación adecuada: a 1–2 mm de singularidades).</li>
+  <li>Calcule el <strong>índice de convergencia GCI</strong> (guía, cap. 6.2) para δ entre las mallas media y fina, y reporte el intervalo de incertidumbre. Este es el entregable 2.</li>
+  <li>Si σ no converge (singularidad), documéntelo y reporte el valor a la distancia correcta.</li>
+</ol>
+
+<h2>Parte C — Sensibilidad a E ±10%</h2>
+<ol style="padding-left:22px">
+  <li>Con la malla fina, varíe el módulo de Young en <span class="mono">E ± 10%</span> (dos corridas adicionales) y registre δ y σ.</li>
+  <li>Verifique la proporcionalidad esperada en problemas lineales (δ ∝ 1/E; σ independiente de E) y discuta <strong>qué significa para la incertidumbre del resultado</strong>. Este es el entregable 3.</li>
+  <li>Opcional (extra): varíe también la carga ±10% y compare la sensibilidad relativa.</li>
+</ol>
+
+<h2>Entregables</h2>
+<div class="entrega"><div>
+  <p><strong><svg class="fico" style="color:var(--mint);width:1.1em;height:1.1em"><use href="#fem-taller"/></svg>&nbsp; 1. Modelo CAD simplificado</strong> — con la tabla de simplificaciones y justificación (cap. 4.2.1).</p>
+  <p><strong>2. Informe de convergencia</strong> — 3 mallas con GCI y tabla de resultados (cap. 6.2).</p>
+  <p><strong>3. Análisis de sensibilidad</strong> — E ±10% y discusión (cap. 6.4).</p>
+  <p><strong>4. Informe de resultados</strong> — formato del cap. 8.3, con las 7 secciones completas (resumen ejecutivo, descripción, verificación, validación, resultados, discusión, conclusiones).</p>
+  <p><strong>5. Reflexión de incertidumbres</strong> — las <strong>3 mayores fuentes de incertidumbre</strong> de su modelo, ordenadas por impacto, con cómo las cuantificaría o reduciría (caps. 7.3 y 8.1).</p>
+  <p style="margin-top:8px">Junto al informe: archivos <span class="mono">.FCStd</span> y el <span class="mono">.inp</span> de la corrida final (reproducibilidad, cap. 8.4).</p>
+</div></div>
+
+<h2>Rúbrica de evaluación</h2>
+<table>
+  <thead><tr><th>Criterio</th><th>Logrado (100%)</th><th>Parcial (60%)</th><th>No logrado (0%)</th><th>Puntos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Modelo y simplificación</strong><br><span class="mono">Geometría propia + justificación</span></td>
+        <td>Pieza apropiada, simplificación con criterio documentado y carga combinada bien definida</td>
+        <td>Simplificación presente sin justificación completa</td>
+        <td>Geometría trivial o sin tabla de simplificaciones</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Convergencia + GCI</strong><br><span class="mono">3 mallas + índice GCI</span></td>
+        <td>Tres mallas, tabla completa y GCI calculado e interpretado correctamente</td>
+        <td>GCI presente con errores menores o mallas incompletas</td>
+        <td>Sin convergencia ni GCI</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Sensibilidad</strong><br><span class="mono">E ±10% y discusión</span></td>
+        <td>Datos completos + interpretación de la proporcionalidad y su impacto en la decisión</td>
+        <td>Datos completos sin interpretación</td>
+        <td>Parte C ausente</td><td class="puntos">15</td></tr>
+    <tr><td><strong>Informe completo</strong><br><span class="mono">7 secciones (cap. 8.3)</span></td>
+        <td>Las 7 secciones presentes, coherentes y con figuras/capturas</td>
+        <td>Informe con secciones incompletas o sin figuras</td>
+        <td>Sin informe o con formato ajeno al cap. 8.3</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Reflexión de incertidumbres</strong><br><span class="mono">3 fuentes + mitigación</span></td>
+        <td>Tres fuentes reales, ordenadas por impacto, con cómo cuantificarlas</td>
+        <td>Fuentes listadas sin orden ni mitigación</td>
+        <td>Reflexión ausente o genérica</td><td class="puntos">10</td></tr>
+  </tbody>
+</table>
+<p class="nota">Total: 100 puntos · Entrega final del curso (fecha acordada en clase).</p>
+
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 7.3</span>
+Si en su reflexión menciona la IA: recuerde que <strong>la verificación y la validación aplican también a los modelos de IA</strong>. Un surrogate entrenado con datos de mala calidad predice mal a alta velocidad — el criterio sigue siendo suyo.</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 4.2.1 (simplificación y St. Venant), cap. 6.2 (GCI), cap. 6.4 (sensibilidad), cap. 7 (IA), cap. 8.1 (checklist), cap. 8.2 (documentación), cap. 8.3 (informe), cap. 8.4 (reproducibilidad), cap. 9.4 (ejercicio integrador). Este taller integra las sesiones 3, 4, 5 y 6 del curso.</div>
+
+<footer>FEM práctico con FreeCAD · Taller 6 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

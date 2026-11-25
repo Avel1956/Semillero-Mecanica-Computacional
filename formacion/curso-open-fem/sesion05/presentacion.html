@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM con FreeCAD — Sesión 5: Errores comunes + Verificación y Validación</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO: FEM práctico con FreeCAD (6 sesiones)
+  Sesión 5 — Errores comunes + Verificación y Validación
+  Recalca: Guía Práctica de Simulación en Ingeniería (caps. 5–6)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Estilo: "Esmeralda" (t5) — verde profundo + menta (V&V)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (THEME) — Esmeralda · t5
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg: #0a1613;            /* verde profundo nocturno */
+  --bg2: #0e1d19;
+  --panel: rgba(14,29,25,.92);
+  --line: rgba(61,220,151,.18);
+  --text: #e4e8ec;
+  --text2: #9fb5ac;
+  --blue: #64b5f6;          /* método / datos */
+  --gold: #e6c07a;          /* insight / resultado */
+  --mint: #3ddc97;          /* correcto / validado */
+  --red: #e57373;           /* error / peligro */
+  --font-display: 'Outfit', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --title-size: 76px;
+  --subtitle-size: 30px;
+  --body-size: 26px;
+  --slide-padding: 88px;
+  --content-gap: 34px;
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);
+  --duration-normal: .6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* --- PASTE viewport-base.css CONTENTS (fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT BASE DE LA PLANTILLA (1920×1080)
+   ═══════════════════════════════════════════════════════════════ */
+body{font-family:var(--font-display);color:var(--text);background:var(--bg)}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.slide{
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(61,220,151,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(230,192,122,.06), transparent 60%),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  padding:var(--slide-padding);
+}
+/* retícula técnica sutil de fondo */
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(61,220,151,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(61,220,151,.05) 1px,transparent 1px);
+  background-size:96px 96px;
+}
+
+/* header de slide */
+.slide-header{
+  display:flex;align-items:baseline;gap:24px;margin-bottom:42px;
+  border-bottom:1px solid var(--line);padding-bottom:20px;
+}
+.kicker{
+  font-family:var(--font-mono);font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+}
+.slide-num{margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--text2)}
+.slide h2{font-size:var(--title-size);font-weight:600;letter-spacing:-.01em;line-height:1.05;margin-bottom:10px}
+.slide h3{font-size:38px;font-weight:600;margin:0 0 18px;color:var(--text)}
+.slide p,.slide li{font-size:var(--body-size);line-height:1.5;color:var(--text2)}
+.slide strong{color:var(--text);font-weight:600}
+.slide .lead{font-size:30px;color:var(--text);line-height:1.45}
+
+/* ANIMACIONES */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration-normal) var(--ease-out-expo),transform var(--duration-normal) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.reveal:nth-child(1){transition-delay:.08s}
+.reveal:nth-child(2){transition-delay:.16s}
+.reveal:nth-child(3){transition-delay:.24s}
+.reveal:nth-child(4){transition-delay:.32s}
+.reveal:nth-child(5){transition-delay:.40s}
+.reveal:nth-child(6){transition-delay:.48s}
+
+/* tarjetas y grids */
+.grid{display:grid;gap:var(--content-gap)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:30px 32px;backdrop-filter:blur(4px);
+}
+.card h4{font-size:24px;margin-bottom:12px;font-weight:600;letter-spacing:.01em}
+.card p,.card li{font-size:22px;line-height:1.45}
+.card .num{font-family:var(--font-mono);font-size:52px;font-weight:600;line-height:1;margin-bottom:14px}
+.t-blue .num,.t-blue h4{color:var(--blue)}
+.t-gold .num,.t-gold h4{color:var(--gold)}
+.t-mint .num,.t-mint h4{color:var(--mint)}
+.t-red .num,.t-red h4{color:var(--red)}
+
+/* tablas */
+table{width:100%;border-collapse:collapse;font-size:23px}
+th{font-family:var(--font-mono);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);font-weight:600}
+td{padding:13px 16px;border-bottom:1px solid rgba(61,220,151,.10);color:var(--text2);line-height:1.4}
+td strong{color:var(--text)}
+tr:hover td{background:rgba(61,220,151,.05)}
+.mono{font-family:var(--font-mono);font-size:22px}
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.big{font-size:44px;line-height:1.3;color:var(--text)}
+.formula{
+  font-family:var(--font-mono);font-size:40px;color:var(--gold);text-align:center;
+  background:rgba(230,192,122,.07);border:1px solid rgba(230,192,122,.25);
+  border-radius:12px;padding:26px;margin:14px 0;letter-spacing:.01em;
+}
+.formula small{display:block;font-size:20px;color:var(--text2);margin-top:10px;font-family:var(--font-display)}
+
+/* callouts */
+.callout{border-left:4px solid var(--blue);background:rgba(100,181,246,.07);padding:22px 28px;border-radius:0 12px 12px 0;font-size:25px;line-height:1.5}
+.callout.warn{border-color:var(--red);background:rgba(229,115,115,.07)}
+.callout.gold{border-color:var(--gold);background:rgba(230,192,122,.07)}
+.callout.mint{border-color:var(--mint);background:rgba(61,220,151,.07)}
+.callout .tag{font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--blue)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint .tag{color:var(--mint)}
+
+/* portada y cierre */
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;gap:0}
+.cover .course-tag{font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:34px}
+.cover h1{font-size:110px;font-weight:600;line-height:1.04;letter-spacing:-.015em;max-width:1500px}
+.cover h1 .accent{color:var(--gold)}
+.cover .sub{margin-top:30px;font-size:34px;color:var(--text2);max-width:1300px;line-height:1.4}
+.cover .meta{margin-top:56px;font-family:var(--font-mono);font-size:21px;color:var(--text2);letter-spacing:.08em;display:flex;gap:36px;align-items:center}
+.cover .meta span{display:flex;align-items:center;gap:10px}
+.cover .rule{width:120px;height:2px;background:var(--gold);margin-top:40px;opacity:.7}
+
+/* lista de pasos numerados */
+.steps{counter-reset:step;list-style:none;display:grid;gap:20px}
+.steps li{counter-increment:step;display:flex;gap:22px;align-items:flex-start;font-size:25px;color:var(--text2);line-height:1.45}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);flex:0 0 56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--blue);
+  border:1px solid var(--line);background:rgba(61,220,151,.08);
+}
+.steps li strong{color:var(--text)}
+.steps li em{color:var(--mint);font-style:normal}
+
+/* footer chrome del deck */
+.deck-chrome{position:fixed;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:900;pointer-events:none;font-family:var(--font-mono);font-size:16px;color:var(--text2);opacity:.75;background:linear-gradient(transparent,rgba(10,22,19,.9))}
+.deck-chrome .brand{letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.deck-chrome .dots{display:flex;gap:10px;align-items:center}
+.deck-chrome .dots i{width:8px;height:8px;border-radius:50%;background:var(--text2);opacity:.35}
+.deck-chrome .dots i.on{background:var(--gold);opacity:1}
+
+/* tablas compactas (listas largas) */
+.tbl-compact{font-size:20px}
+.tbl-compact th{font-size:15px;padding:8px 14px}
+.tbl-compact td{padding:7px 14px}
+
+/* imágenes */
+.figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(14,29,25,.6)}
+.figure img{display:block;width:100%;height:100%;object-fit:contain}
+.figure figcaption{padding:14px 20px;font-size:19px;color:var(--text2);font-family:var(--font-mono);letter-spacing:.03em;border-top:1px solid var(--line)}
+</style>
+</head>
+<body data-tema="t5">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ═══════════════════════ SLIDE 1 · PORTADA ═══════════════════════ -->
+<section class="slide cover active">
+  <div class="reveal course-tag">Curso · FEM práctico con FreeCAD · Sesión 5 de 6</div>
+  <h1 class="reveal">Errores comunes +<br><span class="accent">Verificación y Validación</span></h1>
+  <div class="reveal sub">El índice GCI, las métricas de validación y la sensibilidad:<br>la base de la confianza en su resultado.</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta">
+    <span>Prof. J. A. Vélez</span><span>·</span><span>PUJ Cali — Mecánica</span><span>·</span><span>Basado en: Guía Práctica de Simulación en Ingeniería (caps. 5–6)</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 2 · AGENDA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Sesión 5 · Ruta</span>
+    <span class="slide-num">02 / 20</span>
+  </div>
+  <h2 class="reveal">Agenda de la sesión</h2>
+  <div class="grid grid-2" style="margin-top:36px">
+    <div class="card reveal t-red"><div class="num">01</div><h4>Errores comunes</h4><p>Taxonomía (modelado / discretización / usuario) y los 10 errores más frecuentes con su frecuencia (cap. 5).</p></div>
+    <div class="card reveal t-blue"><div class="num">02</div><h4>Verificación</h4><p>¿Resolvemos bien las ecuaciones? Convergencia de malla y el índice GCI (cap. 6.2).</p></div>
+    <div class="card reveal t-mint"><div class="num">03</div><h4>Validación</h4><p>¿Resolvemos las ecuaciones correctas? Métricas MAE, RMSE, MAPE, R² y estrategias sin datos experimentales (cap. 6.3).</p></div>
+    <div class="card reveal t-gold"><div class="num">04</div><h4>Práctica</h4><p>Convergencia de malla con GCI en la viga + Taller 5: placa con agujero, validación con Kt y sensibilidad.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Recalca la guía</span>
+    Los caps. 5 y 6 completos: esta es la sesión donde su resultado deja de ser una opinión y se vuelve <strong>defendible</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 3 · POR QUÉ V&V ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Motivación · Cap. 5</span>
+    <span class="slide-num">03 / 20</span>
+  </div>
+  <h2 class="reveal">El costo de no verificar</h2>
+  <p class="lead reveal" style="margin-bottom:30px">La verificación y la validación convierten un resultado en una <strong class="mint">afirmación defendible</strong>. Sin ellas, es solo una hipótesis.</p>
+  <div class="grid grid-2">
+    <div class="card reveal t-red">
+      <div class="num">1991</div><h4>Plataforma Sleipner A</h4>
+      <p>Un <strong>error en la malla de elementos finitos</strong> subestimó los esfuerzos en una celda crítica de concreto. La plataforma se hundió en el Mar del Norte [1].</p>
+    </div>
+    <div class="card reveal t-red">
+      <div class="num">1 sola malla</div><h4>Error 9 (2%)</h4>
+      <p>"Verifiqué una vez" <strong>no es convergencia</strong>. Un resultado de una sola malla no prueba nada: el error de discretización es desconocido (cap. 5, Error 9).</p>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Regla de oro</span>
+    Trate cada resultado de simulación como una <strong>hipótesis</strong> que debe verificarse, no como una verdad revelada. V&V es el método para convertirla en evidencia.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 4 · TAXONOMÍA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Teoría · Cap. 5.1</span>
+    <span class="slide-num">04 / 20</span>
+  </div>
+  <h2 class="reveal">Taxonomía de errores en simulación</h2>
+  <p class="lead reveal" style="margin-bottom:30px">Todo error cae en una de tres categorías. <strong>Clasificar el error es el primer paso para evitarlo.</strong></p>
+  <div class="grid grid-3">
+    <div class="card reveal t-red">
+      <h4><svg class="fico lg"><use href="#fem-teoria"/></svg>&nbsp; Modelado</h4>
+      <p>La <strong>física del modelo</strong> no representa adecuadamente el fenómeno real. Ej.: usar elasticidad lineal donde hay plasticidad.</p>
+      <p style="margin-top:12px" class="mono">se resuelve mal el problema</p>
+    </div>
+    <div class="card reveal t-blue">
+      <h4><svg class="fico lg"><use href="#fem-ejer"/></svg>&nbsp; Discretización</h4>
+      <p>La <strong>aproximación numérica</strong> introduce error: malla insuficiente, tipo de elemento inapropiado, integración.</p>
+      <p style="margin-top:12px" class="mono">se aproxima mal la solución</p>
+    </div>
+    <div class="card reveal t-gold">
+      <h4><svg class="fico lg"><use href="#fem-atencion"/></svg>&nbsp; Usuario</h4>
+      <p><strong>Configuración incorrecta</strong> del software, unidades inconsistentes, o mala interpretación de los resultados.</p>
+      <p style="margin-top:12px" class="mono">se opera mal la herramienta</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:32px">
+    <span class="tag">Idea clave</span>
+    Los 10 errores del cap. 5 se reparten en estas tres categorías. Conocerlos <strong>por su frecuencia</strong> le dice dónde poner la atención.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 5 · LOS 10 ERRORES ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Teoría · Cap. 5.2</span>
+    <span class="slide-num">05 / 20</span>
+  </div>
+  <h2 class="reveal">Los 10 errores más frecuentes</h2>
+  <table class="reveal tbl-compact" style="margin-top:20px">
+    <thead><tr><th>#</th><th>Error</th><th>Frecuencia</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td><strong>Condiciones de frontera incorrectas</strong></td><td class="mono red">28%</td></tr>
+      <tr><td class="mono">2</td><td><strong>Mallado inadecuado</strong></td><td class="mono red">22%</td></tr>
+      <tr><td class="mono">3</td><td><strong>Propiedades de material erróneas</strong></td><td class="mono red">15%</td></tr>
+      <tr><td class="mono">4</td><td><strong>Tipo de elemento inapropiado</strong></td><td class="mono">10%</td></tr>
+      <tr><td class="mono">5</td><td><strong>Contactos mal definidos</strong></td><td class="mono">8%</td></tr>
+      <tr><td class="mono">6</td><td><strong>Interpretación errónea de resultados</strong></td><td class="mono">7%</td></tr>
+      <tr><td class="mono">7</td><td><strong>Unidades inconsistentes</strong></td><td class="mono">5%</td></tr>
+      <tr><td class="mono">8</td><td><strong>Simplificaciones excesivas</strong></td><td class="mono">3%</td></tr>
+      <tr><td class="mono">9</td><td><strong>No verificar convergencia</strong></td><td class="mono">2%</td></tr>
+      <tr><td class="mono">10</td><td><strong>Ignorar no linealidades relevantes</strong></td><td class="mono">1%</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn reveal" style="margin-top:16px">
+    <span class="tag">El top 3 = 65% de los casos</span>
+    <strong>CF incorrectas (28%) · Mallado inadecuado (22%) · Material erróneo (15%).</strong> Los tres aparecen en el ejercicio de la viga.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 6 · ERRORES EN DETALLE ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Teoría · Cap. 5.2</span>
+    <span class="slide-num">06 / 20</span>
+  </div>
+  <h2 class="reveal">Síntomas y soluciones del top 3</h2>
+  <div class="grid grid-2" style="margin-top:26px;gap:26px">
+    <div class="figure reveal" style="align-self:center">
+      <img src="../assets/figuras/07_errores_comunes.png" alt="Frecuencia de errores comunes en simulación: CF 28%, mallado 22%, material 15%, elemento 10%, contacto 8%, interpretación 7%, unidades 5%, simplificación 3%, convergencia 2%, no linealidad 1%">
+      <figcaption>Figura 7 — Frecuencia de errores en simulación (Guía, cap. 5)</figcaption>
+    </div>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:12px;justify-content:center">
+      <div class="card" style="padding:14px 22px"><h4 class="red">Error 1 · CF incorrectas (28%)</h4><p style="font-size:20px"><strong>Síntoma:</strong> resultados sin sentido (cuerpo rígido). <strong>Solución:</strong> verifique restricciones; modal con apoyos: si ω₁ ≈ 0 Hz hay un mecanismo.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="red">Error 2 · Mallado inadecuado (22%)</h4><p style="font-size:20px"><strong>Síntoma:</strong> resultados que cambian al refinar. <strong>Solución:</strong> análisis de convergencia con GCI, mínimo 3 mallas.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="red">Error 3 · Material erróneo (15%)</h4><p style="font-size:20px"><strong>Síntoma:</strong> desplazamientos sistemáticamente altos o bajos. <strong>Solución:</strong> verifique unidades y trazabilidad del dato.</p></div>
+      <div class="card" style="padding:14px 22px"><h4 class="gold">Error 9 · No verificar convergencia (2%)</h4><p style="font-size:20px">El que menos ocurre y el que más daño hace: <strong>hoy lo corregimos con el GCI</strong>.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 7 · V vs V ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Teoría · Cap. 6.1</span>
+    <span class="slide-num">07 / 20</span>
+  </div>
+  <h2 class="reveal">Verificación ≠ Validación</h2>
+  <div class="formula reveal" style="font-size:30px;padding:20px">"Verification: Are we solving the equations right?<br>Validation: Are we solving the right equations?"<small>P. J. Roache [2] — las dos preguntas de la confianza</small></div>
+  <table class="reveal" style="margin-top:22px">
+    <thead><tr><th></th><th>Verificación</th><th>Validación</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dominio</strong></td><td>Matemático–computacional</td><td>Físico</td></tr>
+      <tr><td><strong>Comparación contra</strong></td><td>Solución analítica, benchmark, MMS</td><td>Datos experimentales</td></tr>
+      <tr><td><strong>Pregunta clave</strong></td><td>¿El código produce la solución correcta de las ecuaciones?</td><td>¿Las ecuaciones representan la realidad?</td></tr>
+      <tr><td><strong>Herramientas</strong></td><td>Convergencia de malla, MMS, comparación entre códigos</td><td>Experimentos controlados, incertidumbre</td></tr>
+    </tbody>
+  </table>
+  <div class="callout mint reveal" style="margin-top:24px">
+    <span class="tag">Orden lógico</span>
+    Primero se <strong>verifica</strong> (¿el código resuelve bien?), después se <strong>valida</strong> (¿resuelve lo correcto?). No tiene sentido validar un modelo que no está verificado.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 8 · CONVERGENCIA PROCEDIMIENTO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Verificación · Cap. 6.2</span>
+    <span class="slide-num">08 / 20</span>
+  </div>
+  <h2 class="reveal">Convergencia de malla: el procedimiento</h2>
+  <p class="lead reveal" style="margin-bottom:26px">La herramienta más importante de verificación. <strong>Cuatro pasos, siempre iguales.</strong></p>
+  <ol class="steps" style="margin-top:10px">
+    <li class="reveal"><strong>Genere 3 mallas</strong> con razón de refinamiento <span class="mono">r ≈ 2</span> — ej. <span class="mono">500, 2000, 8000</span> elementos.</li>
+    <li class="reveal"><strong>Ejecute el mismo problema</strong> en las 3 mallas (misma geometría, material y CF).</li>
+    <li class="reveal"><strong>Calcule el GCI</strong> (<em>Grid Convergence Index</em>) entre mallas consecutivas.</li>
+    <li class="reveal"><strong>Aplique el criterio:</strong> GCI &lt; 5% para diseño detallado; GCI &lt; 2% para certificación.</li>
+  </ol>
+  <div class="callout warn reveal" style="margin-top:28px">
+    <span class="tag">Error 9 · 2%</span>
+    Si solo corrió <strong>una</strong> malla, el error de discretización es una incógnita. La convergencia es la única manera de acotarlo.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 9 · GCI ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Verificación · Cap. 6.2</span>
+    <span class="slide-num">09 / 20</span>
+  </div>
+  <h2 class="reveal">El índice GCI</h2>
+  <div class="grid grid-2" style="margin-top:26px;gap:28px">
+    <div class="reveal" style="display:flex;flex-direction:column;justify-content:center">
+      <div class="formula" data-katex="GCI = F_s \frac{|\varepsilon|}{r^{p}-1}" style="font-size:44px">$$GCI = F_s \frac{|\varepsilon|}{r^{p}-1}$$</div>
+      <div class="card" style="margin-top:22px">
+        <p style="font-size:22px">· <span class="mono">F_s = 1.25</span> — factor de seguridad (3 mallas)</p>
+        <p style="font-size:22px">· <span class="mono">\(\varepsilon = (f_{fina} - f_{media})/f_{media}\)</span> — cambio relativo de la variable <span class="mono">f</span></p>
+        <p style="font-size:22px">· <span class="mono">r</span> — razón de refinamiento (≈ 2)</p>
+        <p style="font-size:22px">· <span class="mono">p</span> — orden del elemento (<span class="mono">2</span> para cuadráticos)</p>
+      </div>
+      <div class="callout mint" style="margin-top:22px">
+        <span class="tag">Criterio</span>
+        GCI <strong>&lt; 5%</strong> diseño detallado · GCI <strong>&lt; 2%</strong> certificación.
+      </div>
+    </div>
+    <div class="figure reveal" style="align-self:center">
+      <img src="../assets/figuras/03_convergencia_malla.png" alt="Convergencia de malla: el resultado se estabiliza al refinar">
+      <figcaption>Figura 3 — Convergencia de malla (Guía, cap. 6.2)</figcaption>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 10 · MÉTRICAS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Validación · Cap. 6.3.1</span>
+    <span class="slide-num">10 / 20</span>
+  </div>
+  <h2 class="reveal">Métricas cuantitativas de validación</h2>
+  <p class="lead reveal" style="margin-bottom:22px">No basta la inspección visual: <strong>mida el acuerdo</strong> entre simulación y experimento.</p>
+  <table class="reveal">
+    <thead><tr><th>Métrica</th><th>Fórmula</th><th>Interpretación</th></tr></thead>
+    <tbody>
+      <tr><td><strong>MAE</strong></td><td class="mono">\(MAE = \frac{1}{n}\sum_{i=1}^{n} |y_{sim,i} - y_{exp,i}|\)</td><td>Error promedio en unidades de la variable</td></tr>
+      <tr><td><strong>RMSE</strong></td><td class="mono">\(RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n} (y_{sim,i} - y_{exp,i})^{2}}\)</td><td>Penaliza más los errores grandes</td></tr>
+      <tr><td><strong>MAPE</strong></td><td class="mono">\(MAPE = \frac{100}{n}\sum_{i=1}^{n} \left|\frac{y_{sim,i} - y_{exp,i}}{y_{exp,i}}\right|\)</td><td>Error porcentual, fácil de interpretar</td></tr>
+      <tr><td><strong>R²</strong></td><td class="mono">\(R^{2} = 1 - \frac{\sum (y_{exp} - y_{sim})^{2}}{\sum (y_{exp} - \bar{y}_{exp})^{2}}\)</td><td>Proporción de varianza explicada; 1.0 = perfecto</td></tr>
+    </tbody>
+  </table>
+  <div class="callout gold reveal" style="margin-top:26px">
+    <span class="tag">Una buena validación</span>
+    Datos experimentales de <strong>calidad conocida</strong> + <strong>múltiples puntos</strong> de comparación (no solo el máximo) + métricas cuantitativas.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 11 · VALIDACIÓN EXPERIMENTAL ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Validación · Cap. 6.3</span>
+    <span class="slide-num">11 / 20</span>
+  </div>
+  <h2 class="reveal">Validación: laboratorio ↔ modelo</h2>
+  <div class="grid grid-2" style="margin-top:26px;gap:26px">
+    <div class="figure reveal" style="align-self:center">
+      <img src="../assets/figuras/04_validacion_experimental.png" alt="Validación: puntos experimentales contra curva de simulación con métricas de acuerdo">
+      <figcaption>Figura 4 — Validación experimental (Guía, cap. 6.3)</figcaption>
+    </div>
+    <div class="reveal">
+      <h3 class="blue">Sin datos experimentales</h3>
+      <ul style="list-style:none;font-size:23px;line-height:1.7">
+        <li class="reveal">· <strong>Orden de magnitud:</strong> solución analítica simplificada — si el FEM da 10 mm y la mano da 2 mm, algo está mal.</li>
+        <li class="reveal">· <strong>Comparación entre códigos:</strong> el mismo problema en dos solvers.</li>
+        <li class="reveal">· <strong>Simetría y casos límite:</strong> ¿el modelo respeta las simetrías? ¿tiende al caso límite conocido?</li>
+        <li class="reveal">· <strong>Balance de energía:</strong> trabajo externo = energía de deformación interna (estático, dentro de tolerancia).</li>
+      </ul>
+      <div class="callout warn reveal" style="margin-top:24px">
+        <span class="tag">Error 6 · 7%</span>
+        No base decisiones en picos que no convergen. Un esfuerzo que <strong>no converge no es una predicción confiable</strong>.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 12 · SENSIBILIDAD ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Teoría · Cap. 6.4</span>
+    <span class="slide-num">12 / 20</span>
+  </div>
+  <h2 class="reveal">Análisis de sensibilidad</h2>
+  <p class="lead reveal" style="margin-bottom:26px">Incluso un modelo validado produce resultados inciertos si los <strong>parámetros de entrada</strong> son inciertos.</p>
+  <div class="grid grid-2">
+    <div class="card reveal t-blue">
+      <h4>Lineal: sensibilidad directa</h4>
+      <div class="formula" data-katex="\delta \propto \frac{1}{E}" style="font-size:36px;padding:18px">$$\delta \propto \frac{1}{E}$$</div>
+      <p>Un 5% de variación en <span class="mono">E</span> produce <strong>~5% de variación</strong> en \(\delta\). Fácil de anticipar y de comunicar.</p>
+    </div>
+    <div class="card reveal t-red">
+      <h4>No lineal: amplificación</h4>
+      <div class="formula" data-katex="5\%\ \sigma_y \rightarrow 30\%\ F_{colapso}" style="font-size:36px;padding:18px">$$5\%\ \text{en } \sigma_{y} \rightarrow 30\%\ \text{en } F_{\text{colapso}}$$</div>
+      <p>En problemas no lineales la sensibilidad <strong>puede amplificarse</strong> (plasticidad, pandeo, contacto). Un 5% en el límite elástico puede cambiar 30% la carga de colapso.</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:30px">
+    <span class="tag">Práctica recomendada</span>
+    Incluya <strong>barras de error o bandas de incertidumbre</strong> en sus resultados cuando los presente (cap. 6.4).
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 13 · PLAN DE TRABAJO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · FreeCAD</span>
+    <span class="slide-num">13 / 20</span>
+  </div>
+  <h2 class="reveal">Plan de trabajo: convergencia de malla</h2>
+  <ol class="steps" style="margin-top:26px">
+    <li class="reveal"><strong>Geometría</strong> — <em>Part → Box</em>: 200 × 20 × 10 mm (la viga de la Sesión 1)</li>
+    <li class="reveal"><strong>Análisis</strong> — <em>FEM → New Analysis</em>; acero (<span class="mono">E=210000 MPa, ν=0.3</span>); <em>Fixed</em> + <em>Force</em> 100 N</li>
+    <li class="reveal"><strong>Malla 1</strong> — <em>Gmsh</em> con <em>Maximum element size = 10 mm</em> → ejecutar → registrar δ</li>
+    <li class="reveal"><strong>Malla 2</strong> — cambiar a <span class="mono">5 mm</span> → ejecutar → registrar δ</li>
+    <li class="reveal"><strong>Malla 3</strong> — cambiar a <span class="mono">2.5 mm</span> → ejecutar → registrar δ</li>
+    <li class="reveal"><strong>GCI</strong> — calcular a mano con \(r=2,\ p=2,\ F_s=1.25\) y comparar con δ = 0.762 mm</li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════ SLIDE 14 · VALORES ESPERADOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Resultados esperados</span>
+    <span class="slide-num">14 / 20</span>
+  </div>
+  <h2 class="reveal">Valores esperados (ya verificados)</h2>
+  <table class="reveal" style="margin-top:24px">
+    <thead><tr><th>Malla</th><th>Elementos aprox.</th><th>δ<sub>máx</sub> (mm)</th><th>Error vs analítico</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Gruesa · 10 mm</strong></td><td class="mono">≈ 500</td><td class="mono">0.778</td><td class="mono red">+2.1%</td></tr>
+      <tr><td><strong>Media · 5 mm</strong></td><td class="mono">≈ 2000</td><td class="mono">0.765</td><td class="mono gold">+0.4%</td></tr>
+      <tr><td><strong>Fina · 2.5 mm</strong></td><td class="mono">≈ 8000</td><td class="mono mint">0.762</td><td class="mono mint">≈ 0.0%</td></tr>
+    </tbody>
+  </table>
+  <div class="grid grid-2" style="margin-top:26px;gap:26px">
+    <div class="card reveal t-gold">
+      <h4>Referencia analítica</h4>
+      <div class="formula" data-katex="\delta = \frac{PL^{3}}{3EI} = \frac{100\cdot 200^{3}}{3\cdot 210000\cdot 1666.7}" style="font-size:26px;padding:16px">$$\delta = \frac{PL^{3}}{3EI} = 0.762\ \text{mm}$$</div>
+      <p class="mono" style="text-align:center">I = bh³/12 = 1666.7 mm⁴ · σ_máx = Mc/I = 60 MPa</p>
+    </div>
+    <div class="card reveal t-mint">
+      <h4>GCI del estudio</h4>
+      <p style="font-size:23px">· GCI (fina–media) ≈ <span class="mono mint">0.16%</span></p>
+      <p style="font-size:23px">· GCI (media–gruesa) ≈ <span class="mono mint">0.70%</span></p>
+      <p style="font-size:23px">· Criterio cap. 6.2: <strong>GCI &lt; 5%</strong> para diseño detallado — cumplido con holgura.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 15 · GCI A MANO ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Práctica guiada · Cálculo</span>
+    <span class="slide-num">15 / 20</span>
+  </div>
+  <h2 class="reveal">Calcular el GCI a mano</h2>
+  <p class="lead reveal" style="margin-bottom:20px">Con \(r=2\), \(p=2\) y \(F_s=1.25\): \(GCI = 1.25\,|\varepsilon|/3\)</p>
+  <div class="grid grid-2" style="gap:26px">
+    <div class="card reveal t-gold">
+      <h4>GCI (fina – media)</h4>
+      <div class="formula" data-katex="GCI_{f-m} = 1.25\frac{|0.762 - 0.765|/0.765}{2^{2}-1}" style="font-size:30px;padding:18px">$$GCI_{f-m} = 1.25\,\frac{|0.762-0.765|/0.765}{2^{2}-1} \approx 0.16\%$$</div>
+      <p style="font-size:22px">La malla fina ya es <strong>prácticamente independiente</strong> de la malla.</p>
+    </div>
+    <div class="card reveal t-gold">
+      <h4>GCI (media – gruesa)</h4>
+      <div class="formula" data-katex="GCI_{m-g} = 1.25\frac{|0.765 - 0.778|/0.778}{2^{2}-1}" style="font-size:30px;padding:18px">$$GCI_{m-g} = 1.25\,\frac{|0.765-0.778|/0.778}{2^{2}-1} \approx 0.70\%$$</div>
+      <p style="font-size:22px">Todavía excelente: muy por debajo del 5% de diseño detallado.</p>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:28px">
+    <span class="tag">Interpretación</span>
+    El GCI estima el <strong>error de discretización</strong> de la malla fina. Reportarlo junto a δ convierte el resultado en evidencia (cap. 6.2).
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 16 · TALLER 5 ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 5 · Entregable</span>
+    <span class="slide-num">16 / 20</span>
+  </div>
+  <h2 class="reveal">Taller 5 — Placa con agujero: GCI + validación</h2>
+  <div class="grid grid-2" style="margin-top:26px">
+    <div class="card reveal">
+      <h4 class="blue">Parte A · Convergencia + GCI</h4>
+      <ul style="font-size:22px;line-height:1.6">
+        <li>Placa <span class="mono">200×100×5 mm</span>, agujero <span class="mono">d = 20 mm</span> (Sesión 3)</li>
+        <li>\(\sigma_{nom} = 10\ \text{MPa}\) · \(F = 5000\ \text{N}\)</li>
+        <li>3 mallas: <span class="mono">10, 5, 2.5 mm</span> con refinamiento local en el agujero</li>
+        <li>Reportar \(\sigma_{m\acute{a}x}\) por malla + GCI sobre \(\sigma_{m\acute{a}x}\)</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="mint">Partes B · C · D</h4>
+      <ul style="font-size:22px;line-height:1.6">
+        <li><strong>B · Validación:</strong> \(\sigma_{m\acute{a}x}\) vs \(K_t\cdot\sigma_{nom}\) — Peterson: \(K_t \approx 2.5\) para \(d/w = 0.2\) → esperado \(\approx 25\ \text{MPa}\). Calcular error %.</li>
+        <li><strong>C · Sensibilidad:</strong> variar \(E \pm 10\%\) — \(\sigma\) <strong>no cambia</strong> (lineal) mientras \(\delta\) sí (\(\propto 1/E\)).</li>
+        <li><strong>D · Informe:</strong> 4 tablas + conclusiones citando guía (6.2, 6.3, 6.4).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:28px">
+    <span class="tag">Entregables</span>
+    Tabla de convergencia con GCI + tabla de validación (Kt) + tabla de sensibilidad + conclusiones. Rúbrica en <strong>taller.html</strong>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 17 · RÚBRICA ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Taller 5 · Evaluación</span>
+    <span class="slide-num">17 / 20</span>
+  </div>
+  <h2 class="reveal">Rúbrica del Taller 5</h2>
+  <table class="reveal" style="margin-top:28px">
+    <thead><tr><th>Criterio</th><th>Qué se evalúa</th><th>Puntos</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Modelo FEM</strong></td><td>Geometría, material, CF y carga correctos; análisis ejecuta en las 3 mallas</td><td class="mono">30</td></tr>
+      <tr><td><strong>Convergencia + GCI</strong></td><td>Tabla de 3 mallas con σ<sub>máx</sub>, cálculo del GCI y comparación con el criterio &lt; 5%</td><td class="mono">30</td></tr>
+      <tr><td><strong>Validación (Kt)</strong></td><td>σ<sub>máx</sub> vs Kt·σ<sub>nom</sub> ≈ 25 MPa; error % con discusión</td><td class="mono">25</td></tr>
+      <tr><td><strong>Sensibilidad + discusión</strong></td><td>E ±10%: σ invariante y δ ∝ 1/E; conclusiones citando la guía (6.2, 6.3, 6.4)</td><td class="mono">15</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn reveal" style="margin-top:30px">
+    <span class="tag">Atención</span>
+    Reportar un único valor de \(\sigma_{m\acute{a}x}\) sin GCI se evalúa como <strong>no logrado</strong> en convergencia. La evidencia es el 60% de la nota.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 18 · RESUMEN ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre</span>
+    <span class="slide-num">18 / 20</span>
+  </div>
+  <h2 class="reveal">Lo que debe quedar hoy</h2>
+  <div class="grid grid-3" style="margin-top:30px">
+    <div class="card reveal t-red"><div class="num">1</div><h4>Clasifique el error</h4><p>Modelado / discretización / usuario. El top 3 (CF, malla, material) es el 65% de los casos.</p></div>
+    <div class="card reveal t-blue"><div class="num">2</div><h4>Verifique con GCI</h4><p>Tres mallas con r ≈ 2 y GCI &lt; 5% (diseño) o &lt; 2% (certificación).</p></div>
+    <div class="card reveal t-mint"><div class="num">3</div><h4>Valide y explore</h4><p>Métricas MAE/RMSE/MAPE/R² contra experimentos; sensibilidad a los parámetros inciertos.</p></div>
+  </div>
+  <div class="callout gold reveal" style="margin-top:34px">
+    <span class="tag">Lema de la sesión</span>
+    <strong>Verifica, valida, documenta.</strong> Un resultado sin GCI ni validación es una opinión con colores bonitos.
+  </div>
+</section>
+
+<!-- ═══════════════════════ SLIDE 19 · PRÓXIMOS PASOS ═══════════════════════ -->
+<section class="slide">
+  <div class="slide-header reveal">
+    <span class="kicker">Cierre</span>
+    <span class="slide-num">19 / 20</span>
+  </div>
+  <h2 class="reveal">Próximos pasos y recursos</h2>
+  <div class="grid grid-2" style="margin-top:28px">
+    <div class="card reveal">
+      <h4 class="blue">Guía de referencia</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li>Cap. 5 — Errores comunes y cómo evitarlos</li>
+        <li>Cap. 6.1 — Verificación vs validación (Roache)</li>
+        <li>Cap. 6.2 — Convergencia de malla y GCI</li>
+        <li>Cap. 6.3 — Validación y métricas · 6.4 — Sensibilidad</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h4 class="blue">Archivos y notebooks</h4>
+      <ul style="font-size:23px;line-height:1.7">
+        <li><span class="mono">ejercicio_paso_a_paso.html</span> — convergencia con GCI</li>
+        <li><span class="mono">taller.html</span> — enunciado + rúbrica</li>
+        <li><span class="mono">video/guion.md</span> — guion del video asíncrono</li>
+        <li>Notebooks: <span class="mono">02_convergencia_malla.ipynb</span> · <span class="mono">03_validacion_modelos.ipynb</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mint reveal" style="margin-top:30px">
+    <span class="tag">Próxima sesión</span>
+    Sesión 6 — <strong>Flujo profesional e IA en simulación</strong> (cap. 7): surrogados, PINNs, y cómo la IA cambia el trabajo del ingeniero.
+  </div>
+  <p class="mono reveal" style="margin-top:26px;color:var(--text2);font-size:20px">[1] B. Jakobsen y F. Rosendahl, "The Sleipner Platform Accident," <em>Structural Engineering International</em>, vol. 4, no. 3, pp. 190–193, 1994. · [2] P. J. Roache, <em>Verification and Validation in Computational Science and Engineering</em>, Hermosa, 1998.</p>
+</section>
+
+<!-- ═══════════════════════ SLIDE 20 · CIERRE ═══════════════════════ -->
+<section class="slide cover">
+  <div class="reveal course-tag">Sesión 5 · Fin</div>
+  <h1 class="reveal">Verifica, valida,<br><span class="accent">documenta</span></h1>
+  <div class="reveal sub">Próxima sesión: el flujo profesional y la IA en simulación (cap. 7).</div>
+  <div class="reveal rule"></div>
+  <div class="reveal meta"><span>FEM con FreeCAD · 6 sesiones</span><span>·</span><span>Guía Práctica de Simulación FEM · caps. 5–6</span></div>
+</section>
+
+</main>
+</div>
+
+<!-- footer chrome: navegación -->
+<div class="deck-chrome" id="deckChrome">
+  <span class="brand">FEM · FreeCAD</span>
+  <span class="dots" id="dots"></span>
+  <span class="hint">← → navegar · P imprimir</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE PRESENTATION CONTROLLER — plantilla frontend-slides
+   ═══════════════════════════════════════════════════════════════ */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.current=0;
+    this.stage=document.getElementById('deckStage');
+    this.dots=document.getElementById('dots');
+    this.buildDots();
+    this.setupScale();
+    this.setupKeys();
+    this.setupTouch();
+    this.show(0);
+  }
+  buildDots(){
+    this.dots.innerHTML=this.slides.map((_,i)=>`<i data-i="${i}"></i>`).join('');
+    this.dots.querySelectorAll('i').forEach(d=>d.addEventListener('click',()=>this.show(+d.dataset.i)));
+  }
+  setupScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();window.addEventListener('resize',scale);
+  }
+  setupKeys(){
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();this.show(this.current+1)}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();this.show(this.current-1)}
+      else if(e.key==='Home'){this.show(0)}
+      else if(e.key==='End'){this.show(this.slides.length-1)}
+      else if(e.key==='p'||e.key==='P'){window.print()}
+    });
+  }
+  setupTouch(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>60)this.show(this.current+(dx<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.querySelectorAll('i').forEach((d,k)=>d.classList.toggle('on',k===this.current));
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

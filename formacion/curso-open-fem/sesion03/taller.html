@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller 3 — El concentrador de esfuerzos: Kt numérico vs. Peterson</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Taller 3 · Sesión 3
+  Recalca: Guía de Simulación FEM, cap. 4.2 (el arte del
+  pre-procesamiento), cap. 5 (error 2: mallado 22%), cap. 9.2
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#14110c;--bg2:#1a160f;--panel:rgba(20,17,12,.92);--line:rgba(217,160,91,.18);
+  --text:#e8e2d8;--text2:#a89f8f;--blue:#5fb3a1;--gold:#d9a05b;--mint:#8fbf6f;--red:#c96f5e;
+  --font:'Sora',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:40px;font-weight:600;margin:10px 0 8px}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:26px;font-weight:600;margin:40px 0 14px;color:var(--gold)}
+h3{font-size:19px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+p,li{font-size:16.5px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(95,179,161,.07);padding:15px 20px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15.5px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.gold{border-color:var(--gold);background:rgba(217,160,91,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(143,191,111,.07)}
+.callout.mint .tag{color:var(--mint)}
+.callout.warn{border-color:var(--red);background:rgba(201,111,94,.07)}
+.callout.warn .tag{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(95,179,161,.10);color:var(--text2);vertical-align:top}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14px;color:var(--gold)}
+.puntos{text-align:center;font-family:var(--mono);font-size:14px;color:var(--gold);white-space:nowrap}
+.entrega{display:flex;gap:12px;align-items:flex-start;background:rgba(143,191,111,.07);border:1px solid rgba(143,191,111,.25);border-radius:10px;padding:16px 20px;margin:16px 0}
+.entrega .ent-ico{width:1.3em;height:1.3em;flex:0 0 auto;fill:none;stroke:var(--mint);stroke-width:2.2;margin-top:3px}
+.nota{font-family:var(--mono);font-size:14px;color:var(--mint)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t3">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 3 · Taller 3</div>
+  <h1>Taller 3 — El concentrador de esfuerzos: Kt numérico vs. Peterson</h1>
+  <div class="meta">Entrega individual o en parejas · Formato: informe PDF/Markdown · Ponderación: ver rúbrica</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-verif"/></svg>&nbsp; Objetivos</h3>
+  <ul>
+    <li>Aplicar las tres decisiones del pre-procesamiento (geometría, material, malla) a un problema clásico de concentración de esfuerzos.</li>
+    <li>Obtener el <strong>Kt numérico</strong> del FEM y compararlo con el <strong>Kt teórico de Peterson</strong>, cuantificando el error.</li>
+    <li>Demostrar con datos propios que <strong>el refinamiento local es obligatorio donde hay gradientes altos</strong> (regla 4, cap. 4.2.3).</li>
+  </ul>
+</div>
+
+<h2>Contexto</h2>
+<p>Usted ya modeló la placa 200 × 100 × 5 mm con agujero de Ø 20 mm en el ejercicio 3 (σ = 10 MPa, F = 5000 N). En este taller la convierte en un <strong>experimento paramétrico</strong>: tres diámetros de agujero, dos filosofías de malla, y una discusión cuantitativa. La referencia teórica es Peterson: para placa finita con agujero central, \(d/w = 0.1 \rightarrow K_t \approx 2.7\), \(d/w = 0.2 \rightarrow K_t \approx 2.5\), \(d/w = 0.3 \rightarrow K_t \approx 2.3\) (aproximados; lo importante es capturar la tendencia decreciente con d/w).</p>
+<div class="callout warn"><span class="tag">Definición que debe declarar</span>
+Kt se calcula aquí sobre el <strong>esfuerzo nominal bruto</strong>: \(\sigma_{nom} = P/(w\,t)\). Si usa el área neta \((w-d)\cdot t\), el factor aparente sube con d/w y NO es comparable con el Peterson de placa finita que citamos. Especifique siempre sobre cuál lo calculó.</div>
+
+<h2>Parte A — Diámetro del agujero vs. Kt</h2>
+<ol style="padding-left:22px">
+  <li>Partiendo del modelo del ejercicio 3, cree <strong>tres variantes</strong> del agujero: <span class="mono">d = 10 mm</span>, <span class="mono">20 mm</span> y <span class="mono">30 mm</span> (relaciones <span class="mono">d/w = 0.1, 0.2, 0.3</span>). Puede rehacer el corte booleano con cada radio (5, 10 y 15 mm) o duplicar el documento y modificar el cilindro.</li>
+  <li>Mantenga en las tres: misma carga <span class="mono">F = 5000 N</span>, mismo material (acero, E = 210000 MPa), malla media <span class="mono">5 mm</span> con refinamiento local <span class="mono">1.5 mm</span> en las aristas del agujero.</li>
+  <li>Para cada caso registre: σ<sub>máx</sub> (von Mises), \(\sigma_{nom} = P/(w\,t) = 10\ \text{MPa}\) y <strong>\(K_t = \sigma_{máx}/\sigma_{nom}\)</strong>.</li>
+  <li>Compare con Peterson (≈ 2.7, 2.5, 2.3) y calcule el error porcentual de cada caso. Objetivo: error &lt; 10%; el punto central es capturar la <strong>tendencia decreciente de Kt con d/w</strong>.</li>
+</ol>
+
+<h2>Parte B — Malla gruesa vs. fina alrededor del agujero</h2>
+<ol style="padding-left:22px">
+  <li>Fije el caso <span class="mono">d = 20 mm</span> (el del ejercicio).</li>
+  <li>Ejecute con <strong>malla gruesa</strong> (10 mm global, SIN refinamiento local) y con <strong>malla fina</strong> (2.5 mm global + 1.5 mm local en el agujero). Registre σ<sub>máx</sub> y el número de nodos/elementos de cada malla.</li>
+  <li><strong>Cuantifique</strong> cuánto cambia σ<sub>máx</sub> entre ambas (valor absoluto y porcentaje).</li>
+  <li>Interprete con la guía, cap. 4.2.3 (regla 4): donde hay gradientes altos, la malla gruesa subestima el pico — el refinamiento local no es un lujo, es un requisito.</li>
+</ol>
+
+<h2>Parte C — Discusión</h2>
+<ol style="padding-left:22px">
+  <li>Construya la <strong>tabla final</strong>: para cada d/w (0.1, 0.2, 0.3): Kt teórico (Peterson), Kt numérico, error %.</li>
+  <li><strong>Reflexión 1:</strong> ¿por qué la placa <em>infinita</em> da Kt = 3, y la placa finita da menos? (Piense en el material que rodea al agujero y en cómo la frontera lateral redistribuye el flujo de fuerza.)</li>
+  <li><strong>Reflexión 2:</strong> en sus datos, ¿el Kt numérico sigue la tendencia decreciente esperada? ¿Qué fuente de error explica las diferencias con Peterson?</li>
+  <li><strong>Reflexión 3:</strong> ¿qué pasaría con el pico si el agujero estuviera a 15 mm del borde lateral? Razone con la regla de St. Venant y el concepto de ligamento.</li>
+</ol>
+
+<h2>Entregables</h2>
+<div class="entrega"><svg class="ent-ico" aria-hidden="true"><use href="#fem-taller"/></svg><div>
+  <p><strong><svg class="fico" style="color:var(--mint);width:1.1em;height:1.1em"><use href="#fem-taller"/></svg>&nbsp; 1. Tabla Parte A:</strong> d/w vs. Kt teórico vs. Kt numérico vs. error % (tres casos).</p>
+  <p><strong>2. Tabla Parte B:</strong> malla gruesa vs. fina: σ<sub>máx</sub>, nodos, elementos y cambio %.</p>
+  <p><strong>3. Reflexiones</strong> (Parte C) con cita explícita de la guía: cap. 4.2 (pre-procesamiento) y cap. 5, error 2 (mallado inadecuado, 22% de los casos).</p>
+  <p><strong>4. Captura</strong> del mapa de von Mises del caso convergido, marcando el pico en el borde del agujero.</p>
+</div></div>
+
+<h2>Rúbrica de evaluación</h2>
+<table>
+  <thead><tr><th>Criterio</th><th>Logrado (100%)</th><th>Parcial (60%)</th><th>No logrado (0%)</th><th>Puntos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Modelo FEM correcto</strong><br><span class="mono">Geometría (cut), material, CF, malla local</span></td>
+        <td>Las tres variantes ejecutan; CF y carga físicamente correctas; refinamiento local bien aplicado</td>
+        <td>Análisis funcional con algún error menor (dirección de carga, refinamiento mal aplicado)</td>
+        <td>Análisis no ejecuta o CF/cargas incorrectas</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Kt numérico vs. Peterson</strong><br><span class="mono">Tabla Parte A, tendencia d/w</span></td>
+        <td>Error &lt; 10% y tendencia decreciente capturada y comentada</td>
+        <td>Error entre 10–20% o tendencia sin comentar</td>
+        <td>Sin comparación o errores &gt; 20% sin explicación</td><td class="puntos">30</td></tr>
+    <tr><td><strong>Análisis de refinamiento de malla</strong><br><span class="mono">Parte B, cambio % cuantificado</span></td>
+        <td>Datos completos + interpretación correcta del efecto del refinamiento local</td>
+        <td>Datos completos sin interpretación</td>
+        <td>Parte B ausente</td><td class="puntos">25</td></tr>
+    <tr><td><strong>Discusión y cita de la guía</strong><br><span class="mono">3 reflexiones + cap. 4.2 y cap. 5, error 2</span></td>
+        <td>Reflexiones sustentadas y referencias correctas a capítulos</td>
+        <td>Reflexiones presentes sin vínculo a la guía</td>
+        <td>Sin discusión</td><td class="puntos">15</td></tr>
+  </tbody>
+</table>
+<p class="nota">Total: 100 puntos · Entregar antes de la Sesión 4.</p>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 4.2 (el arte del pre-procesamiento: 4.2.1 geometría con St. Venant, 4.2.2 material con trazabilidad, 4.2.3 mallado con las 6 reglas), cap. 5 (error 2: mallado inadecuado, 22%; error 4: tipo de elemento, 10%), cap. 9.2 (placa con agujero). En la Sesión 5 formalizará la convergencia con el índice GCI.</div>
+
+<footer>FEM práctico con FreeCAD · Taller 3 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

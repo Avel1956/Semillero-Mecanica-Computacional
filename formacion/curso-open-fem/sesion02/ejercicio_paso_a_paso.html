@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejercicio 2 — Barra en tracción (FreeCAD FEM)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Ejercicio 2 · Sesión 2
+  Barra en tracción: [K]{u}={F} en acción
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Recalca: Guía de Simulación FEM, caps. 3.4, 4.1, 4.2.1 (St. Venant)
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#0d1418;--bg2:#111a20;--panel:rgba(17,26,32,.92);--line:rgba(79,195,247,.18);
+  --text:#e4e8ec;--text2:#9aa7b8;--blue:#4fc3f7;--gold:#ffb74d;--mint:#4dd0b5;--red:#ef5350;
+  --font-display:'Archivo',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-display);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG tecnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--font-mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:42px;font-weight:600;margin:10px 0 8px;letter-spacing:-.01em}
+.meta{font-family:var(--font-mono);font-size:14px;color:var(--text2)}
+h2{font-size:28px;font-weight:600;margin:44px 0 16px;color:var(--gold);display:flex;align-items:center;gap:14px}
+h2 .n{font-family:var(--font-mono);font-size:18px;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+h3{font-size:21px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+p,li{font-size:17px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:16px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(79,195,247,.07);padding:16px 22px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16px}
+.callout .tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.warn{border-color:var(--red);background:rgba(239,83,80,.07)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold{border-color:var(--gold);background:rgba(255,183,77,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(77,208,181,.07)}
+.callout.mint .tag{color:var(--mint)}
+.steps{counter-reset:step;list-style:none}
+.steps>li{counter-increment:step;margin:18px 0;padding-left:64px;position:relative;font-size:17px;color:var(--text2)}
+.steps>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:17px;font-weight:600;color:var(--blue);border:1px solid var(--line);background:rgba(79,195,247,.08)}
+.steps>li strong{color:var(--text)}
+.steps>li em{color:var(--mint);font-style:normal}
+table{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0}
+th{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(79,195,247,.10);color:var(--text2)}
+td strong{color:var(--text)}
+.mono{font-family:var(--font-mono);font-size:14.5px;color:var(--gold)}
+.check{display:flex;gap:12px;align-items:flex-start;background:rgba(77,208,181,.07);border:1px solid rgba(77,208,181,.25);border-radius:10px;padding:16px 20px;margin:14px 0}
+.check::before{content:'✓';color:var(--mint);font-weight:700;flex:0 0 auto}
+.check strong{color:var(--mint)}
+.q{border-left:4px solid var(--gold);background:rgba(255,183,77,.06);padding:16px 22px;border-radius:0 10px 10px 0;margin:14px 0}
+.q .tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+kbd{font-family:var(--font-mono);font-size:13.5px;background:rgba(79,195,247,.12);border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--blue)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--font-mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t2">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 2 · Ejercicio 2</div>
+  <h1>Barra en tracción: \( [K]\{u\}=\{F\} \) en acción</h1>
+  <div class="meta">Requisitos: FreeCAD 1.0+ instalado (freecad.org) · Workbench FEM · CalculiX · Tiempo: 40–60 min</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-taller"/></svg>&nbsp; Enunciado</h3>
+  <p>Barra de acero de <strong>200 × 20 × 10 mm</strong> (área A = 200 mm²), empotrada en un extremo, con carga axial de <strong>P = 10 kN (10000 N)</strong> en el otro. Determine el esfuerzo y el alargamiento, y verifíquelos contra la solución analítica de tracción simple.</p>
+  <p style="margin-top:8px">Material: acero, <span class="mono">\( E = 210\ \text{GPa}\ (210000\ \text{MPa}) \)</span>, <span class="mono">\( \nu = 0.3 \)</span>. Valores esperados: <span class="mono">σ = 50 MPa</span>, <span class="mono">δ ≈ 0.048 mm</span>.</p>
+</div>
+
+<h2><span class="n">PASO 1</span> Preparar el entorno</h2>
+<ol class="steps">
+  <li><strong>Instalar FreeCAD</strong> desde <em>freecad.org</em> (instalador oficial, Windows/Linux/macOS). Versión 1.0 o superior.</li>
+  <li>Verificar que el <strong>solver CalculiX</strong> esté disponible: menú <kbd>FEM</kbd> → <kbd>Preferences</kbd> → pestaña <kbd>CalculiX</kbd>. Si la ruta está vacía, instale CalculiX (calculix.de) y seleccione el ejecutable <span class="mono">ccx.exe</span>. FreeCAD 1.0 puede descargarlo automáticamente desde esa misma pestaña.</li>
+  <li>Crear documento nuevo: <kbd>File</kbd> → <kbd>New</kbd>.</li>
+</ol>
+
+<h2><span class="n">PASO 2</span> Geometría: la barra 200 × 20 × 10</h2>
+<ol class="steps">
+  <li>Workbench <kbd>Part</kbd> (lista desplegable superior).</li>
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd>.</li>
+  <li>En la pestaña Datos (abajo a la izquierda) fije: <span class="mono">Length = 200 mm</span> (dirección de la carga), <span class="mono">Width = 20 mm</span>, <span class="mono">Height = 10 mm</span>.</li>
+  <li>Pulse <kbd>Ctrl+D</kbd> para ver todo (<em>Fit all</em>). El área de la sección transversal es <span class="mono">\( A = 20 \times 10 = 200\ \text{mm}^2 \)</span>.</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.2.1</span>
+Geometría = <strong>simplificar con criterio</strong>. La barra real tendría roscas o mordazas en los extremos; las eliminamos porque no están en la zona de interés. Regla de St. Venant: los detalles geométricos solo afectan localmente.</div>
+
+<h2><span class="n">PASO 3</span> Crear el análisis FEM</h2>
+<ol class="steps">
+  <li>Cambie al workbench <kbd>FEM</kbd>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Analysis container</kbd> → <kbd>New analysis</kbd>. Se crea un contenedor con un solver CalculiX por defecto.</li>
+  <li>En el árbol, verifique que aparece: <span class="mono">Analysis</span> → <span class="mono">Solver CalculiX</span>.</li>
+</ol>
+
+<h2><span class="n">PASO 4</span> Material: acero con trazabilidad</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Material</kbd> → <kbd>Solid material</kbd>.</li>
+  <li>En el diálogo, seleccione el <strong>objeto Box</strong> (clic en el modelo o en el árbol).</li>
+  <li>Elija la plantilla <span class="mono">CalculiX-Steel</span> o cree un material propio con: <span class="mono">Young's modulus = 210000 MPa</span>, <span class="mono">Poisson's ratio = 0.3</span>, <span class="mono">Density = 7.85e-9 t/mm³</span>.</li>
+  <li>Acepte. En el árbol debe aparecer <span class="mono">MechanicalMaterial</span> con el sólido asignado.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.2 · Error 3 (15%)</span>
+Propiedades de material con <strong>trazabilidad</strong>: anote de dónde salió cada valor. El E nominal del acero varía 190–210 GPa según la norma — en el taller de esta sesión usará el mismo material en los dos tramos.</div>
+
+<h2><span class="n">PASO 5</span> Empotramiento: Constraint fixed</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint fixed</kbd>.</li>
+  <li>Seleccione la <strong>cara</strong> de la barra en x = 0 (extremo del empotramiento).</li>
+  <li>Pulse <kbd>OK</kbd>. En el árbol aparece <span class="mono">ConstraintFixed</span>.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.1 · Error 1 (28%)</span>
+Fijar u=0 en toda la cara evita el <strong>modo de cuerpo rígido</strong> (desplazamiento sin deformación), que haría fallar al solver. Pregúntese siempre: ¿qué tan sensible es el resultado a cómo modelo los apoyos?</div>
+
+<h2><span class="n">PASO 6</span> Carga: Constraint force</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd>.</li>
+  <li>Seleccione la <strong>cara opuesta</strong>, en x = 200 mm.</li>
+  <li>Fije <span class="mono">Force = 10000 N</span>. En <strong>Direction</strong> elija la dirección axial de la barra (+X o −X según su sistema; use el botón <em>Reverse direction</em> si la flecha apunta hacia el empotramiento).</li>
+  <li>Nota: como la carga actúa sobre la cara completa, FreeCAD la reparte como <strong>carga distribuida equivalente</strong>. Una carga uniforme de 10000 N sobre 200 mm² equivale a 50 MPa aplicados — justo el valor que esperamos.</li>
+</ol>
+
+<h2><span class="n">PASO 7</span> Mallado con Gmsh</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd>.</li>
+  <li>Seleccione el sólido (Box) y deje marcado <em>Make mesh</em> / <em>Automatic mesh</em>.</li>
+  <li>Fije <span class="mono">Maximum element size = 5 mm</span> (por defecto puede venir 0 = automático; escríbalo explícito).</li>
+  <li>Pulse <kbd>OK</kbd> y luego <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>.</li>
+  <li>En el árbol: <span class="mono">Mesh</span> (Gmsh) con el número de nodos y elementos.</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 3.4 y 4.2.3</span>
+La malla es la <strong>discretización</strong> del paso 1 del FEM: los elementos conectados por nodos son las incógnitas \( u_i \) del sistema \( [K]\{u\}=\{F\} \). Regla de transición suave: el tamaño no debe cambiar más de 2× entre elementos adyacentes.</div>
+
+<h2><span class="n">PASO 8</span> Ejecutar el solver CalculiX</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">Solver CalculiX</span> del árbol.</li>
+  <li>Marque <em>Analysis type = Static</em> (por defecto).</li>
+  <li>Pulse <kbd>Write .inp file</kbd> y luego <kbd>Run CalculiX</kbd>.</li>
+  <li>Espere el mensaje <em>CalculiX done!</em> (o revise la pestaña <em>Report</em>).</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 8:</strong> en la pestaña Report debe aparecer la línea <span class="mono">"CalculiX done!"</span> sin errores. Si falla, revise que el material y las CF estén asignados al sólido.</div></div>
+
+<h2><span class="n">PASO 9</span> Post-proceso: leer los resultados</h2>
+<ol class="steps">
+  <li>En el árbol aparece <span class="mono">CalculiX_static_results</span>. Selecciónelo y pulse <kbd>FEM</kbd> → <kbd>Post processing</kbd> → <kbd>Warp by filter</kbd> (para ver la deformada).</li>
+  <li>Para el mapa de desplazamientos: doble clic en <span class="mono">CalculiX_static_results</span> → pestaña <em>Displacement</em> → marque <em>Show</em>, magnitud <span class="mono">Abs</span>. Anote el máximo.</li>
+  <li>Para esfuerzos: misma ventana, pestaña <em>Stress</em> → <em>Von Mises</em> → <em>Show</em>. Anote el valor en el centro de la barra (no en los extremos).</li>
+</ol>
+
+<h2><span class="n">PASO 10</span> Verificación analítica (¡haga esto SIEMPRE!)</h2>
+<table>
+  <thead><tr><th>Magnitud</th><th>Fórmula</th><th>Cálculo</th><th>Valor esperado</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Área</strong></td><td class="mono">\( A = b\,h \)</td><td class="mono">\( 20 \cdot 10 \)</td><td class="mono">\( 200\ \text{mm}^2 \)</td></tr>
+    <tr><td><strong>Esfuerzo</strong></td><td class="mono">\( \sigma = \frac{P}{A} \)</td><td class="mono">\( \frac{10000}{200} \)</td><td class="mono gold">\( \approx 50\ \text{MPa} \)</td></tr>
+    <tr><td><strong>Alargamiento</strong></td><td class="mono">\( \delta = \frac{PL}{EA} \)</td><td class="mono">\( \frac{10000 \cdot 200}{210000 \cdot 200} \)</td><td class="mono gold">\( \approx 0.048\ \text{mm} \)</td></tr>
+    <tr><td><strong>Rigidez axial</strong></td><td class="mono">\( k = \frac{EA}{L} \)</td><td class="mono">\( \frac{210000 \cdot 200}{200} \)</td><td class="mono gold">\( 210000\ \text{N/mm} \)</td></tr>
+  </tbody>
+</table>
+<div class="check"><div><strong>Checkpoint 10a:</strong> desplazamiento máximo FEM ≈ <strong>0.043–0.052 mm</strong> (δ = 0.048 mm ±10%). El valor es el mismo en toda la barra: la deformada de tracción pura es lineal.</div></div>
+<div class="check"><div><strong>Checkpoint 10b:</strong> esfuerzo von Mises en el centro de la barra ≈ <strong>45–55 MPa</strong> (σ = 50 MPa ±10%).</div></div>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.1 · St. Venant</span>
+Cerca de la cara donde se aplica la fuerza (y del empotramiento), el esfuerzo <strong>no es uniforme</strong>: la carga entra por la cara y tarda 1–2 anchos en "repartirse". Lea σ a 1–2 anchos (20–40 mm) de los extremos: ahí debe estar ≈ 50 MPa. Si lee justo en la cara, verá valores mayores que NO representan el esfuerzo de tracción pura.</div>
+
+<div class="q"><span class="tag">Preguntas de reflexión (para el taller)</span>
+<p>1. ¿El desplazamiento máximo del FEM coincide con 0.048 mm en toda la barra? ¿Por qué el mapa de desplazamiento varía linealmente a lo largo del eje?</p>
+<p>2. ¿El esfuerzo en el centro de la barra es independiente del tamaño de malla? ¿Y en la cara cargada? ¿Qué le dice eso sobre los errores 2 (mallado) y 6 (interpretación) de la guía?</p>
+<p>3. Si duplica el área (barra de 20×20), ¿qué pasa con σ y con δ? ¿Y si duplica E?</p>
+<p>4. El sistema \( [K]\{u\}=\{F\} \) de esta barra tiene N incógnitas (una por nodo en la dirección axial). ¿Qué representa físicamente cada fila de \( [K] \)?</p>
+</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 3.4 (FEM y \( [K]\{u\}=\{F\} \)), cap. 4.1 (los 4 pasos: discretización → formulación elemental → ensamblaje → solución), cap. 4.2.1 (St. Venant), cap. 4.2.3 (mallado), cap. 5 (errores 2 y 4). Notebook complementario: <span class="mono">notebooks/02_metodos_numericos.ipynb</span>.</div>
+
+<footer>FEM práctico con FreeCAD · Sesión 2 · Ejercicio 2 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

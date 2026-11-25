@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejercicio 3 — Placa con agujero: concentración de esfuerzos (FreeCAD FEM)</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — Ejercicio 3 · Sesión 3
+  Placa con agujero: pre-procesamiento, malla local y Kt (Peterson)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Recalca: Guía de Simulación FEM, caps. 2.4, 4.2, 5, 9.2
+  ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- KaTeX local (offline) + soporte compartido (iconos SVG + temas) -->
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script src="../assets/katex/katex.min.js"></script>
+<script src="../assets/katex/auto-render.min.js"></script>
+<script src="../assets/soporte/fem.js"></script>
+<link rel="stylesheet" href="../assets/soporte/temas.css">
+<style>
+:root{
+  --bg:#14110c;--bg2:#1a160f;--panel:rgba(20,17,12,.92);--line:rgba(217,160,91,.18);
+  --text:#e8e2d8;--text2:#a89f8f;--blue:#5fb3a1;--gold:#d9a05b;--mint:#8fbf6f;--red:#c96f5e;
+  --font:'Sora',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);line-height:1.6}
+/* iconos SVG técnicos (sprite fem.js) */
+.fico{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:none;stroke:currentColor;stroke-width:2.2;flex:0 0 auto}
+.fico.lg{width:1.4em;height:1.4em}
+.fico.xl{width:2.6em;height:2.6em}
+.card .fico{color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:48px 32px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+.course-tag{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+h1{font-size:42px;font-weight:600;margin:10px 0 8px;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:14px;color:var(--text2)}
+h2{font-size:28px;font-weight:600;margin:44px 0 16px;color:var(--gold);display:flex;align-items:center;gap:14px}
+h2 .n{font-family:var(--mono);font-size:18px;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+h3{font-size:21px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+p,li{font-size:17px;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:16px 0}
+.callout{border-left:4px solid var(--blue);background:rgba(95,179,161,.07);padding:16px 22px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16px}
+.callout .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.warn{border-color:var(--red);background:rgba(201,111,94,.07)}
+.callout.warn .tag{color:var(--red)}
+.callout.gold{border-color:var(--gold);background:rgba(217,160,91,.07)}
+.callout.gold .tag{color:var(--gold)}
+.callout.mint{border-color:var(--mint);background:rgba(143,191,111,.07)}
+.callout.mint .tag{color:var(--mint)}
+.steps{counter-reset:step;list-style:none}
+.steps>li{counter-increment:step;margin:18px 0;padding-left:64px;position:relative;font-size:17px;color:var(--text2)}
+.steps>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue);border:1px solid var(--line);background:rgba(95,179,161,.08)}
+.steps>li strong{color:var(--text)}
+.steps>li em{color:var(--mint);font-style:normal}
+table{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0}
+th{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid rgba(95,179,161,.10);color:var(--text2)}
+td strong{color:var(--text)}
+.mono{font-family:var(--mono);font-size:14.5px;color:var(--gold)}
+.check{display:flex;gap:12px;align-items:flex-start;background:rgba(143,191,111,.07);border:1px solid rgba(143,191,111,.25);border-radius:10px;padding:16px 20px;margin:14px 0}
+.check::before{content:'✓';color:var(--mint);font-weight:700;flex:0 0 auto}
+.check strong{color:var(--mint)}
+.q{border-left:4px solid var(--gold);background:rgba(217,160,91,.06);padding:16px 22px;border-radius:0 10px 10px 0;margin:14px 0}
+.q .tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+kbd{font-family:var(--mono);font-size:13.5px;background:rgba(95,179,161,.12);border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--blue)}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;font-family:var(--mono);font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body data-tema="t3">
+<div class="wrap">
+<header>
+  <div class="course-tag">FEM práctico con FreeCAD · Sesión 3 · Ejercicio 3</div>
+  <h1>Placa con agujero: concentración de esfuerzos</h1>
+  <div class="meta">Requisitos: FreeCAD 1.0+ instalado (freecad.org) · Workbench FEM · CalculiX · Tiempo: 50–70 min</div>
+</header>
+
+<div class="card">
+  <h3><svg class="fico lg" style="color:var(--gold)"><use href="#fem-taller"/></svg>&nbsp; Enunciado</h3>
+  <p>Placa de acero de <strong>200 × 100 × 5 mm</strong> con un agujero circular central de <strong>Ø 20 mm</strong>, sometida a tracción uniaxial de <strong>10 MPa</strong> en los extremos. Determine el esfuerzo máximo (von Mises), dónde ocurre, y verifíquelo contra el factor de concentración de esfuerzos de Peterson.</p>
+  <p style="margin-top:8px">Material: acero, \(E = 210\ \text{GPa}\ (210000\ \text{MPa})\), \(\nu = 0.3\). Fuerza equivalente: \(F = \sigma \cdot A = 10\ \text{MPa} \times (100 \times 5)\ \text{mm}^2 = 5000\ \text{N}\).</p>
+</div>
+
+<h2><span class="n">PASO 1</span> Preparar el entorno</h2>
+<ol class="steps">
+  <li><strong>Instalar FreeCAD</strong> desde <em>freecad.org</em> (instalador oficial, Windows/Linux/macOS). Versión 1.0 o superior.</li>
+  <li>Verificar que el <strong>solver CalculiX</strong> esté disponible: menú <kbd>FEM</kbd> → <kbd>Preferences</kbd> → pestaña <kbd>CalculiX</kbd>. Si la ruta está vacía, instale CalculiX (calculix.de) y seleccione el ejecutable <span class="mono">ccx.exe</span>. FreeCAD 1.0 puede descargarlo automáticamente desde esa misma pestaña.</li>
+  <li>Crear documento nuevo: <kbd>File</kbd> → <kbd>New</kbd>.</li>
+</ol>
+
+<h2><span class="n">PASO 2</span> Geometría: la placa (Box 200 × 100 × 5)</h2>
+<ol class="steps">
+  <li>Workbench <kbd>Part</kbd> (lista desplegable superior).</li>
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Box</kbd>.</li>
+  <li>En la pestaña Datos (abajo a la izquierda) fije: <span class="mono">Length = 200 mm</span>, <span class="mono">Width = 100 mm</span>, <span class="mono">Height = 5 mm</span>.</li>
+  <li>Pulse <kbd>Ctrl+D</kbd> para ver todo (<em>Fit all</em>).</li>
+</ol>
+<div class="callout gold"><span class="tag">Recalca la guía · Cap. 4.2.1</span>
+Geometría = <strong>simplificar con criterio</strong>. La placa real tendría chaflanes y texturas; los eliminamos porque no están en la zona de interés. El agujero NO se elimina: es el concentrador que queremos estudiar (está en zona de alta tensión).</div>
+
+<h2><span class="n">PASO 3</span> Geometría: el cilindro del agujero</h2>
+<ol class="steps">
+  <li><kbd>Part</kbd> → <kbd>Primitives</kbd> → <kbd>Cylinder</kbd>.</li>
+  <li>Fije en la pestaña Datos: <span class="mono">Radius = 10 mm</span>, <span class="mono">Height = 50 mm</span> (mucho mayor que los 5 mm del espesor, para que el corte atraviese toda la placa).</li>
+  <li>Centre el cilindro en la placa: <span class="mono">Position x = 100 mm</span>, <span class="mono">y = 50 mm</span>, <span class="mono">z = 0 mm</span>. Así el agujero queda en el centro de la placa 200 × 100.</li>
+  <li>Verifique con <kbd>Ctrl+D</kbd>: el cilindro debe atravesar la placa de lado a lado en el centro.</li>
+</ol>
+
+<h2><span class="n">PASO 4</span> Geometría: la resta booleana (Cut)</h2>
+<ol class="steps">
+  <li>Seleccione el <strong>Box</strong> en el árbol (es el cuerpo base, primer objeto).</li>
+  <li><kbd>Part</kbd> → <kbd>Boolean</kbd> → <kbd>Cut</kbd>.</li>
+  <li>En el diálogo booleano, asegúrese de que el <strong>Base</strong> sea el Box y el <strong>Tool</strong> sea el Cylinder (en FreeCAD 1.0 puede seleccionar ambos en el diálogo; el orden importa: base − herramienta).</li>
+  <li>Acepte. En el árbol aparece <span class="mono">Cut</span> con el agujero perforado. Mantener el cilindro en el árbol es opcional: puede ocultarlo (Espacio) o dejarlo visible; no interfiere si no se selecciona en el análisis.</li>
+</ol>
+<div class="callout warn"><span class="tag">Atención · Cap. 4.2.1</span>
+Si el cilindro no tiene altura suficiente o no está bien posicionado, el corte queda incompleto. Revise el agujero con rotación 3D antes de continuar: <strong>los errores de geometría son los más caros de corregir después</strong>.</div>
+
+<h2><span class="n">PASO 5</span> Crear el análisis FEM y el material</h2>
+<ol class="steps">
+  <li>Cambie al workbench <kbd>FEM</kbd>.</li>
+  <li><kbd>FEM</kbd> → <kbd>Analysis container</kbd> → <kbd>New analysis</kbd>. Se crea un contenedor con un solver CalculiX por defecto.</li>
+  <li><kbd>FEM</kbd> → <kbd>Material</kbd> → <kbd>Solid material</kbd>. Seleccione el objeto <strong>Cut</strong> (no el cilindro).</li>
+  <li>Elija la plantilla <span class="mono">CalculiX-Steel</span> o cree un material propio: <span class="mono">Young's modulus = 210000 MPa</span>, <span class="mono">Poisson's ratio = 0.3</span>, <span class="mono">Density = 7.85e-9 t/mm³</span>.</li>
+  <li>En el árbol debe aparecer <span class="mono">MechanicalMaterial</span> asignado al sólido.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.2 · Error 3 (15%)</span>
+Propiedades con <strong>trazabilidad</strong>: anote la procedencia de cada valor (norma, ensayo, estimación). El E nominal del acero varía 190–210 GPa según la norma — hoy usamos 210000 MPa de la plantilla, y en el Taller 1 ya exploró la sensibilidad a E.</div>
+
+<h2><span class="n">PASO 6</span> Condiciones de frontera</h2>
+<ol class="steps">
+  <li><strong>Empotramiento:</strong> <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint fixed</kbd>. Seleccione la <strong>cara completa</strong> en x = 0 (extremo izquierdo). Acepte.</li>
+  <li><strong>Carga:</strong> <kbd>FEM</kbd> → <kbd>Constraints</kbd> → <kbd>Constraint force</kbd>. Seleccione la <strong>cara completa</strong> en x = 200 mm (extremo derecho).</li>
+  <li>Fije <span class="mono">Force = 5000 N</span>. La dirección: <strong>eje X</strong> (axial) — si el diálogo deja la dirección vacía, FreeCAD la aplica normal a la cara, que ya es +X; use <em>Reverse direction</em> si la flecha apunta hacia adentro (compresión).</li>
+  <li>Nota: la cara completa recibe la carga; FreeCAD la reparte automáticamente como carga distribuida equivalente — exactamente lo que queremos para reproducir \(\sigma = 10\ \text{MPa}\).</li>
+</ol>
+<div class="callout gold"><span class="tag">Verificación rápida · Cap. 4.2.2</span>
+Compruebe la equivalencia antes de resolver: \(\sigma = F/A = 5000\ \text{N} / (100 \times 5)\ \text{mm}^2 = 10\ \text{MPa}\). Si usted cambiara el área o la fuerza, el nominal cambia — mantenga esta relación presente para todo el análisis.</div>
+
+<h2><span class="n">PASO 7</span> Mallado con Gmsh + refinamiento local</h2>
+<ol class="steps">
+  <li><kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Gmsh</kbd>.</li>
+  <li>Seleccione el sólido (Cut) y deje marcado <em>Make mesh</em> / <em>Automatic mesh</em>.</li>
+  <li>Fije <span class="mono">Maximum element size = 5 mm</span> (malla "media"; si viene 0 = automático, escríbalo explícito).</li>
+  <li><strong>Refinamiento local (obligatorio):</strong> seleccione en la vista 3D las <strong>dos aristas circulares del agujero</strong> y, en el diálogo de Gmsh, agréguelas como región con tamaño fijo: <span class="mono">Maximum element size = 1.5 mm</span> sobre la selección. Gmsh respeta ese tamaño local alrededor del agujero.</li>
+  <li>Pulse <kbd>OK</kbd> y luego <kbd>FEM</kbd> → <kbd>Mesh</kbd> → <kbd>Set FEM mesh</kbd>.</li>
+  <li>En el árbol: <span class="mono">Mesh</span> (Gmsh). Inspeccione la zona del agujero: debe verse claramente más densa que el resto.</li>
+</ol>
+<div class="callout warn"><span class="tag">Recalca la guía · Cap. 4.2.3 · Error 2 (22%)</span>
+Aquí aplican las reglas 1, 2, 3 y 4 del mallado: mínimo 2–3 elementos a través del espesor (5 mm / 2 ≈ 2–3 elementos <svg class="fico" style="color:var(--mint)"><use href="#fem-verif"/></svg>), transición suave ≤ 2×, y <strong>refinar donde hay gradientes altos</strong> — el borde del agujero. Un mallado inadecuado es el error 2 de la guía, con el 22% de los casos.</div>
+
+<h2><span class="n">PASO 8</span> Ejecutar el solver CalculiX</h2>
+<ol class="steps">
+  <li>Doble clic en <span class="mono">Solver CalculiX</span> del árbol.</li>
+  <li>Marque <em>Analysis type = Static</em> (por defecto).</li>
+  <li>Pulse <kbd>Write .inp file</kbd> y luego <kbd>Run CalculiX</kbd>.</li>
+  <li>Espere el mensaje <em>CalculiX done!</em> (o revisar la pestaña <em>Report</em>).</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 8:</strong> en la pestaña Report debe aparecer la línea <span class="mono">"CalculiX done!"</span> sin errores. Si falla, revise que el material y las CF estén asignados al <strong>Cut</strong>, no al cilindro.</div></div>
+
+<h2><span class="n">PASO 9</span> Post-proceso: leer el esfuerzo von Mises</h2>
+<ol class="steps">
+  <li>En el árbol aparece <span class="mono">CalculiX_static_results</span>. Selecciónelo y pulse <kbd>FEM</kbd> → <kbd>Post processing</kbd> → <kbd>Warp by filter</kbd> (para ver la deformada amplificada).</li>
+  <li>Para el mapa de color de esfuerzos: doble clic en <span class="mono">CalculiX_static_results</span> → pestaña <em>Stress</em> → <em>Von Mises</em> → <em>Show</em>.</li>
+  <li>Anote el valor máximo de la leyenda y <strong>dónde aparece</strong>: debe estar en el borde del agujero, en la sección media (a 90° del eje de carga), no en los extremos.</li>
+  <li>Para desplazamientos: pestaña <em>Displacement</em> → magnitud <span class="mono">Abs</span> → <em>Show</em>. Anote el máximo (está en el extremo cargado).</li>
+</ol>
+<div class="check"><div><strong>Checkpoint 9a:</strong> σ<sub>máx</sub> (von Mises) ≈ <strong>22–27 MPa</strong> con la malla media (5 mm) + refinamiento local 1.5 mm en el agujero. Con malla gruesa (10 mm) el pico subestima; al refinar converge hacia ~25 MPa.</div></div>
+<div class="check"><div><strong>Checkpoint 9b:</strong> \(K_t = \sigma_{máx,FEM} / \sigma_{nominal} \approx 2.2\text{–}2.7\) (objetivo: ≈ 2.5, error &lt; 5% con malla fina local).</div></div>
+<div class="check"><div><strong>Checkpoint 9c:</strong> desplazamiento axial máximo del orden de <strong>0.01–0.05 mm</strong>. Referencia rápida para la placa sin agujero: \(\delta = \sigma \cdot L/E = 10 \cdot 200/210000 \approx 0.0095\ \text{mm}\) — la placa con agujero es algo más flexible (menos área neta), por eso el valor sube un poco.</div></div>
+
+<h2><span class="n">PASO 10</span> Verificación analítica (¡haga esto SIEMPRE!)</h2>
+<table>
+  <thead><tr><th>Magnitud</th><th>Fórmula</th><th>Cálculo</th><th>Valor esperado</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Fuerza equivalente</strong></td><td class="mono">\(F = \sigma \cdot A\)</td><td class="mono">\(10 \cdot (100 \cdot 5)\)</td><td class="mono">\(5000\ \text{N}\)</td></tr>
+    <tr><td><strong>Esfuerzo nominal bruto</strong></td><td class="mono">\(\sigma_{nom} = \frac{P}{w\,t}\)</td><td class="mono">\(5000/(100 \cdot 5)\)</td><td class="mono">\(10\ \text{MPa}\)</td></tr>
+    <tr><td><strong>Kt (Peterson, placa finita)</strong></td><td class="mono">\(d/w = 20/100 = 0.2\)</td><td class="mono">catálogo Peterson</td><td class="mono gold">\(\approx 2.42\text{–}2.5\)</td></tr>
+    <tr><td><strong>Esfuerzo máximo</strong></td><td class="mono">\(\sigma_{máx} = K_t \cdot \sigma_{nom}\)</td><td class="mono">\(\approx 2.5 \cdot 10\)</td><td class="mono gold">\(\approx 25\ \text{MPa}\ (\text{rango }22\text{–}27)\)</td></tr>
+    <tr><td><strong>Desplazamiento axial (ref.)</strong></td><td class="mono">\(\delta = \sigma \cdot L / E\)</td><td class="mono">\(10 \cdot 200 / 210000\)</td><td class="mono">\(\approx 0.0095\ \text{mm}\ (\text{sin agujero})\)</td></tr>
+  </tbody>
+</table>
+<div class="check"><div><strong>Checkpoint 10a:</strong> σ<sub>máx</sub> FEM dentro de <strong>22–27 MPa</strong> → error frente a Peterson &lt; 10% con malla media, y &lt; 5% al refinar localmente.</div></div>
+<div class="check"><div><strong>Checkpoint 10b:</strong> el pico está <strong>en el borde del agujero</strong> (sección a 90° del eje de carga). Si su pico aparece en la esquina del empotramiento, revise las CF: la cara completa fijada reparte el bloqueo y el pico debe dominar el agujero.</div></div>
+
+<div class="q"><span class="tag">Preguntas de reflexión (para el taller)</span>
+<p>1. ¿Por qué el pico de esfuerzo está en el borde del agujero y no en la zona central de la placa? Relacione su respuesta con la compresión de las líneas de flujo de fuerza.</p>
+<p>2. ¿Qué pasaría si el agujero estuviera cerca del borde lateral de la placa (p. ej. a 15 mm)? ¿El Kt subiría o bajaría? ¿Por qué? (Piense en el ligamento de material restante.)</p>
+<p>3. Si cambiara la malla a TET4 (1er orden) alrededor del agujero, ¿esperaría un σ_máx mayor o menor? ¿Por qué la guía dice que TET4 es "demasiado rígido"?</p>
+<p>4. ¿El Kt numérico cambia si usted calcula el nominal con el área bruta \((w\cdot t)\) o con el área neta \(((w-d)\cdot t)\)? ¿Sobre cuál está definido el Peterson que usó?</p>
+</div>
+
+<div class="callout mint"><span class="tag">Conexión con la guía</span>
+Cap. 2.4 (modelos constitutivos), cap. 4.2 (el arte del pre-procesamiento: 4.2.1 geometría, 4.2.2 material, 4.2.3 mallado), cap. 5 (errores 2, 3 y 4), cap. 9.2 (placa con agujero). Referencia de Kt: <span class="mono">Peterson's Stress Concentration Factors</span>, 4.ª ed., Wiley, 2008. Notebook complementario: <span class="mono">notebooks/02_convergencia_malla.ipynb</span>.</div>
+
+<footer>FEM práctico con FreeCAD · Sesión 3 · Ejercicio 3 de 6 — Prof. J. A. Vélez · PUJ Cali</footer>
+</div>
+</body>
+</html>

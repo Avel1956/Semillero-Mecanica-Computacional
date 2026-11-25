@@ -1,0 +1,201 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S1 - ¿Qué es simular? Del fenómeno al modelo</title>
+<!-- ═══════════════════════════════════════════════════════════════
+  CURSO FEM PRÁCTICO CON FREECAD — SESIÓN 1 (video asíncrono)
+  Prof. J. A. Vélez — Pontificia Univ. Javeriana Cali
+  Motor: VIDEOMN engine v2 (compartido). NO editar engine.js.
+  Anclaje visual: Puente de Tacoma Narrows (1940) — el costo
+  de una mala simulación. 6 escenas, narración ~11 min.
+  Guion: sesion01/video/guion.md
+  ═══════════════════════════════════════════════════════════════ -->
+<script src="../../assets/p5.min.js"></script><script>p5.disableFriendlyErrors=true;</script>
+<script src="../../assets/engine.js"></script>
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#3a3d45;}canvas{display:block;}</style>
+</head><body><script>
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 0 — PORTADA: el costo de una mala simulación
+//  Anclaje: puente de Tacoma Narrows oscilando (torsión → colapso)
+// ═══════════════════════════════════════════════════════════════
+function s0(){
+  let t=st,cx=width/2,cy=height*0.38;uFF(t);uFP();
+  // — puente: tablero que oscila en torsión (Tacoma) —
+  let sway=sin(t*0.9)*0.5+sin(t*2.3)*0.25;
+  let bw=width*0.5,bh=14;
+  push();translate(cx,cy);rotate(sway*0.35);
+  fill(cb('gray')[0],cb('gray')[1],cb('gray')[2],60);noStroke();rect(-bw/2-30,-8,30,16);rect(bw/2,-8,30,16);
+  fill(30,34,42,220);stroke(cb('blue')[0],cb('blue')[1],cb('blue')[2],70);strokeWeight(1.5);rect(-bw/2,-bh/2,bw,bh,4);
+  // cables
+  stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],90);strokeWeight(1.6);
+  for(let i=0;i<9;i++){let lx=-bw/2+i*bw/8,hh=70+40*abs(sin(t*1.3+i));line(lx,-bh/2,lx-40+sin(t+i)*6,-bh/2-hh);line(lx,-bh/2,lx+40+sin(t+i)*6,-bh/2-hh)}
+  pop();
+  // grietas que aparecen (el colapso se anuncia)
+  if(t>6){let ck=constrain(map(t,6,9,0,1),0,1);stroke(cb('red')[0],cb('red')[1],cb('red')[2],150*ck);strokeWeight(3);
+    line(cx-60,cy-8,cx-40+sin(t*5)*4,cy+6);line(cx+30,cy-10,cx+50,cy+2);line(cx+50,cy+2,cx+66,cy+8)}
+  // — panel + títulos —
+  let ta=constrain(map(t,1,4,0,200),0,200);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();rect(cx-560,height*0.66,1120,150,16)}
+  txB(window,'¿Qué es simular?',cx,height*0.66+45,60,'gold');
+  txB(window,'Del fenómeno físico al modelo matemático — Sesión 1',cx,height*0.66+115,30,'white');
+  // pie: referencia al caso real
+  let al0=txa([8,11],t);
+  if(al0>20){drawingContext.globalAlpha=al0/255;
+    tx(window,'Tacoma Narrows, 1940: un modelo incompleto costó un puente',cx,height*0.9,19,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 1 — LOS 3 PILARES (teoría / experimento / simulación)
+//  Beats: 0=título, 1=teoría+experimento, 2=simulación+tríada
+// ═══════════════════════════════════════════════════════════════
+function s1(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let cols=[{n:'Teoría',c:'blue',d:'Modelos matemáticos',w:'Solo geometrías simples'},
+            {n:'Experimento',c:'gold',d:'Ensayos, prototipos',w:'Costoso y lento'},
+            {n:'Simulación',c:'mint',d:'Cómputo',w:'Depende del modelo'}];
+  // tres columnas — aparecen con beats
+  for(let i=0;i<3;i++){
+    let x=cx-430+i*430,y=height*0.30;
+    if(beat>=i){let al=txa([0.3+i*0.35,1.4],t);
+      drawingContext.globalAlpha=al/255;
+      let cc=cb(cols[i].c);
+      fill(cc[0],cc[1],cc[2],10);stroke(cc[0],cc[1],cc[2],60);strokeWeight(1);
+      rect(x-150,y,300,300,16);
+      noStroke();fill(cc[0],cc[1],cc[2],230);
+      tx(window,cols[i].n,x,y+60,40,cols[i].c);
+      tx(window,cols[i].d,x,y+120,20,'white');
+      tx(window,cols[i].w,x,y+165,17,'gray');
+      drawingContext.globalAlpha=1}
+  }
+  // tríada virtuosa (beat 2): teoría → simulación → experimento → validación
+  if(beat>=2){
+    let al=txa([1.0,2.2],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.74;stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],120);strokeWeight(2);
+    let xs=[cx-360,cx-120,cx+120,cx+360];
+    for(let i=0;i<3;i++){line(xs[i],y,xs[i]+240,y);triangle(xs[i]+236,y-8,xs[i]+250,y,xs[i]+236,y+8)}
+    for(let i=0;i<4;i++)tx(window,['Teoría','Simulación','Experimento','Validación'][i],xs[i],y+45,20,i===3?'mint':'white');
+    drawingContext.globalAlpha=1}
+  txB(window,'Los tres pilares de la ingeniería',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 2 — LA BRECHA DE MODELADO (realidad vs. modelo)
+//  Beats: 0=título, 1=realidad, 2=modelo + brecha
+// ═══════════════════════════════════════════════════════════════
+function s2(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let y=height*0.42;
+  // — realidad: viga con imperfecciones (izquierda) —
+  if(beat>=1){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    stroke(cb('red')[0],cb('red')[1],cb('red')[2],70);strokeWeight(1.5);
+    fill(40,44,52,120);rect(cx-430,y,260,34,4);
+    for(let i=0;i<6;i++){let px=cx-400+i*44;line(px,y+34,px+8+sin(t*2+i)*3,y+52);line(px,y+2,px+12,y-14)}
+    stroke(cb('gray')[0],cb('gray')[1],cb('gray')[2],90);line(cx-430,y-40,cx-430,y+80);line(cx-170,y-40,cx-170,y+80);
+    tx(window,'Realidad',cx-300,y+100,26,'red');
+    tx(window,'micro-defectos, soldadura, variaciones de E…',cx-300,y+140,17,'gray');
+    drawingContext.globalAlpha=1}
+  // — modelo: viga ideal (derecha) —
+  if(beat>=2){let al=txa([0.3,1.2],t);drawingContext.globalAlpha=al/255;
+    stroke(cb('mint')[0],cb('mint')[1],cb('mint')[2],90);strokeWeight(1.5);
+    fill(30,80,72,60);rect(cx+170,y,260,34,4);
+    // empotramiento + carga
+    fill(cb('blue')[0],cb('blue')[1],cb('blue')[2],70);rect(cx+160,y-12,14,58);
+    fill(cb('gold')[0],cb('gold')[1],cb('gold')[2],200);triangle(cx+430,y-22,cx+430,y+22,cx+452,y);
+    tx(window,'Modelo',cx+300,y+100,26,'mint');
+    tx(window,'homogéneo, isótropo, empotrado, P ideal',cx+300,y+140,17,'gray');
+    drawingContext.globalAlpha=1}
+  // — brecha (beat 2): flecha doble entre ambos —
+  if(beat>=2){let al=txa([1.6,2.8],t);drawingContext.globalAlpha=al/255;
+    setLineDash([10,8]);stroke(cb('gold')[0],cb('gold')[1],cb('gold')[2],140);strokeWeight(2.5);
+    line(cx-30,y+17,cx+30,y+17);setLineDash([]);
+    txB(window,'brecha de modelado',cx,y+70,24,'gold');
+    drawingContext.globalAlpha=1}
+  txB(window,'Modelar es elegir qué simplificar',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 3 — CONDICIONES DE FRONTERA (la trampa)
+//  Beats: 0=título, 1=tipos, 2=la trampa del empotramiento
+// ═══════════════════════════════════════════════════════════════
+function s3(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let tipos=[{n:'Dirichlet',c:'blue',d:'u = 0  (empotramiento)'},
+             {n:'Neumann',c:'gold',d:'σ·n = t  (presión)'},
+             {n:'Robin',c:'mint',d:'soporte elástico (mixta)'}];
+  for(let i=0;i<3;i++){
+    let x=cx-430+i*430,y=height*0.28;
+    if(beat>=1){let al=txa([0.3+i*0.3,1.3],t);drawingContext.globalAlpha=al/255;
+      let cc=cb(tipos[i].c);
+      fill(cc[0],cc[1],cc[2],8);stroke(cc[0],cc[1],cc[2],50);strokeWeight(1);
+      rect(x-165,y,330,150,12);
+      tx(window,tipos[i].n,x,y+45,30,tipos[i].c);
+      txM(window,tipos[i].d,x,y+100,19,'white');
+      drawingContext.globalAlpha=1}
+  }
+  // la trampa (beat 2): empotramiento perfecto NO existe
+  if(beat>=2){
+    let al=txa([0.6,1.8],t);drawingContext.globalAlpha=al/255;
+    let y=height*0.62;
+    fill(cb('red')[0],cb('red')[1],cb('red')[2],10);stroke(cb('red')[0],cb('red')[1],cb('red')[2],70);strokeWeight(1.5);
+    rect(cx-560,y,1120,180,14);
+    tx(window,'⚠ La trampa más común',cx,y+50,34,'red');
+    tx(window,'Un "empotramiento perfecto" (u = 0) es una abstracción:',cx,y+100,22,'white');
+    tx(window,'el concreto cede, los pernos se deforman, hay fricción',cx,y+140,22,'gray');
+    drawingContext.globalAlpha=1}
+  txB(window,'Condiciones de frontera: donde el modelo toca el mundo',cx,height*0.08,40,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 4 — EL FLUJO DE TRABAJO FEM (5 pasos)
+//  Beats: 0=título, 1..5 = pasos que se revelan con ESPACIO
+// ═══════════════════════════════════════════════════════════════
+function s4(){
+  let t=st,cx=width/2;uFF(t);uFP();
+  let steps=[['Fenómeno físico','cargas, apoyos, material'],
+             ['Modelo matemático','ecuaciones + CF + constitutivo'],
+             ['Discretización','malla de elementos finitos'],
+             ['Resolver [K]{u}={F}','CalculiX: sistema de ecuaciones'],
+             ['Resultados y validación','¿tiene sentido físico? ¿converge?']];
+  let ys=[0.16,0.30,0.44,0.58,0.72];
+  for(let i=0;i<steps.length;i++){
+    if(beat>=i){let al=txa([0.3+i*0.25,1.2],t);
+      drawingContext.globalAlpha=al/255;
+      let y=height*ys[i];
+      let cc=cb(i===4?'mint':(i===3?'gold':'blue'));
+      fill(cc[0],cc[1],cc[2],10);noStroke();rect(cx-500,y,1000,height*0.115,10);
+      txM(window,String(i+1).padStart(2,'0'),cx-420,y+height*0.055,26,cc);
+      tx(window,steps[i][0],cx-180,y+height*0.055,26,'white');
+      tx(window,steps[i][1],cx+250,y+height*0.055,18,'gray');
+      drawingContext.globalAlpha=1}
+  }
+  txB(window,'El flujo de simulación (FreeCAD FEM + CalculiX)',cx,height*0.06,38,'white');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ESCENA 5 — CIERRE: la regla de oro + qué sigue
+// ═══════════════════════════════════════════════════════════════
+function s5(){
+  let t=st,cx=width/2,cy=height*0.36;uFF(t);uFP();
+  let burst=constrain(map(t,2,5,0,1),0,1);
+  glow(g=>{if(burst>0){dB(g,cx,cy,430*burst,cb('mint'),6);dB(g,cx,cy,230*burst,cb('white'),3)}});
+  let ta=constrain(map(t,1.5,3.5,0,220),0,220);
+  if(ta>10){fill(cb('bg')[0],cb('bg')[1],cb('bg')[2],ta*0.72);noStroke();
+    rect(cx-560,cy-70,1120,150,16)}
+  drawingContext.globalAlpha=constrain(map(t,1.5,4,0,1),0,1);
+  txB(window,'Regla de oro',cx,cy-5,58,'gold');
+  txB(window,'Un resultado de simulación es una hipótesis, no una verdad revelada',cx,cy+60,26,'white');
+  drawingContext.globalAlpha=1;
+  // qué sigue
+  let al=txa([6,8.5],t);
+  if(al>20){drawingContext.globalAlpha=al/255;
+    tx(window,'Sesión 2 → La idea del FEM: discretizar para resolver · barra en tracción',cx,height*0.86,22,'gray');
+    drawingContext.globalAlpha=1}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN — 6 escenas
+// ═══════════════════════════════════════════════════════════════
+SNAMES=['Portada','3 pilares','Brecha de modelado','Fronteras','Flujo FEM','Cierre'];
+SBEATS=[1,3,3,3,5,1];
+function initSessions(){scenes=[s0,s1,s2,s3,s4,s5];}
+</script></body></html>
