@@ -110,13 +110,13 @@ En la formación de ingeniería existe una desconexión entre los fundamentos te
 
 La operación del semillero se organiza en líneas de trabajo definidas según los intereses del grupo y el contexto del semillero. Cada línea cuenta con un estudiante responsable que lidera la creación de capacidades y la ejecución del presupuesto asignado. Las líneas y sus proyectos base se acordaron con los estudiantes durante el primer semestre de ejecución (informe de seguimiento de septiembre de 2026).
 
-| Línea | Alcance | Proyecto base / trabajo actual |
-|---|---|---|
-| Formación | Programa de talleres y webinarios sobre simulación y modelación computacional. Modalidad asíncrona, con videos de preparación y ejercicios prácticos | [Curso «FEM práctico con FreeCAD»](formacion/README.md) y [solver FEM de armaduras](proyectos/fem-armaduras/README.md) |
-| Inteligencia artificial | Incorporación de herramientas de inteligencia artificial al trabajo del semillero: apoyo a la programación, al análisis de resultados y a la elaboración de material de formación | [Tutor socrático PUJ-IA](proyectos/tutor-socratico/README.md) |
-| Modelado físico | Modelado y fabricación de prototipos y herramientas mediante manufactura aditiva (impresión 3D), como complemento experimental de las simulaciones y apoyo a la divulgación | Diseño y fabricación de prototipos como complemento experimental de las simulaciones ([AeroBio](proyectos/aerobio/README.md)) |
-| Control | Instrumentación de experimentos y adquisición de datos con sistemas embebidos, orientada a la validación experimental de los modelos computacionales | Instrumentación y adquisición de datos para validar los modelos ([AeroBio](proyectos/aerobio/README.md)) |
-| Biomecánica | Simulación de problemas de interés biomecánico y desarrollo de proyectos interdisciplinarios con el programa de Ingeniería Biomédica | Simulación de problemas biomecánicos con Ingeniería Biomédica ([AeroBio](proyectos/aerobio/README.md)) |
+| Línea | Responsable | Alcance | Proyecto base / trabajo actual |
+|---|---|---|---|
+| Formación | Por definir (coordina el tutor) | Programa de talleres y webinarios sobre simulación y modelación computacional. Modalidad asíncrona, con videos de preparación y ejercicios prácticos | [Curso «FEM práctico con FreeCAD»](formacion/README.md), [webinario «Skills, agentes y harness»](formacion/webinario-2026-11-09-skills-agentes-harness/README.md) y [solver FEM de armaduras](proyectos/fem-armaduras/README.md) |
+| Inteligencia artificial | Juanita Prado Valencia | Incorporación de herramientas de inteligencia artificial al trabajo del semillero: apoyo a la programación, al análisis de resultados y a la elaboración de material de formación | Incorporación de herramientas de IA a las actividades del semillero; optimización topológica del ala de AeroBio; [tutor socrático PUJ-IA](proyectos/tutor-socratico/README.md) |
+| Modelado físico | Gabriel Mariño Arcila | Modelado y fabricación de prototipos y herramientas mediante manufactura aditiva (impresión 3D), como complemento experimental de las simulaciones y apoyo a la divulgación | Línea líder de [AeroBio](proyectos/aerobio/README.md): modelo CAD paramétrico de las alas (fase 1) y fabricación de especímenes |
+| Control | Juan José Zubiria Bedoya | Instrumentación de experimentos y adquisición de datos con sistemas embebidos, orientada a la validación experimental de los modelos computacionales | Instrumentación de experimentos y adquisición de datos para validar los modelos; banco de ensayo de [AeroBio](proyectos/aerobio/README.md) |
+| Biomecánica | Katherin Johanna Arcila Valencia | Simulación de problemas de interés biomecánico y desarrollo de proyectos interdisciplinarios con el programa de Ingeniería Biomédica | Simulación de problemas biomecánicos con Ingeniería Biomédica; perfil alar bioinspirado de [AeroBio](proyectos/aerobio/README.md) |
 
 El proyecto integrador **AeroBio** reúne las cinco líneas alrededor de un ala bioinspirada en el cóndor andino.
 
@@ -130,7 +130,9 @@ El proyecto integrador **AeroBio** reúne las cinco líneas alrededor de un ala 
 | 2 | Tutor socrático PUJ-IA y generador de agentes pedagógicos | Inteligencia artificial | En funcionamiento (v0.1.0) | [`proyectos/tutor-socratico`](proyectos/tutor-socratico/README.md) |
 | 3 | Curso «FEM práctico con FreeCAD» de 6 sesiones con ejercicios verificados analíticamente | Formación | Contenido terminado; pendiente publicación asíncrona | [`formacion`](formacion/README.md) |
 | 4 | AeroBio: ala bioinspirada con 70,3 % menos masa que el ala maciza NACA 4412, verificada en CAD | Todas | Modelado terminado; ensayo pendiente | [`proyectos/aerobio`](proyectos/aerobio/README.md) |
-| 5 | Charla de divulgación en el Colegio Militar General Agustín Codazzi (7 nov. 2026, grados 9.º y 11.º) — piloto de «Simulando el Futuro» | Divulgación | Realizada | [`divulgacion`](divulgacion/2026-11-07-charla-cmgac/README.md) |
+| 5 | Charla de divulgación en el Colegio Militar General Agustín Codazzi (7 nov. 2026, grados 9.º y 11.º) — piloto de «Simulando el Futuro» | Modelado físico | Realizada | [`divulgacion`](divulgacion/2026-11-07-charla-cmgac/README.md) |
+| 6 | Webinario «Skills, agentes y harness: IA agéntica para material técnico-científico» (9 nov. 2026) con texto de acompañamiento | Formación / IA | Realizado | [`formacion/webinario-…`](formacion/webinario-2026-11-09-skills-agentes-harness/README.md) |
+| 7 | Planes de trabajo de noviembre por línea para AeroBio (costos, actividades y cronograma de 4 semanas) | IA, Modelado físico, Biomecánica | En ejecución | [`proyectos/aerobio`](proyectos/aerobio/README.md) |
 
 ---
 
@@ -173,7 +175,8 @@ Las carpetas se crean cuando existe el primer contenido; `actas/` aún no tiene 
 Semillero-Mecanica-Computacional/
 │
 ├── formacion/
-│   └── curso-open-fem/        Curso «FEM práctico con FreeCAD» (6 sesiones, HTML sin conexión)
+│   ├── curso-open-fem/        Curso «FEM práctico con FreeCAD» (6 sesiones, HTML sin conexión)
+│   └── webinario-2026-11-09-skills-agentes-harness/   Webinario de IA agéntica (diapositivas y texto)
 ├── proyectos/
 │   ├── fem-armaduras/         Solver FEM de armaduras 2D/3D (código + reporte)
 │   ├── tutor-socratico/       PUJ-IA: resumen y presentaciones (código en repo propio)
@@ -203,18 +206,21 @@ Tipografía: **Space Grotesk** o **Inter** para títulos y texto; **JetBrains Mo
 
 ## Equipo
 
-| Nombre | Rol | Correo |
+Integrantes a noviembre de 2026. El contacto del semillero es el correo del tutor.
+
+| Nombre | Rol | Línea |
 |---|---|---|
-| Jaime Andrés Vélez Zea | Tutor del semillero | jaimea.velez@javerianacali.edu.co |
-
-**Autores de productos publicados en este repositorio**
-
-| Nombre | Aporte |
-|---|---|
-| Juan Esteban Navarrete | Solver FEM de armaduras 2D/3D |
-| Gabriel Mariño Arcila | Charla e informe de divulgación AeroBio en el CMGAC |
-
-La lista completa de estudiantes vinculados y de responsables de línea se publicará cuando esté confirmada.
+| Jaime Andrés Vélez Zea | Tutor del semillero (jaimea.velez@javerianacali.edu.co) | Formación |
+| Juanita Prado Valencia | Responsable de línea | Inteligencia artificial |
+| Gabriel Mariño Arcila | Responsable de línea | Modelado físico |
+| Juan José Zubiria Bedoya | Responsable de línea | Control |
+| Katherin Johanna Arcila Valencia | Responsable de línea | Biomecánica |
+| Daniel Enrique Ramírez Marcus | Integrante | Modelado físico |
+| Ian Pérez Guzmán | Integrante | Inteligencia artificial |
+| Juan Esteban Navarrete Plua | Integrante | Formación (solver FEM de armaduras) |
+| Juan Jaramillo Jiménez | Integrante | Por asignar |
+| Manuel Osorio Toro | Integrante | Por asignar |
+| María Ariza Cabrera | Integrante | Por asignar |
 
 ---
 

@@ -8,13 +8,15 @@ Pregunta de ingeniería: **¿cómo diseñar un ala más liviana sin que se rompa
 
 ## Papel de cada línea
 
-| Línea | Aporte |
-|---|---|
-| Biomecánica | Revisión de la biomecánica del vuelo del cóndor andino y definición del perfil bioinspirado |
-| Formación | Simulación estática (FreeCAD/CalculiX o SolidWorks): mapa de esfuerzos y deformaciones |
-| Inteligencia artificial | Aligeramiento de la estructura interna (optimización topológica) |
-| Modelado físico | Fabricación de los especímenes en impresión 3D (PLA / TPU) |
-| Control | Banco de ensayo con celdas de carga y galgas (Arduino/ESP32) para validar la simulación |
+| Línea | Responsable | Aporte |
+|---|---|---|
+| Biomecánica | Katherin Johanna Arcila Valencia | Biomecánica del vuelo del cóndor andino; modelo CAD del perfil bioinspirado comparado con el NACA 4412 (entrega en STEP/IGES con ficha de parámetros) |
+| Formación | Coordina el tutor | Simulación estática (FreeCAD/CalculiX o SolidWorks): mapa de esfuerzos de von Mises y deformaciones |
+| Inteligencia artificial | Juanita Prado Valencia | Optimización topológica (SIMP y BESO en Python; SolidWorks como verificación) para reducir la masa interna en torno al 40 %, y malla reticular imprimible |
+| Modelado físico (línea líder) | Gabriel Mariño Arcila, con Daniel Enrique Ramírez Marcus | Modelo CAD paramétrico de la familia de alas en SolidWorks (fase 1) y fabricación FDM en PLA y TPU (fase 2) |
+| Control | Juan José Zubiria Bedoya | Banco de ensayo con celdas de carga y galgas (Arduino/ESP32) para contrastar la simulación |
+
+En noviembre de 2026 las líneas de IA, Modelado físico y Biomecánica trabajan con un plan de cuatro semanas (costos, actividades y cronograma). Criterio común: la cifra de reducción de masa que se presenta a los estudiantes es la medida en la pieza impresa, no el valor teórico.
 
 ## Resultados a noviembre de 2026
 

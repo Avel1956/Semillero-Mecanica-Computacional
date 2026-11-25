@@ -18,3 +18,9 @@ Curso de elementos finitos con herramientas libres (FreeCAD FEM + CalculiX + Gms
 | 06 | Flujo profesional, informe e IA en simulación | Soporte bajo carga combinada + proyecto integrador | Ciclo completo con GCI |
 
 **Estado:** contenido terminado; pendiente revisión final y publicación en formato asíncrono.
+
+## Webinario «Skills, agentes y harness» (9 de noviembre de 2026)
+
+Carpeta: [`webinario-2026-11-09-skills-agentes-harness/`](webinario-2026-11-09-skills-agentes-harness/README.md)
+
+IA agéntica para adquirir, generar y presentar material técnico-científico: cómo funcionan los modelos de lenguaje, las cuatro etapas de uso (chat, contexto, skills, orquestación), anatomía de un skill, agentes y harness, y un caso resuelto de revisión bibliográfica en mecánica computacional con puntos de control humanos. Incluye las diapositivas (PDF y PPTX) y el texto de acompañamiento «De conversar a delegar».
