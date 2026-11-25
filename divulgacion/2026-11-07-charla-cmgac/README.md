@@ -1,3 +1,5 @@
+<img src="../../recursos/marca/smc-isotipo.svg" alt="SMC" width="64" align="right">
+
 # Informe de actividad — Charla AeroBio en el Colegio Militar General Agustín Codazzi
 
 **Semillero de Mecánica Computacional (SMC) · Ingeniería Mecánica · Pontificia Universidad Javeriana Cali**

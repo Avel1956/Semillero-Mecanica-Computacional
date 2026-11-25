@@ -1,3 +1,5 @@
+<img src="../../recursos/marca/smc-isotipo.svg" alt="SMC" width="64" align="right">
+
 # PUJ-IA — Tutor socrático y generador de agentes pedagógicos
 
 **Línea:** Inteligencia artificial · **Estado:** en funcionamiento (v0.1.0) · **Responsable:** Jaime Andrés Vélez Zea

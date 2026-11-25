@@ -1,3 +1,5 @@
+<img src="../../recursos/marca/smc-isotipo.svg" alt="SMC" width="64" align="right">
+
 # Solver FEM de armaduras 2D/3D (método de rigidez matricial)
 
 **Línea:** Formación · **Estado:** terminado (versión desplegada en Streamlit) · **Periodo:** marzo – mayo de 2026

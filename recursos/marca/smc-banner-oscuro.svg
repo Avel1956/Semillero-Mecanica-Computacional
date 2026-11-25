@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260">
+  <rect width="1200" height="260" fill="#0F172A"/>
+  <rect y="0" width="1200" height="8" fill="#00A8E8"/>
+  <g transform="translate(40,30) scale(0.62)"><polygon points="294.752,97.848 169.92,25.776 45.088,97.848 45.088,241.992 169.92,314.064 294.752,241.992" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="miter"/>
+  <polygon points="169.92,62.736 269.712,147.744 236.448,147.744 169.92,99.696 103.392,147.744 70.128,147.744" fill="#00A8E8"/>
+  <polygon points="169.92,129.264 247.536,203.184 217.968,203.184 169.92,166.224 121.872,203.184 92.304,203.184" fill="#FFFFFF"/>
+  <polygon points="169.92,188.4 221.664,254.928 199.488,254.928 169.92,225.36 140.352,254.928 118.176,254.928" fill="#FFFFFF"/>
+  <rect x="166.4" y="62.7" width="7" height="214.4" fill="#0F172A"/>
+  <circle cx="169.92" cy="166.224" r="14" fill="#0F172A" stroke="#E5A823" stroke-width="4.5"/>
+  <circle cx="169.92" cy="166.224" r="7" fill="#E5A823"/>
+  <circle cx="294.752" cy="97.848" r="9" fill="#0F172A" stroke="#00A8E8" stroke-width="4"/>
+  <circle cx="169.92" cy="25.776" r="9" fill="#0F172A" stroke="#00A8E8" stroke-width="4"/>
+  <circle cx="45.088" cy="97.848" r="9" fill="#0F172A" stroke="#00A8E8" stroke-width="4"/>
+  <circle cx="45.088" cy="241.992" r="9" fill="#0F172A" stroke="#00A8E8" stroke-width="4"/>
+  <circle cx="169.92" cy="314.064" r="9" fill="#0F172A" stroke="#00A8E8" stroke-width="4"/>
+  <circle cx="294.752" cy="241.992" r="9" fill="#0F172A" stroke="#00A8E8" stroke-width="4"/></g>
+  <text x="290" y="112" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="64" font-weight="700" fill="#FFFFFF" letter-spacing="2">SMC</text>
+  <text x="292" y="154" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="26" font-weight="700" fill="#CBD5E1" letter-spacing="1.5">SEMILLERO DE MECÁNICA COMPUTACIONAL</text>
+  <text x="292" y="188" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="17" font-weight="600" fill="#94A3B8" letter-spacing="2.2">PONTIFICIA UNIVERSIDAD JAVERIANA CALI · GRUPO SIGMA · INGENIERÍA MECÁNICA</text>
+  <rect x="292" y="210" width="72" height="5" fill="#00A8E8"/><rect x="370" y="210" width="24" height="5" fill="#E5A823"/>
+  <text x="1160" y="236" font-family="'JetBrains Mono',Consolas,monospace" font-size="14" fill="#94A3B8" text-anchor="end">[K]{u} = {F}</text>
+</svg>

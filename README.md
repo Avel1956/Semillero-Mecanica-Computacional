@@ -1,15 +1,14 @@
 <div align="center">
 
-# Semillero de Mecánica Computacional
-### Pontificia Universidad Javeriana – Cali · Facultad de Ingeniería
-Grupo de Investigación SIGMA · Programa de Ingeniería Mecánica
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="recursos/marca/smc-banner-oscuro.svg">
+  <img src="recursos/marca/smc-banner.svg" alt="SMC — Semillero de Mecánica Computacional · Pontificia Universidad Javeriana Cali" width="100%">
+</picture>
 
----
-
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-F37626?style=for-the-badge&logo=jupyter&logoColor=white)
-![FreeCAD](https://img.shields.io/badge/FreeCAD-FEM-333333?style=for-the-badge)
-![Estado](https://img.shields.io/badge/Estado-A%C3%B1o%201%20en%20ejecuci%C3%B3n-brightgreen?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.10%2B-0B2545?style=for-the-badge&logo=python&logoColor=white)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-00A8E8?style=for-the-badge&logo=jupyter&logoColor=white)
+![FreeCAD](https://img.shields.io/badge/FreeCAD-FEM-0F172A?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-A%C3%B1o%201%20en%20ejecuci%C3%B3n-E5A823?style=for-the-badge)
 
 </div>
 
@@ -28,6 +27,7 @@ Grupo de Investigación SIGMA · Programa de Ingeniería Mecánica
 - [Cronograma](#cronograma)
 - [Productos esperados](#productos-esperados)
 - [Estructura del repositorio](#estructura-del-repositorio)
+- [Identidad visual](#identidad-visual)
 - [Equipo](#equipo)
 - [Cómo contribuir](#cómo-contribuir)
 - [Contacto](#contacto)
@@ -167,7 +167,7 @@ Productos comprometidos en la propuesta registrada ante la convocatoria.
 
 ## Estructura del repositorio
 
-Las carpetas se crean cuando existe el primer contenido; `actas/` y `recursos/` aún no tienen material.
+Las carpetas se crean cuando existe el primer contenido; `actas/` aún no tiene material.
 
 ```text
 Semillero-Mecanica-Computacional/
@@ -180,11 +180,24 @@ Semillero-Mecanica-Computacional/
 │   └── aerobio/               Proyecto integrador: propuesta y análisis biomecánico
 ├── divulgacion/
 │   └── 2026-11-07-charla-cmgac/   Informe y presentación de la charla AeroBio
+├── recursos/
+│   └── marca/                 Logo, banner, paleta y manual de identidad visual
 ├── actas/                     (pendiente) Acta de cada sesión de trabajo
-├── recursos/                  (pendiente) Material de referencia del grupo
 │
 └── README.md
 ```
+
+---
+
+## Identidad visual
+
+<img src="recursos/marca/smc-isotipo.svg" alt="Isotipo SMC" width="96" align="right">
+
+El semillero usa la insignia aeroespacial **Concepto K**: un escudo hexagonal con tres chevrons escalonados (ondas de choque), un eje vectorial central y un nodo de enfoque en oro. Los archivos de logo, banner y paleta están en [`recursos/marca/`](recursos/marca/README.md).
+
+<img src="recursos/marca/smc-paleta.svg" alt="Paleta de color del SMC" width="100%">
+
+Tipografía: **Space Grotesk** o **Inter** para títulos y texto; **JetBrains Mono** para datos, fórmulas y código.
 
 ---
 
@@ -299,6 +312,11 @@ El semillero no cuenta con correo electrónico propio. Las comunicaciones se rec
 
 ---
 
-**Semillero de Mecánica Computacional**
-Pontificia Universidad Javeriana – Cali · Facultad de Ingeniería
+<div align="center">
+<img src="recursos/marca/smc-isotipo.svg" alt="SMC" width="56">
+
+**Semillero de Mecánica Computacional**<br>
+Pontificia Universidad Javeriana – Cali · Facultad de Ingeniería<br>
 Convocatoria Semilleros de Investigación 2026 · Ejecución 2026 – 2027
+
+</div>

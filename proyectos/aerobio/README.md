@@ -1,3 +1,5 @@
+<img src="../../recursos/marca/smc-isotipo.svg" alt="SMC" width="64" align="right">
+
 # AeroBio — De las aves al vuelo del futuro
 
 **Proyecto integrador del semillero** · Líneas: las cinco · **Estado:** modelado y simulación terminados; fabricación y ensayo pendientes

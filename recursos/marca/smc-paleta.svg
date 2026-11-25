@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="220" viewBox="0 0 1180 220">
+  <rect width="100%" height="100%" fill="#FFFFFF"/><rect x="20" y="20" width="212" height="110" rx="6" fill="#0B2545" stroke="#C9D3E0"/>
+  <text x="20" y="156" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Azul Aeroespacial</text>
+  <text x="20" y="180" font-family="'JetBrains Mono',Consolas,monospace" font-size="15" fill="#5A6B80">#0B2545</text>
+  <text x="20" y="202" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="13" fill="#5A6B80">Escudo, títulos</text>
+  <rect x="252" y="20" width="212" height="110" rx="6" fill="#00A8E8" stroke="#C9D3E0"/>
+  <text x="252" y="156" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Cian Onda de Choque</text>
+  <text x="252" y="180" font-family="'JetBrains Mono',Consolas,monospace" font-size="15" fill="#5A6B80">#00A8E8</text>
+  <text x="252" y="202" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="13" fill="#5A6B80">Chevron superior, nodos, acentos</text>
+  <rect x="484" y="20" width="212" height="110" rx="6" fill="#E5A823" stroke="#C9D3E0"/>
+  <text x="484" y="156" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Oro Académico</text>
+  <text x="484" y="180" font-family="'JetBrains Mono',Consolas,monospace" font-size="15" fill="#5A6B80">#E5A823</text>
+  <text x="484" y="202" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="13" fill="#5A6B80">Foco central, destacados</text>
+  <rect x="716" y="20" width="212" height="110" rx="6" fill="#0F172A" stroke="#C9D3E0"/>
+  <text x="716" y="156" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Carbono Profundo</text>
+  <text x="716" y="180" font-family="'JetBrains Mono',Consolas,monospace" font-size="15" fill="#5A6B80">#0F172A</text>
+  <text x="716" y="202" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="13" fill="#5A6B80">Texto y fondos oscuros</text>
+  <rect x="948" y="20" width="212" height="110" rx="6" fill="#F8FAFC" stroke="#C9D3E0"/>
+  <text x="948" y="156" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Blanco / Lienzo</text>
+  <text x="948" y="180" font-family="'JetBrains Mono',Consolas,monospace" font-size="15" fill="#5A6B80">#F8FAFC</text>
+  <text x="948" y="202" font-family="'Space Grotesk','Inter','Segoe UI',Arial,sans-serif" font-size="13" fill="#5A6B80">Superficies</text>
+</svg>

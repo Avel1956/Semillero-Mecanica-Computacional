@@ -1,3 +1,5 @@
+<img src="../recursos/marca/smc-isotipo.svg" alt="SMC" width="64" align="right">
+
 # Formación
 
 ## Curso «FEM práctico con FreeCAD» (6 sesiones)
